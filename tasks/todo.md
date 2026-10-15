@@ -107,7 +107,7 @@ Reuse `masm/challenge/*` untouched; write one `beats_target` (`masm/games/pub_sc
 - [x] Data v4: 48 characters, 12 pools (spending places have a pickup stop 110 m into the street, stop 0), radio station concepts (no audio) → verify: course tests pass, vectors regenerated
 - [x] HUD: time, score, speed, radar, seats, gantry signs + phone direction row, callouts, results → verify: matches the v4 boards at 1280x960 (screenshots); phone layouts still to check
 - [x] Splash + menus on `Boomers`, radio select over the 14 level tracks, results on `Wireline Cosmos`, synth SFX (engine, skid, crash, ka-ching) → verify: no autoplay (music starts on the splash click), reduced motion keeps the start prompt steady; songs in `web/public/music` (66 MB, slug names), M toggles sound
-- [x] Course map in the HUD (open item 14) → verify: the pyramid shows district colours and your position, updates at each fork (screenshot)
+- [x] Course map in the HUD (open item 14): built, then REMOVED on Gaylord's call (gives away too much). Forks are read from the gantry only
 - [x] Portrait phone layout: scene on top, seat strip + radar below, pad under; radio and results fixed to the viewport → verify: 420x900 window screenshots. Landscape 740x340 not yet checked
 - [ ] Gaylord playtest on desktop + phone
 
@@ -140,8 +140,8 @@ Reuse `masm/challenge/*` untouched; write one `beats_target` (`masm/games/pub_sc
 13. Pickup venues per district (set in M2, expected rider points per pair from the pools in brackets): Downtown market + garage
     (630), Waterfront aquagym + arcade (610), Casino Strip bar + bingo (737), Golf Hills nursing home + school (574).
     Spread 1.28x, the test caps it at 1.35x.
-14. Course map in the HUD (review 2026-10-15): the pyramid with district colours and your position. Without it a fork is a
-    coin flip for riders whose place isn't on the next sign; with it the game has a planning layer, like reading OutRun's map live.
+14. Course map in the HUD: built in M3, removed the same night on Gaylord's call (it gave away too much). The fork is read
+    from the gantry signs only.
 15. A record is a known course: the rival regenerates it from the seed and can practise it before shooting (SAME RUN does the
     same for the champion). Time-attack format, same as GQ's known city list. Fine by me; flag it if you want blind shots.
 16. Course depth 7 legs, drop bay at the start of each street, wreck on closing speed (all in the rules above).
