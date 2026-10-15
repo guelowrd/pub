@@ -31,7 +31,7 @@ export function startAttract(cv: HTMLCanvasElement): () => void {
       const f = hgt / 366, sx = (ch.atlasIndex % sheet.cols) * sheet.cw, sy = Math.floor(ch.atlasIndex / sheet.cols) * sheet.ch;
       ctx.save(); ctx.globalAlpha = alpha;
       ctx.translate(gx * k, gy * k);
-      if (fromLeft) ctx.scale(-1, 1); // from the left they wave the other hand
+      if (!fromLeft) ctx.scale(-1, 1); // the raised hand is on the road's side: as drawn it is the viewer's left, so the right side mirrors
       ctx.drawImage(im, sx, sy, sheet.cw, sheet.ch, -sheet.ax * f * k, -sheet.ay * f * k, sheet.cw * f * k, sheet.ch * f * k);
       ctx.restore();
     }
