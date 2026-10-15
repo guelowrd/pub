@@ -1,7 +1,8 @@
 // Pseudo-3D view: road segments projected from a low chase camera, sprites sorted by segment and drawn at their anchors.
 import { BAY, CAR_W, LANE, NAME, SEG, TOP, W, WALK, halfWidth, isRed, rightEdge, seg, stopAt, type District, type Sim } from "./sim";
 import { CHARACTERS, FORK_OUT, sidewalkX } from "./course";
-import { BUILDING, DPROP, DPROPS, DROP, ICON, PEOPLE, PROP, SHEETS, SKYLINE, TRAFFIC, TREES, VENUE_CELL, img, type Sheet } from "./art";
+import { BUILDING, DPROP, DPROPS, DROP, FILLERS, ICON, LIGHT_GREEN, LIGHT_RED, PANO, PANO_HORIZON, PEOPLE, PORTAL, PROP, ROAD_TINT, SHEETS, TRAFFIC, TREES, VENUE_CELL, img, type Sheet } from "./art";
+import { DEFAULT_SKY, SKY } from "./stations";
 
 const N = 140; // segments drawn ahead
 const CAM_H = 2.2, CAM_BACK = 5;
@@ -11,6 +12,10 @@ const SMOKE_MS = [50, 100, 170, 260, 370, 500], SMOKE_A = [1, 1, 1, 0.85, 0.35, 
 // effects live between frames: skid puffs trail behind the car, a burst marks a wreck
 const puffs: { z: number; x: number; t: number }[] = [], bursts: { z: number; x: number; t: number }[] = [];
 let lastT = 0, lastPuff = 0, lastSpin = 0;
+let sky = DEFAULT_SKY;
+export const setSong = (id: string) => { sky = SKY[id] ?? DEFAULT_SKY; };
+// blend a hex colour toward a tint
+const mix = (a: string, b: string, k: number) => "#" + [0, 2, 4].map((i) => Math.round(parseInt(a.slice(1 + i, 3 + i), 16) * (1 - k) + parseInt(b.slice(1 + i, 3 + i), 16) * k).toString(16).padStart(2, "0")).join("");
 
 export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number) {
   const cx = w / 2, hy = h * 0.42, focal = h * 0.9;
@@ -35,16 +40,19 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     sy[n] = hy + (camY - yAt(i0 + n)) * sc[n];
   }
 
-  // sky and the skyline, which slides a little against the curves and barely against the hills
-  const sky = ctx.createLinearGradient(0, 0, 0, hy);
-  sky.addColorStop(0, "#14102e"); sky.addColorStop(1, "#5a2a6e");
-  ctx.fillStyle = sky; ctx.fillRect(0, 0, w, hy);
-  const skyline = img(SKYLINE);
+  // the song's sky, then the district's skyline, which slides a little against the curves. The district swaps inside the tunnel
+  const here = s.streets.filter((st) => s.z >= st.z0 - 50).pop() ?? s.streets[0];
+  const district = here.district;
+  const grad = ctx.createLinearGradient(0, 0, 0, hy);
+  grad.addColorStop(0, sky[0]); grad.addColorStop(1, sky[1]);
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, w, hy);
+  const skyline = img(PANO[district]);
   if (skyline) {
     const dw = w * 1.4, dh = dw / 2, dx = -xo[Math.min(N, 40)] * 0.004 * w - (dw - w) / 2;
-    ctx.drawImage(skyline, dx, hy - dh * 0.9, dw, dh);
+    ctx.drawImage(skyline, dx, hy - dh * PANO_HORIZON, dw, dh);
   }
   ctx.fillStyle = "#1c1636"; ctx.fillRect(0, hy, w, h - hy);
+  const [tint, tintA] = ROAD_TINT[district], asphalt = [mix("#272244", tint, tintA), mix("#2c264a", tint, tintA)];
 
   const X = (n: number, xr: number) => cx + (xo[n] + xr - s.x) * sc[n];
   const quad = (n: number, l1: number, r1: number, l2: number, r2: number, color: string) => {
@@ -55,10 +63,11 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     ctx.fill();
   };
   // tunnels join the areas: from where the branches run straight to the first metres of the next street
-  const TUN_H = 6, TUN_IN = FORK_OUT / 2, TUN_OUT = 30;
+  const TUN_H = 7, TUN_IN = FORK_OUT / 2, TUN_OUT = 30;
   const tunnelAt = (z: number) => s.forks.find((o) => z >= o.zDecide + TUN_IN && z < o.zEnd + TUN_OUT);
   const wallH = tunnelAt(s.z) ? 40 : TUN_H; // inside, the walls climb out of view; outside, only the portal face shows above the road
-  const tunnel = (n: number, c1: number, c2: number, hw: number, tint: string, mouth: boolean) => {
+  const tunnel = (n: number, c1: number, c2: number, hw: number, to: District, mouth: boolean) => {
+    const tint = COLOR[to];
     const l1 = c1 - hw - WALK, r1 = c1 + hw + WALK, l2 = c2 - hw - WALK, r2 = c2 + hw + WALK;
     const top1 = sy[n] - TUN_H * sc[n], top2 = sy[n + 1] - TUN_H * sc[n + 1], high1 = sy[n] - wallH * sc[n], high2 = sy[n + 1] - wallH * sc[n + 1];
     const poly = (pts: number[][], color: string) => { ctx.fillStyle = color; ctx.beginPath(); pts.forEach(([x, y], j) => (j ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.fill(); };
@@ -66,18 +75,15 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     poly([[X(n, r1), sy[n]], [X(n, r1), high1], [X(n + 1, r2), high2], [X(n + 1, r2), sy[n + 1]]], "#141028");
     poly([[X(n, l1), top1], [X(n, r1), top1], [X(n + 1, r2), top2], [X(n + 1, l2), top2]], (i0 + n) % 2 ? "#1c1838" : "#201c3e");
     if ((i0 + n) % 4 === 0) poly([[X(n, c1 - 1), top1 + 0.1 * sc[n]], [X(n, c1 + 1), top1 + 0.1 * sc[n]], [X(n + 1, c2 + 1), top2 + 0.1 * sc[n + 1]], [X(n + 1, c2 - 1), top2 + 0.1 * sc[n + 1]]], tint);
-    if (mouth) { // the portal face, with the opening cut out
-      ctx.fillStyle = "#2a2448"; ctx.beginPath();
-      ctx.rect(X(n, l1 - 4), sy[n] - (TUN_H + 4) * sc[n], X(n, r1 + 4) - X(n, l1 - 4), (TUN_H + 4) * sc[n]);
-      ctx.rect(X(n, l1), top1, X(n, r1) - X(n, l1), TUN_H * sc[n]);
-      ctx.fill("evenodd");
-      ctx.strokeStyle = tint; ctx.lineWidth = Math.max(1, 0.25 * sc[n]); ctx.strokeRect(X(n, l1), top1, X(n, r1) - X(n, l1), TUN_H * sc[n]);
+    if (mouth) { // the painted portal, fading out as the camera reaches it so the inside shows through
+      const z = (i0 + n) * SEG, d = z - s.z, a = Math.max(0, Math.min(1, (d - 12) / 30));
+      if (a > 0) cell(ctx, PORTAL[to], 0, X(n, c1), sy[n], sc[n], undefined, false, a);
     }
   };
   // a road slice centred at c (relative to the main road), with its sidewalks, curbs and lane dashes
   const road = (n: number, c1: number, c2: number, hw1: number, hw2: number, re1: number, re2: number, alt: boolean) => {
     quad(n, c1 - hw1 - WALK, c1 + re1 + WALK, c2 - hw2 - WALK, c2 + re2 + WALK, alt ? "#5e5280" : "#665a8a");
-    quad(n, c1 - hw1, c1 + re1, c2 - hw2, c2 + re2, alt ? "#272244" : "#2c264a");
+    quad(n, c1 - hw1, c1 + re1, c2 - hw2, c2 + re2, alt ? asphalt[0] : asphalt[1]);
     const curb = alt ? "#e8e8f8" : "#ff6fc8";
     quad(n, c1 - hw1 - 0.4, c1 - hw1, c2 - hw2 - 0.4, c2 - hw2, curb);
     quad(n, c1 + re1, c1 + re1 + 0.4, c2 + re2, c2 + re2 + 0.4, curb);
@@ -98,20 +104,21 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     return { px: cx + (xo[n] + (xo[n + 1] - xo[n]) * t + x - s.x) * k, py: hy + (camY - y) * k, k };
   };
   // a whole cell of a sheet at its anchor; ppm overrides the sheet's scale, flip mirrors it for the left side
-  const cell = (ctx2: CanvasRenderingContext2D, sh: Sheet, i: number, px: number, py: number, k: number, ppm = sh.ppm, flip = false, alpha = 1) => {
+  const cell = (ctx2: CanvasRenderingContext2D, sh: Sheet, i: number, px: number, py: number, k: number, ppm = sh.ppm, flip = false, alpha = 1, dim = false) => {
     const im = img(sh.file);
     if (!im) return;
     const f = k / ppm, sx = (i % sh.cols) * sh.cw, sy0 = Math.floor(i / sh.cols) * sh.ch;
     ctx2.save();
     ctx2.globalAlpha = alpha;
+    if (dim) ctx2.filter = "brightness(0.65)";
     ctx2.translate(px, py);
     if (flip) ctx2.scale(-1, 1);
     ctx2.drawImage(im, sx, sy0, sh.cw, sh.ch, -sh.ax * f, -sh.ay * f, sh.cw * f, sh.ch * f);
     ctx2.restore();
   };
-  const spr = (z: number, x: number, sh: Sheet, i: number, ppm = sh.ppm, flip = false, alpha = 1) => at(z, () => {
+  const spr = (z: number, x: number, sh: Sheet, i: number, ppm = sh.ppm, flip = false, alpha = 1, lift = 0, dim = false) => at(z, () => {
     const { px, py, k } = place(z, x);
-    cell(ctx, sh, i, px, py, k, ppm, flip, alpha);
+    cell(ctx, sh, i, px, py - lift * k, k, ppm, flip, alpha, dim);
   });
   const prop = (z: number, x: number, p: keyof typeof PROP, flip = false) => spr(z, x, SHEETS.props, PROP[p][0], PROP[p][1], flip);
 
@@ -126,20 +133,27 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
       prop(z + 20, side * (W + BAY + WALK + 6), trees[(i >> 5) % 2], side < 0);
     }
   }
+  // filler buildings every 70 m on each side, set back a varying distance, kept clear of the venues and the destination
+  for (let i = Math.ceil(i0 / 14) * 14; i <= i0 + N; i += 14) {
+    const z = i * SEG, st = s.streets.find((o) => z >= o.z0 + 210 && z < o.z1 - 40);
+    if (!st) continue;
+    const fl = FILLERS[st.district], side = (i >> 4) % 2 ? 1 : -1;
+    if (side > 0 && s.stops.some((o) => o.rider && Math.abs(o.z + 15 - z) < 45)) continue;
+    spr(z, side * (W + BAY + WALK + 7 + ((i >> 5) % 3) * 4), fl[(i >> 3) % 3], 0, fl[(i >> 3) % 3].ppm, side < 0, 1, 0, true);
+  }
   for (const c of s.traffic) {
     const yaw = c.tx - c.x < -0.3 ? 0 : c.tx - c.x > 0.3 ? 2 : 1;
     spr(c.z, c.x, TRAFFIC[c.kind], yaw + (c.braking ? 3 : 0));
   }
   // traffic lights: a head on each curb, a stop line across the road
   for (const l of s.lights) {
-    const lamp = isRed(l, s.t) ? "#ff2030" : "#30e060";
     at(l.z, () => {
       const { px, py, k } = place(l.z, 0);
       ctx.fillStyle = "#f0f0f0"; ctx.fillRect(px - W * k, py - 0.08 * k, 2 * W * k, 0.12 * k);
       for (const x of [-(W + 0.8), W + 0.8]) {
         const p = place(l.z, x);
         ctx.fillStyle = "#404048"; ctx.fillRect(p.px - 0.12 * k, p.py - 4 * k, 0.25 * k, 4 * k);
-        ctx.fillStyle = lamp; ctx.beginPath(); ctx.arc(p.px, p.py - 4.2 * k, 0.4 * k, 0, 7); ctx.fill();
+        cell(ctx, isRed(l, s.t) ? LIGHT_RED : LIGHT_GREEN, 0, p.px, p.py - 4 * k, k, undefined, x < 0);
       }
     });
   }
@@ -177,7 +191,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     const top = py - 6 * k, bw = (W + 3) * 2 * k;
     ctx.fillStyle = "#1c4a30"; ctx.fillRect(px - bw / 2, top, bw, 1.8 * k);
     ctx.fillStyle = "#e8e8e8"; ctx.fillRect(px - bw / 2 - 0.3 * k, top, 0.3 * k, 6 * k); ctx.fillRect(px + bw / 2, top, 0.3 * k, 6 * k);
-    ctx.font = `${Math.max(6, k)}px "PUB Pixel", monospace`; ctx.textBaseline = "middle";
+    ctx.font = `${Math.max(6, k)}px "Boomer GT", monospace`; ctx.textBaseline = "middle";
     const il = img(ICON[f.left]), ir = img(ICON[f.right]);
     if (il) ctx.drawImage(il, px - bw / 2 + 0.3 * k, top + 0.2 * k, 1.4 * k, 1.4 * k);
     ctx.fillStyle = COLOR[f.left]; ctx.textAlign = "left"; ctx.fillText(`< ${NAME[f.left]}`, px - bw / 2 + 2 * k, top + 0.9 * k);
@@ -216,12 +230,12 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
         if (side === f.side) continue;
         const c1 = (side - f.side) * f.off[d], c2 = (side - f.side) * f.off[d + 1];
         road(n, c1, c2, W, W, W, W, alt);
-        if (tun) tunnel(n, c1, c2, W, COLOR[side < 0 ? f.left : f.right], mouth);
+        if (tun) tunnel(n, c1, c2, W, side < 0 ? f.left : f.right, mouth);
       }
       if (f.side === 0) continue;
     }
     road(n, 0, 0, halfWidth(s, z1), halfWidth(s, z2), rightEdge(s, z1), rightEdge(s, z2), alt);
-    if (tun) tunnel(n, 0, 0, W, COLOR[tun.side < 0 ? tun.left : tun.right], mouth);
+    if (tun) tunnel(n, 0, 0, W, tun.side < 0 ? tun.left : tun.right, mouth);
     const st = stopAt(s, z1);
     if (st && !st.taken) quad(n, W + 0.3, W + BAY - 0.2, W + 0.3, W + BAY - 0.2, st.drop ? COLOR[st.drop] + "66" : alt ? "#8a7a20" : "#a08a20");
     sprites.get(n)?.forEach((fn) => fn());

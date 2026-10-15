@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { KMH, NAME, PLACE, RATE, RUN, TOP, agePoints, candidate, newSim, step, tick, type District, type Input, type Rider, type Sim } from "./game/sim";
 import { CHARACTERS, extend } from "./game/course";
-import { COLOR, draw } from "./game/render";
+import { COLOR, draw, setSong } from "./game/render";
 import { ICON, loadArt } from "./game/art";
 import { MENU_TRACK, RESULTS_TRACK, STATIONS } from "./game/stations";
 import { audio } from "./audio";
@@ -39,7 +39,7 @@ export default function App() {
   // music follows the screen: menus loop Boomers, the run plays the station from its first second, results loop Wireline Cosmos
   useEffect(() => {
     if (mode === "radio") { if (preview) audio.run(STATIONS[station].id); else audio.menu(MENU_TRACK); }
-    else if (mode === "play") { if (sim.current.t === 0) audio.run(STATIONS[station].id); else audio.resume(); }
+    else if (mode === "play") { if (sim.current.t === 0) { setSong(STATIONS[station].id); audio.run(STATIONS[station].id); } else audio.resume(); }
     else if (mode === "paused") audio.pause();
     else if (mode === "over") audio.results(RESULTS_TRACK);
     if (mode !== "play") { audio.engine(0, false); audio.skid(false); }
@@ -101,7 +101,7 @@ export default function App() {
       set("score", String(s.score).padStart(5, "0"));
       set("speed", String(Math.round(s.v * KMH)).padStart(3, "0"));
       const full = !s.seats.includes(null);
-      set("bank", `TO BANK ${fmt(s.seats.reduce((a, r) => a + (r ? agePoints(r.age) : 0), 0))}${full ? "  FULL" : ""}`);
+      html("bank", `TO BANK <span class="num">${fmt(s.seats.reduce((a, r) => a + (r ? agePoints(r.age) : 0), 0))}</span>${full ? "  FULL" : ""}`);
       s.seats.forEach((r, i) => html(`seat${i}`, r ? `${face(r)}${icon(r.dest)}<small>AGE</small><b>${r.age}</b><em>${fmt(agePoints(r.age))}<small>PTS</small></em>` : `<span>EMPTY</span>`));
       // radar: the next stop's face and honest range; the reveal for 2 s after boarding; nothing at a fork
       const c = candidate(s), e = s.log[s.log.length - 1];
@@ -115,7 +115,7 @@ export default function App() {
       const badge = (d: District) => { const n = s.seats.filter((r) => r && r.dest === d).length; return n ? ` x${n}` : ""; };
       html("fork", f ? `<span style="color:${COLOR[f.left]}">&lt; ${NAME[f.left]}${badge(f.left)}</span><span style="color:${COLOR[f.right]}">${NAME[f.right]}${badge(f.right)} &gt;</span>` : "");
       const text = s.callout?.text ?? "";
-      set("callout", text);
+      html("callout", text.replace(/\+(\d+)|X(\d[\d.]*)|AGE (\d+)/g, (_, award, mult, age) => award ? `<span class="num">+${fmt(Number(award))}</span>` : mult ? `<span class="num">x${mult}</span>` : `AGE <span class="num">${age}</span>`));
       el.querySelector<HTMLElement>("#callout")!.style.color = /WRECK|SPIN|BAILED/.test(text) ? "#ff40bd" : /CRAZY/.test(text) ? "#78ffcb" : /^\+|GROUP/.test(text) ? "#ffe564" : "#fff3f4";
     };
     raf = requestAnimationFrame(frame);
@@ -145,7 +145,7 @@ export default function App() {
         <div className="callout" id="callout" />
       </div>
       {mode === "ready" && (
-        <div className="overlay splash" onClick={() => { if (loaded) { audio.unlock(); setMode("radio"); } }}><div className="start-prompt" data-text={loaded ? "CLICK TO START" : "LOADING"}><span className="text" data-text={loaded ? "CLICK TO START" : "LOADING"}>{loaded ? "CLICK TO START" : "LOADING"}</span></div></div>
+        <div className="overlay splash" onClick={() => { if (loaded) { audio.unlock(); setMode("radio"); } }}>{loaded ? <div className="start-prompt"><img src={`${ART}click-to-start-chrome.png`} alt="CLICK TO START" /></div> : <p className="loading">LOADING</p>}</div>
       )}
       {mode === "radio" && (
         <div className="overlay radio">

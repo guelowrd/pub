@@ -1,0 +1,1678 @@
+{
+  "version": 1,
+  "station_count": 14,
+  "track_titles_and_moods": "runtime data owned by developer; demo words are not track concepts",
+  "station_order": "preserve existing order; index 0..13",
+  "dial_mhz_range": [
+    88,
+    108
+  ],
+  "dial_is_display_only": true,
+  "layouts": {
+    "desktop": {
+      "component_size": [
+        1120,
+        560
+      ],
+      "screen_size": [
+        1280,
+        960
+      ],
+      "origin": [
+        80,
+        220
+      ],
+      "scale": 1,
+      "layers": [
+        {
+          "id": "housing",
+          "svg": "assets/radio/layers/desktop/housing.svg",
+          "png": "assets/radio/layers/desktop/housing.png",
+          "rect": [
+            0,
+            0,
+            1120,
+            560
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            0,
+            0
+          ],
+          "screen_position": [
+            80,
+            220
+          ],
+          "pivot_local": null,
+          "role": "production"
+        },
+        {
+          "id": "frequency-band",
+          "svg": "assets/radio/layers/desktop/frequency-band.svg",
+          "png": "assets/radio/layers/desktop/frequency-band.png",
+          "rect": [
+            101,
+            41,
+            918,
+            110
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            101,
+            41
+          ],
+          "screen_position": [
+            181,
+            261
+          ],
+          "pivot_local": null,
+          "role": "production"
+        },
+        {
+          "id": "needle",
+          "svg": "assets/radio/layers/desktop/needle.svg",
+          "png": "assets/radio/layers/desktop/needle.png",
+          "rect": [
+            387.9230769230769,
+            66.0,
+            18,
+            59.00000000000001
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            387.9230769230769,
+            66.0
+          ],
+          "screen_position": [
+            467.9230769230769,
+            286.0
+          ],
+          "pivot_local": [
+            9,
+            1
+          ],
+          "role": "production"
+        },
+        {
+          "id": "lcd-bed",
+          "svg": "assets/radio/layers/desktop/lcd-bed.svg",
+          "png": "assets/radio/layers/desktop/lcd-bed.png",
+          "rect": [
+            225,
+            187,
+            670,
+            156
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            225,
+            187
+          ],
+          "screen_position": [
+            305,
+            407
+          ],
+          "pivot_local": null,
+          "role": "production"
+        },
+        {
+          "id": "lcd-glow",
+          "svg": "assets/radio/layers/desktop/lcd-glow.svg",
+          "png": "assets/radio/layers/desktop/lcd-glow.png",
+          "rect": [
+            235,
+            197,
+            650,
+            136
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            235,
+            197
+          ],
+          "screen_position": [
+            315,
+            417
+          ],
+          "pivot_local": null,
+          "role": "production"
+        },
+        {
+          "id": "lcd-title-demo",
+          "svg": "assets/radio/layers/desktop/lcd-title-demo.svg",
+          "png": "assets/radio/layers/desktop/lcd-title-demo.png",
+          "rect": [
+            238,
+            212,
+            644,
+            73.0
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            238,
+            212
+          ],
+          "screen_position": [
+            318,
+            432
+          ],
+          "pivot_local": null,
+          "role": "preview-only; draw actual title in code"
+        },
+        {
+          "id": "lcd-mood-demo",
+          "svg": "assets/radio/layers/desktop/lcd-mood-demo.svg",
+          "png": "assets/radio/layers/desktop/lcd-mood-demo.png",
+          "rect": [
+            238,
+            272.3,
+            644,
+            58.400000000000006
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            238,
+            272.3
+          ],
+          "screen_position": [
+            318,
+            492.3
+          ],
+          "pivot_local": null,
+          "role": "preview-only; draw actual mood in code"
+        },
+        {
+          "id": "lcd-station-demo",
+          "svg": "assets/radio/layers/desktop/lcd-station-demo.svg",
+          "png": "assets/radio/layers/desktop/lcd-station-demo.png",
+          "rect": [
+            832.5,
+            201,
+            27.200000000000003,
+            22.1
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            832.5,
+            201
+          ],
+          "screen_position": [
+            912.5,
+            421
+          ],
+          "pivot_local": null,
+          "role": "preview-only; draw actual index/frequency in code"
+        },
+        {
+          "id": "vu-off",
+          "svg": "assets/radio/layers/desktop/vu-off.svg",
+          "png": "assets/radio/layers/desktop/vu-off.png",
+          "rect": [
+            230,
+            365,
+            660,
+            58
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            230,
+            365
+          ],
+          "screen_position": [
+            310,
+            585
+          ],
+          "pivot_local": null,
+          "role": "production"
+        },
+        {
+          "id": "vu-lit",
+          "svg": "assets/radio/layers/desktop/vu-lit.svg",
+          "png": "assets/radio/layers/desktop/vu-lit.png",
+          "rect": [
+            230,
+            365,
+            660,
+            58
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            230,
+            365
+          ],
+          "screen_position": [
+            310,
+            585
+          ],
+          "pivot_local": null,
+          "role": "production; clip each row to its runtime level"
+        },
+        {
+          "id": "volume-base",
+          "svg": "assets/radio/layers/desktop/volume-base.svg",
+          "png": "assets/radio/layers/desktop/volume-base.png",
+          "rect": [
+            40,
+            204,
+            152,
+            152
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            40,
+            204
+          ],
+          "screen_position": [
+            120,
+            424
+          ],
+          "pivot_local": [
+            76,
+            76
+          ],
+          "role": "production"
+        },
+        {
+          "id": "volume-pointer",
+          "svg": "assets/radio/layers/desktop/volume-pointer.svg",
+          "png": "assets/radio/layers/desktop/volume-pointer.png",
+          "rect": [
+            112,
+            239.98000000000002,
+            8,
+            20.7
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            112,
+            239.98000000000002
+          ],
+          "screen_position": [
+            192,
+            459.98
+          ],
+          "pivot_local": [
+            4,
+            40.019999999999996
+          ],
+          "role": "production"
+        },
+        {
+          "id": "ignition-base",
+          "svg": "assets/radio/layers/desktop/ignition-base.svg",
+          "png": "assets/radio/layers/desktop/ignition-base.png",
+          "rect": [
+            925.4,
+            199.39999999999998,
+            161.20000000000002,
+            161.20000000000002
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            925.4,
+            199.39999999999998
+          ],
+          "screen_position": [
+            1005.4,
+            419.4
+          ],
+          "pivot_local": [
+            80.60000000000001,
+            80.60000000000001
+          ],
+          "role": "production"
+        },
+        {
+          "id": "ignition-key",
+          "svg": "assets/radio/layers/desktop/ignition-key.svg",
+          "png": "assets/radio/layers/desktop/ignition-key.png",
+          "rect": [
+            965.7,
+            274,
+            80.60000000000001,
+            80.39999999999999
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            965.7,
+            274
+          ],
+          "screen_position": [
+            1045.7,
+            494
+          ],
+          "pivot_local": [
+            40.300000000000004,
+            6
+          ],
+          "role": "production"
+        },
+        {
+          "id": "tune-left",
+          "svg": "assets/radio/layers/desktop/tune-left.svg",
+          "png": "assets/radio/layers/desktop/tune-left.png",
+          "rect": [
+            229,
+            457,
+            146,
+            72
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            229,
+            457
+          ],
+          "screen_position": [
+            309,
+            677
+          ],
+          "pivot_local": null,
+          "role": "production"
+        },
+        {
+          "id": "tune-right",
+          "svg": "assets/radio/layers/desktop/tune-right.svg",
+          "png": "assets/radio/layers/desktop/tune-right.png",
+          "rect": [
+            393,
+            457,
+            146,
+            72
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            393,
+            457
+          ],
+          "screen_position": [
+            473,
+            677
+          ],
+          "pivot_local": null,
+          "role": "production"
+        },
+        {
+          "id": "engraved-labels",
+          "svg": "assets/radio/layers/desktop/engraved-labels.svg",
+          "png": "assets/radio/layers/desktop/engraved-labels.png",
+          "rect": [
+            0,
+            0,
+            1120,
+            560
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            0,
+            0
+          ],
+          "screen_position": [
+            80,
+            220
+          ],
+          "pivot_local": null,
+          "role": "production"
+        }
+      ],
+      "needle": {
+        "x_min": 136,
+        "x_max": 984,
+        "default_index": 4,
+        "initial_x": 396.9230769230769,
+        "y": 67.0,
+        "anchor_local": [
+          9,
+          1
+        ],
+        "formula": "x_min + index * (x_max-x_min)/13"
+      },
+      "lcd": {
+        "title_baseline": [
+          254,
+          248
+        ],
+        "title_font_px": 36,
+        "mood_baseline": [
+          254,
+          300
+        ],
+        "mood_font_px": 24,
+        "rect": [
+          230,
+          192,
+          660,
+          146
+        ],
+        "font": "Boomer LCD",
+        "text_color": "#aeffda",
+        "title_clip": [
+          242,
+          206,
+          636,
+          80.30000000000001
+        ],
+        "mood_clip": [
+          242,
+          272.3,
+          636,
+          58.400000000000006
+        ]
+      },
+      "vu": {
+        "rect": [
+          230,
+          365,
+          660,
+          58
+        ],
+        "rows": 2,
+        "segments": 26,
+        "clip_each_row_independently": true
+      },
+      "volume": {
+        "center": [
+          116,
+          280
+        ],
+        "angle_min_deg": -135,
+        "angle_max_deg": 135,
+        "default": 0.5,
+        "press_to_mute": true,
+        "hit_rect": [
+          40,
+          204,
+          152,
+          152
+        ]
+      },
+      "ignition": {
+        "center": [
+          1006,
+          280
+        ],
+        "rest_deg": 0,
+        "turn_deg": 30,
+        "key_returns_after_start": true,
+        "hit_rect": [
+          925.4,
+          199.39999999999998,
+          161.20000000000002,
+          161.20000000000002
+        ]
+      },
+      "tune_left_hit": [
+        230,
+        458,
+        144,
+        70
+      ],
+      "tune_right_hit": [
+        394,
+        458,
+        144,
+        70
+      ]
+    },
+    "portrait": {
+      "component_size": [
+        366,
+        638
+      ],
+      "screen_size": [
+        390,
+        844
+      ],
+      "origin": [
+        12,
+        100
+      ],
+      "scale": 1,
+      "layers": [
+        {
+          "id": "housing",
+          "svg": "assets/radio/layers/portrait/housing.svg",
+          "png": "assets/radio/layers/portrait/housing.png",
+          "rect": [
+            0,
+            0,
+            366,
+            638
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            0,
+            0
+          ],
+          "screen_position": [
+            12,
+            100
+          ],
+          "pivot_local": null,
+          "role": "production"
+        },
+        {
+          "id": "frequency-band",
+          "svg": "assets/radio/layers/portrait/frequency-band.svg",
+          "png": "assets/radio/layers/portrait/frequency-band.png",
+          "rect": [
+            17,
+            31,
+            332,
+            122
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            17,
+            31
+          ],
+          "screen_position": [
+            29,
+            131
+          ],
+          "pivot_local": null,
+          "role": "production"
+        },
+        {
+          "id": "needle",
+          "svg": "assets/radio/layers/portrait/needle.svg",
+          "png": "assets/radio/layers/portrait/needle.png",
+          "rect": [
+            117.46153846153847,
+            58.519999999999996,
+            18,
+            65.72
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            117.46153846153847,
+            58.519999999999996
+          ],
+          "screen_position": [
+            129.46153846153845,
+            158.51999999999998
+          ],
+          "pivot_local": [
+            9,
+            1
+          ],
+          "role": "production"
+        },
+        {
+          "id": "lcd-bed",
+          "svg": "assets/radio/layers/portrait/lcd-bed.svg",
+          "png": "assets/radio/layers/portrait/lcd-bed.png",
+          "rect": [
+            17,
+            172,
+            332,
+            146
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            17,
+            172
+          ],
+          "screen_position": [
+            29,
+            272
+          ],
+          "pivot_local": null,
+          "role": "production"
+        },
+        {
+          "id": "lcd-glow",
+          "svg": "assets/radio/layers/portrait/lcd-glow.svg",
+          "png": "assets/radio/layers/portrait/lcd-glow.png",
+          "rect": [
+            27,
+            182,
+            312,
+            126
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            27,
+            182
+          ],
+          "screen_position": [
+            39,
+            282
+          ],
+          "pivot_local": null,
+          "role": "production"
+        },
+        {
+          "id": "lcd-title-demo",
+          "svg": "assets/radio/layers/portrait/lcd-title-demo.svg",
+          "png": "assets/radio/layers/portrait/lcd-title-demo.png",
+          "rect": [
+            30,
+            197,
+            306,
+            68.0
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            30,
+            197
+          ],
+          "screen_position": [
+            42,
+            297
+          ],
+          "pivot_local": null,
+          "role": "preview-only; draw actual title in code"
+        },
+        {
+          "id": "lcd-mood-demo",
+          "svg": "assets/radio/layers/portrait/lcd-mood-demo.svg",
+          "png": "assets/radio/layers/portrait/lcd-mood-demo.png",
+          "rect": [
+            30,
+            251.8,
+            306,
+            54.400000000000006
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            30,
+            251.8
+          ],
+          "screen_position": [
+            42,
+            351.8
+          ],
+          "pivot_local": null,
+          "role": "preview-only; draw actual mood in code"
+        },
+        {
+          "id": "lcd-station-demo",
+          "svg": "assets/radio/layers/portrait/lcd-station-demo.svg",
+          "png": "assets/radio/layers/portrait/lcd-station-demo.png",
+          "rect": [
+            307.0,
+            184,
+            22.400000000000002,
+            18.2
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            307.0,
+            184
+          ],
+          "screen_position": [
+            319.0,
+            284
+          ],
+          "pivot_local": null,
+          "role": "preview-only; draw actual index/frequency in code"
+        },
+        {
+          "id": "vu-off",
+          "svg": "assets/radio/layers/portrait/vu-off.svg",
+          "png": "assets/radio/layers/portrait/vu-off.png",
+          "rect": [
+            22,
+            333,
+            322,
+            52
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            22,
+            333
+          ],
+          "screen_position": [
+            34,
+            433
+          ],
+          "pivot_local": null,
+          "role": "production"
+        },
+        {
+          "id": "vu-lit",
+          "svg": "assets/radio/layers/portrait/vu-lit.svg",
+          "png": "assets/radio/layers/portrait/vu-lit.png",
+          "rect": [
+            22,
+            333,
+            322,
+            52
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            22,
+            333
+          ],
+          "screen_position": [
+            34,
+            433
+          ],
+          "pivot_local": null,
+          "role": "production; clip each row to its runtime level"
+        },
+        {
+          "id": "volume-base",
+          "svg": "assets/radio/layers/portrait/volume-base.svg",
+          "png": "assets/radio/layers/portrait/volume-base.png",
+          "rect": [
+            36,
+            384,
+            112,
+            112
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            36,
+            384
+          ],
+          "screen_position": [
+            48,
+            484
+          ],
+          "pivot_local": [
+            56,
+            56
+          ],
+          "role": "production"
+        },
+        {
+          "id": "volume-pointer",
+          "svg": "assets/radio/layers/portrait/volume-pointer.svg",
+          "png": "assets/radio/layers/portrait/volume-pointer.png",
+          "rect": [
+            88,
+            411.58,
+            8,
+            14.7
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            88,
+            411.58
+          ],
+          "screen_position": [
+            100,
+            511.58
+          ],
+          "pivot_local": [
+            4,
+            28.419999999999998
+          ],
+          "role": "production"
+        },
+        {
+          "id": "ignition-base",
+          "svg": "assets/radio/layers/portrait/ignition-base.svg",
+          "png": "assets/radio/layers/portrait/ignition-base.png",
+          "rect": [
+            215.2,
+            380.2,
+            119.60000000000001,
+            119.60000000000001
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            215.2,
+            380.2
+          ],
+          "screen_position": [
+            227.2,
+            480.2
+          ],
+          "pivot_local": [
+            59.800000000000004,
+            59.800000000000004
+          ],
+          "role": "production"
+        },
+        {
+          "id": "ignition-key",
+          "svg": "assets/radio/layers/portrait/ignition-key.svg",
+          "png": "assets/radio/layers/portrait/ignition-key.png",
+          "rect": [
+            245.1,
+            434,
+            59.800000000000004,
+            61.199999999999996
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            245.1,
+            434
+          ],
+          "screen_position": [
+            257.1,
+            534
+          ],
+          "pivot_local": [
+            29.900000000000002,
+            6
+          ],
+          "role": "production"
+        },
+        {
+          "id": "tune-left",
+          "svg": "assets/radio/layers/portrait/tune-left.svg",
+          "png": "assets/radio/layers/portrait/tune-left.png",
+          "rect": [
+            21,
+            549,
+            152,
+            66
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            21,
+            549
+          ],
+          "screen_position": [
+            33,
+            649
+          ],
+          "pivot_local": null,
+          "role": "production"
+        },
+        {
+          "id": "tune-right",
+          "svg": "assets/radio/layers/portrait/tune-right.svg",
+          "png": "assets/radio/layers/portrait/tune-right.png",
+          "rect": [
+            193,
+            549,
+            152,
+            66
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            193,
+            549
+          ],
+          "screen_position": [
+            205,
+            649
+          ],
+          "pivot_local": null,
+          "role": "production"
+        },
+        {
+          "id": "engraved-labels",
+          "svg": "assets/radio/layers/portrait/engraved-labels.svg",
+          "png": "assets/radio/layers/portrait/engraved-labels.png",
+          "rect": [
+            0,
+            0,
+            366,
+            638
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            0,
+            0
+          ],
+          "screen_position": [
+            12,
+            100
+          ],
+          "pivot_local": null,
+          "role": "production"
+        }
+      ],
+      "needle": {
+        "x_min": 36,
+        "x_max": 330,
+        "default_index": 4,
+        "initial_x": 126.46153846153847,
+        "y": 59.519999999999996,
+        "anchor_local": [
+          9,
+          1
+        ],
+        "formula": "x_min + index * (x_max-x_min)/13"
+      },
+      "lcd": {
+        "title_baseline": [
+          36,
+          228
+        ],
+        "title_font_px": 22,
+        "mood_baseline": [
+          36,
+          279
+        ],
+        "mood_font_px": 17,
+        "rect": [
+          22,
+          177,
+          322,
+          136
+        ],
+        "font": "Boomer LCD",
+        "text_color": "#aeffda",
+        "title_clip": [
+          34,
+          191,
+          298,
+          74.80000000000001
+        ],
+        "mood_clip": [
+          34,
+          251.8,
+          298,
+          54.400000000000006
+        ]
+      },
+      "vu": {
+        "rect": [
+          22,
+          333,
+          322,
+          52
+        ],
+        "rows": 2,
+        "segments": 26,
+        "clip_each_row_independently": true
+      },
+      "volume": {
+        "center": [
+          92,
+          440
+        ],
+        "angle_min_deg": -135,
+        "angle_max_deg": 135,
+        "default": 0.5,
+        "press_to_mute": true,
+        "hit_rect": [
+          36,
+          384,
+          112,
+          112
+        ]
+      },
+      "ignition": {
+        "center": [
+          275,
+          440
+        ],
+        "rest_deg": 0,
+        "turn_deg": 30,
+        "key_returns_after_start": true,
+        "hit_rect": [
+          215.2,
+          380.2,
+          119.60000000000001,
+          119.60000000000001
+        ]
+      },
+      "tune_left_hit": [
+        22,
+        550,
+        150,
+        64
+      ],
+      "tune_right_hit": [
+        194,
+        550,
+        150,
+        64
+      ]
+    },
+    "landscape": {
+      "component_size": [
+        716,
+        292
+      ],
+      "screen_size": [
+        740,
+        340
+      ],
+      "origin": [
+        12,
+        24
+      ],
+      "scale": 1,
+      "layers": [
+        {
+          "id": "housing",
+          "svg": "assets/radio/layers/landscape/housing.svg",
+          "png": "assets/radio/layers/landscape/housing.png",
+          "rect": [
+            0,
+            0,
+            716,
+            292
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            0,
+            0
+          ],
+          "screen_position": [
+            12,
+            24
+          ],
+          "pivot_local": null,
+          "role": "production"
+        },
+        {
+          "id": "frequency-band",
+          "svg": "assets/radio/layers/landscape/frequency-band.svg",
+          "png": "assets/radio/layers/landscape/frequency-band.png",
+          "rect": [
+            149,
+            13,
+            420,
+            76
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            149,
+            13
+          ],
+          "screen_position": [
+            161,
+            37
+          ],
+          "pivot_local": null,
+          "role": "production"
+        },
+        {
+          "id": "needle",
+          "svg": "assets/radio/layers/landscape/needle.svg",
+          "png": "assets/radio/layers/landscape/needle.png",
+          "rect": [
+            277.3076923076923,
+            30.86,
+            18,
+            39.96
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            277.3076923076923,
+            30.86
+          ],
+          "screen_position": [
+            289.3076923076923,
+            54.86
+          ],
+          "pivot_local": [
+            9,
+            1
+          ],
+          "role": "production"
+        },
+        {
+          "id": "lcd-bed",
+          "svg": "assets/radio/layers/landscape/lcd-bed.svg",
+          "png": "assets/radio/layers/landscape/lcd-bed.png",
+          "rect": [
+            149,
+            93,
+            420,
+            110
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            149,
+            93
+          ],
+          "screen_position": [
+            161,
+            117
+          ],
+          "pivot_local": null,
+          "role": "production"
+        },
+        {
+          "id": "lcd-glow",
+          "svg": "assets/radio/layers/landscape/lcd-glow.svg",
+          "png": "assets/radio/layers/landscape/lcd-glow.png",
+          "rect": [
+            159,
+            103,
+            400,
+            90
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            159,
+            103
+          ],
+          "screen_position": [
+            171,
+            127
+          ],
+          "pivot_local": null,
+          "role": "production"
+        },
+        {
+          "id": "lcd-title-demo",
+          "svg": "assets/radio/layers/landscape/lcd-title-demo.svg",
+          "png": "assets/radio/layers/landscape/lcd-title-demo.png",
+          "rect": [
+            162,
+            118,
+            394,
+            50.0
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            162,
+            118
+          ],
+          "screen_position": [
+            174,
+            142
+          ],
+          "pivot_local": null,
+          "role": "preview-only; draw actual title in code"
+        },
+        {
+          "id": "lcd-mood-demo",
+          "svg": "assets/radio/layers/landscape/lcd-mood-demo.svg",
+          "png": "assets/radio/layers/landscape/lcd-mood-demo.png",
+          "rect": [
+            162,
+            153.0,
+            394,
+            40.0
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            162,
+            153.0
+          ],
+          "screen_position": [
+            174,
+            177.0
+          ],
+          "pivot_local": null,
+          "role": "preview-only; draw actual mood in code"
+        },
+        {
+          "id": "lcd-station-demo",
+          "svg": "assets/radio/layers/landscape/lcd-station-demo.svg",
+          "png": "assets/radio/layers/landscape/lcd-station-demo.png",
+          "rect": [
+            532.5,
+            102,
+            17.6,
+            14.3
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            532.5,
+            102
+          ],
+          "screen_position": [
+            544.5,
+            126
+          ],
+          "pivot_local": null,
+          "role": "preview-only; draw actual index/frequency in code"
+        },
+        {
+          "id": "vu-off",
+          "svg": "assets/radio/layers/landscape/vu-off.svg",
+          "png": "assets/radio/layers/landscape/vu-off.png",
+          "rect": [
+            154,
+            213,
+            410,
+            33
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            154,
+            213
+          ],
+          "screen_position": [
+            166,
+            237
+          ],
+          "pivot_local": null,
+          "role": "production"
+        },
+        {
+          "id": "vu-lit",
+          "svg": "assets/radio/layers/landscape/vu-lit.svg",
+          "png": "assets/radio/layers/landscape/vu-lit.png",
+          "rect": [
+            154,
+            213,
+            410,
+            33
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            154,
+            213
+          ],
+          "screen_position": [
+            166,
+            237
+          ],
+          "pivot_local": null,
+          "role": "production; clip each row to its runtime level"
+        },
+        {
+          "id": "volume-base",
+          "svg": "assets/radio/layers/landscape/volume-base.svg",
+          "png": "assets/radio/layers/landscape/volume-base.png",
+          "rect": [
+            28,
+            85,
+            104,
+            104
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            28,
+            85
+          ],
+          "screen_position": [
+            40,
+            109
+          ],
+          "pivot_local": [
+            52,
+            52
+          ],
+          "role": "production"
+        },
+        {
+          "id": "volume-pointer",
+          "svg": "assets/radio/layers/landscape/volume-pointer.svg",
+          "png": "assets/radio/layers/landscape/volume-pointer.png",
+          "rect": [
+            76,
+            110.9,
+            8,
+            13.5
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            76,
+            110.9
+          ],
+          "screen_position": [
+            88,
+            134.9
+          ],
+          "pivot_local": [
+            4,
+            26.099999999999998
+          ],
+          "role": "production"
+        },
+        {
+          "id": "ignition-base",
+          "svg": "assets/radio/layers/landscape/ignition-base.svg",
+          "png": "assets/radio/layers/landscape/ignition-base.png",
+          "rect": [
+            579.4,
+            82.4,
+            109.2,
+            109.2
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            579.4,
+            82.4
+          ],
+          "screen_position": [
+            591.4,
+            106.4
+          ],
+          "pivot_local": [
+            54.6,
+            54.6
+          ],
+          "role": "production"
+        },
+        {
+          "id": "ignition-key",
+          "svg": "assets/radio/layers/landscape/ignition-key.svg",
+          "png": "assets/radio/layers/landscape/ignition-key.png",
+          "rect": [
+            606.7,
+            131,
+            54.6,
+            56.4
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            606.7,
+            131
+          ],
+          "screen_position": [
+            618.7,
+            155
+          ],
+          "pivot_local": [
+            27.3,
+            6
+          ],
+          "role": "production"
+        },
+        {
+          "id": "tune-left",
+          "svg": "assets/radio/layers/landscape/tune-left.svg",
+          "png": "assets/radio/layers/landscape/tune-left.png",
+          "rect": [
+            19,
+            235,
+            57,
+            46
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            19,
+            235
+          ],
+          "screen_position": [
+            31,
+            259
+          ],
+          "pivot_local": null,
+          "role": "production"
+        },
+        {
+          "id": "tune-right",
+          "svg": "assets/radio/layers/landscape/tune-right.svg",
+          "png": "assets/radio/layers/landscape/tune-right.png",
+          "rect": [
+            86,
+            235,
+            57,
+            46
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            86,
+            235
+          ],
+          "screen_position": [
+            98,
+            259
+          ],
+          "pivot_local": null,
+          "role": "production"
+        },
+        {
+          "id": "engraved-labels",
+          "svg": "assets/radio/layers/landscape/engraved-labels.svg",
+          "png": "assets/radio/layers/landscape/engraved-labels.png",
+          "rect": [
+            0,
+            0,
+            716,
+            292
+          ],
+          "anchor_px": [
+            0,
+            0
+          ],
+          "layout_position": [
+            0,
+            0
+          ],
+          "screen_position": [
+            12,
+            24
+          ],
+          "pivot_local": null,
+          "role": "production"
+        }
+      ],
+      "needle": {
+        "x_min": 170,
+        "x_max": 548,
+        "default_index": 4,
+        "initial_x": 286.3076923076923,
+        "y": 31.86,
+        "anchor_local": [
+          9,
+          1
+        ],
+        "formula": "x_min + index * (x_max-x_min)/13"
+      },
+      "lcd": {
+        "title_baseline": [
+          169,
+          139
+        ],
+        "title_font_px": 25,
+        "mood_baseline": [
+          169,
+          181
+        ],
+        "mood_font_px": 16,
+        "rect": [
+          154,
+          98,
+          410,
+          100
+        ],
+        "font": "Boomer LCD",
+        "text_color": "#aeffda",
+        "title_clip": [
+          166,
+          112,
+          386,
+          55.00000000000001
+        ],
+        "mood_clip": [
+          166,
+          153.0,
+          386,
+          40.0
+        ]
+      },
+      "vu": {
+        "rect": [
+          154,
+          213,
+          410,
+          33
+        ],
+        "rows": 2,
+        "segments": 26,
+        "clip_each_row_independently": true
+      },
+      "volume": {
+        "center": [
+          80,
+          137
+        ],
+        "angle_min_deg": -135,
+        "angle_max_deg": 135,
+        "default": 0.5,
+        "press_to_mute": true,
+        "hit_rect": [
+          28,
+          85,
+          104,
+          104
+        ]
+      },
+      "ignition": {
+        "center": [
+          634,
+          137
+        ],
+        "rest_deg": 0,
+        "turn_deg": 30,
+        "key_returns_after_start": true,
+        "hit_rect": [
+          579.4,
+          82.4,
+          109.2,
+          109.2
+        ]
+      },
+      "tune_left_hit": [
+        20,
+        236,
+        55,
+        44
+      ],
+      "tune_right_hit": [
+        87,
+        236,
+        55,
+        44
+      ]
+    }
+  }
+}

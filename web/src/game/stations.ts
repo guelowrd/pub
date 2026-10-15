@@ -17,3 +17,12 @@ export const STATIONS: Station[] = [
   { id: "vector-world", title: "VECTOR WORLD", mood: "WIREFRAME COOL" },
 ];
 export const MENU_TRACK = "omotesando-menu", RESULTS_TRACK = "wireline-cosmos";
+// the song owns the sky: top and bottom of the gradient behind the district's skyline
+export const SKY: Record<string, [string, string]> = {
+  "abandoned-factory": ["#0b0b14", "#4a3a50"], "bittersweet-sunset": ["#2a1452", "#ff8c5a"], "dark-horse": ["#0a0820", "#5a2a6e"],
+  "midnight-chase": ["#120a2e", "#8a2a9e"], "neon-pursuit": ["#0c1030", "#2a60c0"], "night-cruise": ["#0a1030", "#3050a0"],
+  "nocturnal-run": ["#06061a", "#4a2a7a"], "orange-horizon": ["#3a1240", "#ff7a30"], "outrun-pulse": ["#14102e", "#bc448e"],
+  "pick-up-or-crush-up": ["#2a0a40", "#ff40bd"], "pickup-truck": ["#3a3a7a", "#f0c090"], "synthwave-engine": ["#1a0a3a", "#d04aa0"],
+  "vector-world": ["#030a18", "#1a6aa0"],
+};
+export const DEFAULT_SKY: [string, string] = ["#14102e", "#bc448e"];

@@ -1,6 +1,10 @@
 @font-face { font-family: "PUB Pixel"; src: url("/art/pub-pixel.woff") format("woff"); }
+/* the game's own faces (handoff 05): Boomer GT for words, Boomer LCD for every number */
+@font-face { font-family: "Boomer GT"; src: url("/art/BoomerGT.woff") format("woff"); font-display: swap; }
+@font-face { font-family: "Boomer LCD"; src: url("/art/BoomerLCD.woff") format("woff"); font-display: swap; }
 * { box-sizing: border-box; margin: 0; }
-html, body, #root { height: 100%; background: #080c24; color: #fff3f4; font-family: "PUB Pixel", ui-monospace, Menlo, monospace; overflow: hidden; }
+html, body, #root { height: 100%; background: #080c24; color: #fff3f4; font-family: "Boomer GT", ui-monospace, Menlo, monospace; overflow: hidden; }
+.num, .panel > b, .slots > div > b, .slots > div > em, #radar b, .overlay .big, .box b, .best { font-family: "Boomer LCD", monospace; font-variant-numeric: tabular-nums; }
 #root { display: flex; flex-direction: column; align-items: center; justify-content: center; }
 /* the view is 4:3 like the boards (1280 x 960 reference); --u is one board pixel. The pad takes the room under it on phones */
 .app { position: relative; width: min(100vw, calc(100vh * 4 / 3)); height: min(100vh, calc(100vw * 3 / 4)); --u: calc(min(100vw, 100vh * 4 / 3) / 1280); font-size: calc(18 * var(--u)); }
@@ -9,7 +13,7 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .panel { position: absolute; background: rgba(11,16,45,.88); border: calc(2 * var(--u)) solid #63e7ff; padding: calc(10 * var(--u)) calc(16 * var(--u)); }
 .panel::before { content: ""; position: absolute; top: calc(-2 * var(--u)); left: calc(-2 * var(--u)); width: calc(28 * var(--u)); height: calc(4 * var(--u)); background: #ff40bd; }
 .panel small { display: block; color: #63e7ff; font-size: calc(18 * var(--u)); }
-.panel > b { display: block; font-size: calc(48 * var(--u)); color: #ffe564; line-height: 1.1; }
+.panel > b { display: block; font-size: calc(44 * var(--u)); color: #ffe564; line-height: 1.1; }
 .tl { top: calc(24 * var(--u)); left: calc(26 * var(--u)); } .tr { top: calc(24 * var(--u)); right: calc(26 * var(--u)); text-align: right; }
 .bl { bottom: calc(24 * var(--u)); left: calc(26 * var(--u)); border-color: #ff40bd; } .bl small:last-child { color: #aca5d1; font-size: calc(14 * var(--u)); }
 #time.late { color: #ff40bd; }
@@ -45,14 +49,12 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .overlay button.cyan { border-color: #63e7ff; } .overlay button.pink { border-color: #ff40bd; }
 .actions { display: flex; gap: calc(50 * var(--u)); }
 .splash { background: #080c24 url("/art/title-scene.webp") center / cover no-repeat; }
-/* the designer's start prompt (components/start-prompt.css): chrome lettering, 1.6 s blink, a glint every 3.2 s */
-.start-prompt { position: absolute; left: 50%; top: 43.5417%; transform: translate(-50%, -50%) skewX(-12deg); font: 400 calc(48 * var(--u)) / 1 "PUB Pixel", monospace; white-space: nowrap; letter-spacing: .03em; animation: pub-start-blink 1.6s step-end infinite; isolation: isolate; }
-.start-prompt::before { content: attr(data-text); position: absolute; inset: 0; transform: translate(calc(4 * var(--u)), calc(5 * var(--u))); color: #67155e; -webkit-text-stroke: calc(2 * var(--u)) #ff40bd; z-index: -1; }
-.start-prompt .text { display: block; color: transparent; -webkit-text-stroke: .4px #fff2ff; background-image: repeating-linear-gradient(0deg, #080c2440 0 1px, transparent 1px 5px), linear-gradient(#fff 0%, #b9f5ff 28%, #5385e8 48%, #201a5b 49%, #f9abff 58%, #ff37bd 80%, #fff4ff 100%); background-clip: text; -webkit-background-clip: text; filter: drop-shadow(calc(-2 * var(--u)) 0 #63e7ff); }
-.start-prompt .text::after { content: attr(data-text); position: absolute; inset: 0; color: transparent; background: linear-gradient(115deg, transparent 43%, #fff 50%, transparent 57%); background-size: 300% 100%; background-clip: text; -webkit-background-clip: text; animation: pub-start-sheen 3.2s linear infinite; }
-@keyframes pub-start-blink { 0%, 72.5%, 100% { opacity: 1; } 72.6%, 99.99% { opacity: 0; } }
-@keyframes pub-start-sheen { from { background-position: 150% 0; } to { background-position: -150% 0; } }
-@media (prefers-reduced-motion: reduce) { .start-prompt, .start-prompt .text::after { animation: none; } .start-prompt .text::after { display: none; } }
+/* the designer's chrome CLICK TO START (Boomer GT), centred in the title-to-car gap, 1.6 s blink */
+.start-prompt { position: absolute; left: 50%; top: 43.5417%; transform: translate(-50%, -50%); width: calc(860 * var(--u)); animation: pub-blink 1.6s steps(1, end) infinite; filter: drop-shadow(0 0 calc(5 * var(--u)) #bd41b955); }
+.start-prompt img { display: block; width: 100%; }
+.loading { position: absolute; left: 50%; top: 43.5417%; transform: translate(-50%, -50%); font-size: calc(40 * var(--u)); color: #fff3f4; }
+@keyframes pub-blink { 0%, 72.5% { opacity: 1; } 72.6%, 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .start-prompt { animation: none; } }
 .results { justify-content: flex-start; padding-top: calc(36 * var(--u)); gap: calc(14 * var(--u)); }
 .box { width: calc(980 * var(--u)); border: calc(2 * var(--u)) solid; padding: calc(16 * var(--u)) calc(30 * var(--u)); text-align: left; font-size: calc(22 * var(--u)); }
 .box.cyan { border-color: #63e7ff; } .box.pink { border-color: #ff40bd; }

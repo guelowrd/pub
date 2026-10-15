@@ -44,6 +44,21 @@ export const PEOPLE: Record<string, Sheet> = { a: SHEETS.people, b: SHEETS.peopl
 export const BUILDING: Record<District, [number, number, number]> = { casino: [0, 62, -1.4], waterfront: [1, 39, -4.6], golf: [2, 71, -2.1], downtown: [3, 70, -2.3] };
 export const DPROP: Record<string, [number, number]> = { "casino-fountain": [0, 168], "gold-palm-planter": [1, 183], "slot-machine": [2, 209], "mooring-bollard": [3, 428], yacht: [4, 102], "luggage-trolley": [5, 219], "golf-cart": [6, 211], "fairway-fence": [7, 286], sprinkler: [8, 360], "valet-podium": [9, 365], "velvet-rope": [10, 309], "spiral-topiary": [11, 175] };
 export const DPROPS: Record<District, string[]> = { casino: ["casino-fountain", "gold-palm-planter", "slot-machine"], waterfront: ["mooring-bollard", "yacht", "luggage-trolley"], golf: ["golf-cart", "fairway-fence", "sprinkler"], downtown: ["valet-podium", "velvet-rope", "spiral-topiary"] };
+// handoff 05: district skylines (sky painted in code), decorative fillers, painted portals, light heads
+export const PANO: Record<District, string> = { waterfront: "pano-waterfront.webp", casino: "pano-casino.webp", downtown: "pano-downtown.png", golf: "pano-golf.png" };
+export const PANO_HORIZON = 725 / 887; // the horizon row of the 1774x887 panoramas
+const FL = (file: string, ppm: number) => SH(file, 512, 512, 1, 256, 460, ppm); // visible height / world height
+export const FILLERS: Record<District, Sheet[]> = {
+  waterfront: [FL("filler-waterfront-1.webp", 36), FL("filler-waterfront-2.webp", 45), FL("filler-waterfront-3.webp", 83)],
+  downtown: [FL("filler-downtown-1.webp", 62), FL("filler-downtown-2.webp", 51), FL("filler-downtown-3.webp", 72)],
+  casino: [FL("filler-casino-strip-1.webp", 66), FL("filler-casino-strip-2.webp", 30), FL("filler-casino-strip-3.webp", 83)],
+  golf: [FL("filler-golf-hills-1.webp", 38), FL("filler-golf-hills-2.webp", 21), FL("filler-golf-hills-3.webp", 55)],
+};
+// portals: the painted mouth is 7 m wide at its native scale; drawn at 50 px/m the mouth spans the road
+export const PORTAL: Record<District, Sheet> = { waterfront: SH("portal-waterfront.webp", 1024, 768, 1, 512, 708, 50), downtown: SH("portal-downtown.webp", 1024, 768, 1, 512, 708, 50), casino: SH("portal-casino.webp", 1024, 768, 1, 512, 708, 50), golf: SH("portal-golf.webp", 1024, 768, 1, 512, 708, 50) };
+export const LIGHT_RED = SH("light-red.webp", 512, 1024, 1, 256, 980, 600), LIGHT_GREEN = SH("light-green.webp", 512, 1024, 1, 256, 980, 600);
+// road material tints (source-atop on the asphalt only)
+export const ROAD_TINT: Record<District, [string, number]> = { waterfront: ["#175e79", 0.12], downtown: ["#655071", 0.12], casino: ["#7d285f", 0.14], golf: ["#2c6255", 0.12] };
 export const DROP: Record<District, Sheet> = { downtown: SHEETS.dropDowntown, waterfront: SHEETS.dropWaterfront, casino: SHEETS.dropCasino, golf: SHEETS.dropGolf };
 export const ICON: Record<District, string> = { downtown: "destination-restaurant.png", waterfront: "destination-cruise.png", casino: "destination-casino.png", golf: "destination-golf.png" };
 export const SKYLINE = "skyline.webp";
@@ -54,7 +69,7 @@ export const img = (file: string) => images.get(file);
 export let ready = false;
 
 export function loadArt(): Promise<void> {
-  const files = new Set<string>([...Object.values(SHEETS).map((s) => s.file), ...Object.values(ICON), SKYLINE, TITLE]);
+  const files = new Set<string>([...Object.values(SHEETS).map((s) => s.file), ...Object.values(ICON), ...Object.values(PANO), ...Object.values(FILLERS).flat().map((s) => s.file), ...Object.values(PORTAL).map((s) => s.file), LIGHT_RED.file, LIGHT_GREEN.file, SKYLINE, TITLE]);
   return Promise.all([...files].map((file) => new Promise<void>((ok, bad) => {
     const im = new Image();
     im.onload = () => { images.set(file, im); ok(); };
