@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { KMH, LANE, REV, RUN, TOP, W, WRECK, agePoints, newSim, step, type Input, type Sim } from "./sim";
+import { GREEN, KMH, LANE, RED, REV, RUN, TOP, W, WRECK, agePoints, newSim, step, type Input, type Sim } from "./sim";
 import { extend } from "./course";
 
 const idle: Input = { gas: false, brake: false, left: false, right: false };
@@ -76,14 +76,14 @@ describe("traffic", () => {
     const s = newSim(1);
     extend(s);
     s.dx.fill(0);
-    s.lights = [{ z: 300, offset: 0 }]; // red for the first 8 s
-    const car = { z: 200, x: 0, tx: 0, v: 100 / KMH, cruise: 100 / KMH, kind: 0, braking: false };
+    s.lights = [{ z: 300, offset: RED + GREEN - 1 }]; // turns red at t = 1, as the car gets there
+    const car = { z: 270, x: 0, tx: 0, v: 50 / KMH, cruise: 50 / KMH, kind: 0, braking: false };
     s.traffic = [car];
-    run(s, {}, 6);
+    run(s, {}, 2.5);
     expect(car.v).toBe(0);
     expect(car.z).toBeGreaterThan(280);
     expect(car.z).toBeLessThan(300);
-    run(s, {}, 5);
+    run(s, {}, 4);
     expect(car.z).toBeGreaterThan(300);
   });
 });

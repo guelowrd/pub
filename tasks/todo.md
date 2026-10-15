@@ -159,7 +159,7 @@ Playtest batch 2 (same day): top 220, traffic avoids hazards and slower cars lik
 Reverse: brake held past a standstill backs up at 20 km/h (REV), gas or letting go stops it. Reversing earns no distance;
 backing into a car behind stops you. Gaylord asked for it: the reflex after a missed stop is to keep braking.
 Curbs and lights (same day, Gaylord's ask): curb drag per district (CURB: downtown 3/s, casino 2, waterfront 1.5, golf 1).
-Traffic lights per street (LIGHTS: downtown 3, casino 2, waterfront 1, golf 0), red 8 s / green 10 s, random phase.
+Traffic lights per street (LIGHTS: downtown 3, casino 2, waterfront 0, golf 0), red 2 s / green 10 s, random phase.
 A red is a stopped blocker in every lane, so traffic queues at it and pulls away at 3 m/s² on green; you thread the
 queue or wait. Traffic now brakes by stopping distance (10 m/s² plus 8 m) instead of a flat 35 m. The player gets no
 penalty for running a red, only the queue itself. Bot: 6.6 km, 12 picks, 5 wrecks (full throttle into queues).

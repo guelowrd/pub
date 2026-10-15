@@ -20,8 +20,8 @@ export const DISTRICTS: District[] = ["downtown", "waterfront", "casino", "golf"
 export const NAME: Record<District, string> = { downtown: "DOWNTOWN", waterfront: "WATERFRONT", casino: "CASINO STRIP", golf: "GOLF HILLS" };
 export const PLACE: Record<District, string> = { downtown: "RESTAURANT", waterfront: "CRUISE", casino: "CASINO", golf: "GOLF" };
 export const CURB: Record<District, number> = { downtown: 3, casino: 2, waterfront: 1.5, golf: 1 }; // scrape drag per second: city curbs bite, golf is grass
-export const LIGHTS: Record<District, number> = { downtown: 3, casino: 2, waterfront: 1, golf: 0 }; // traffic lights per street
-export const RED = 8, GREEN = 10; // light cycle, seconds
+export const LIGHTS: Record<District, number> = { downtown: 3, casino: 2, waterfront: 0, golf: 0 }; // traffic lights per street
+export const RED = 2, GREEN = 10; // light cycle, seconds
 
 export interface Rider { name: string; age: number; dest: District; lo: number; hi: number }
 export interface Stop { z: number; len: number; rider: Rider | null; drop: District | null; taken: boolean }
