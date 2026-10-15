@@ -11,8 +11,9 @@ const RULES = [
   "DROP THEM WHERE THEY WANT", "YOUR CAR GOT THREE SEATS", "DON'T CRASH! BOOMERS WILL LEAVE YOUR CAR", "EACH DRIVE SESSION IS 3-MIN LONG", "DRIVE MORE = MORE POINTS",
 ].join("      •      ");
 const RIBBON_PX_PER_S = 140;
-// a car pulls away up the left lane toward the sun: the lane runs from the bottom edge to the painting's vanishing point
-const LANE_NEAR = [400, 990] as const, VANISH = [640, 560] as const, CAR_PERIOD = 6, PX_PER_M_NEAR = 75;
+// a car pulls away up the far left lane. The painting's road lines converge at y 392 (its width is 880 px at the bottom
+// edge and 400 px at y 650) but the road visibly ends at the water around y 580, so the car fades out there
+const LANE_NEAR = [330, 1010] as const, VANISH = [625, 392] as const, CAR_PERIOD = 6, PX_PER_M_NEAR = 95, CAR_END = 0.32;
 
 export function startAttract(cv: HTMLCanvasElement): () => void {
   const ctx = cv.getContext("2d")!;
@@ -25,11 +26,11 @@ export function startAttract(cv: HTMLCanvasElement): () => void {
     ctx.clearRect(0, 0, w, h);
     // the car: its apparent size falls off as 1 / distance, so it lingers near and shrinks fast toward the horizon
     const cn = Math.floor(t / CAR_PERIOD), cu = (t % CAR_PERIOD) / CAR_PERIOD, sheet0 = TRAFFIC[(cn * 5) % TRAFFIC.length], car = img(sheet0.file);
-    const sc = 1 / (1 + 14 * cu); // 1 at the bottom edge, ~0.07 at the sun
-    if (car && sc > 0.06) {
+    const sc = 1 / (1 + 2.3 * cu); // 1 at the bottom edge, CAR_END where the road meets the water
+    if (car && sc > CAR_END) {
       const cx = VANISH[0] + (LANE_NEAR[0] - VANISH[0]) * sc, cy = VANISH[1] + (LANE_NEAR[1] - VANISH[1]) * sc;
-      const f = (2 * PX_PER_M_NEAR * sc) / sheet0.ppm; // a 2 m wide car at the lane's scale, 75 px per metre at the bottom edge
-      ctx.save(); ctx.globalAlpha = Math.min(1, (sc - 0.06) / 0.08);
+      const f = (2 * PX_PER_M_NEAR * sc) / sheet0.ppm; // a 2 m wide car at the lane's scale
+      ctx.save(); ctx.globalAlpha = Math.min(1, (sc - CAR_END) / 0.06);
       ctx.drawImage(car, sheet0.cw, 0, sheet0.cw, sheet0.ch, (cx - sheet0.ax * f) * k, (cy - sheet0.ay * f) * k, sheet0.cw * f * k, sheet0.ch * f * k);
       ctx.restore();
     }
