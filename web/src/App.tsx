@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { KMH, NAME, PLACE, RATE, RUN, agePoints, candidate, newSim, step, tick, type District, type Input, type Rider, type Sim } from "./game/sim";
+import { KMH, NAME, PLACE, RATE, RUN, TOP, agePoints, candidate, newSim, step, tick, type District, type Input, type Rider, type Sim } from "./game/sim";
 import { CHARACTERS, extend } from "./game/course";
 import { COLOR, draw } from "./game/render";
 import { ICON, loadArt } from "./game/art";
+import { MENU_TRACK, RESULTS_TRACK, STATIONS } from "./game/stations";
+import { audio } from "./audio";
 
-type Mode = "ready" | "play" | "paused" | "over";
+type Mode = "ready" | "radio" | "play" | "paused" | "over";
 const STEP = 1 / 120;
 const KEYS: Record<string, keyof Input> = { ArrowUp: "gas", w: "gas", ArrowDown: "brake", s: "brake", ArrowLeft: "left", a: "left", ArrowRight: "right", d: "right" };
 const ART = `${import.meta.env.BASE_URL}art/`;
@@ -29,17 +31,38 @@ export default function App() {
   const [seed, setSeed] = useState(1);
   const [loaded, setLoaded] = useState(false);
   useEffect(() => { loadArt().then(() => { loadedRef.current = true; setLoaded(true); }, (e) => console.error(e)); }, []);
+  const [station, setStation] = useState(0);
+  const stationRef = useRef(0);
+  stationRef.current = station;
+  const [preview, setPreview] = useState(false);
+  const [soundOn, setSoundOn] = useState(true);
+  // music follows the screen: menus loop Boomers, the run plays the station from its first second, results loop Wireline Cosmos
+  useEffect(() => {
+    if (mode === "radio") { if (preview) audio.run(STATIONS[station].id); else audio.menu(MENU_TRACK); }
+    else if (mode === "play") { if (sim.current.t === 0) audio.run(STATIONS[station].id); else audio.resume(); }
+    else if (mode === "paused") audio.pause();
+    else if (mode === "over") audio.results(RESULTS_TRACK);
+    if (mode !== "play") { audio.engine(0, false); audio.skid(false); }
+  }, [mode, preview, station]);
 
-  const start = (sd: number) => { sim.current = newSim(sd); setSeed(sd); setMode("play"); };
+  const start = (sd: number) => { setPreview(false); sim.current = newSim(sd); setSeed(sd); setMode("play"); };
   // dev hook: drive the sim from the console (window.pub.run({gas:true}, 5))
   if (import.meta.env.DEV) Object.assign(window, { pub: { sim, run: (inp: Partial<Input>, secs: number) => { for (let t = 0; t < secs; t += STEP) step(sim.current, { gas: false, brake: false, left: false, right: false, ...inp }, STEP, extend); } } });
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
+      if (e.key === "m") setSoundOn(audio.toggle());
+      if (modeRef.current === "radio") {
+        if (e.key === "ArrowUp" || e.key === "ArrowLeft") setStation((i) => (i + STATIONS.length - 1) % STATIONS.length);
+        if (e.key === "ArrowDown" || e.key === "ArrowRight") setStation((i) => (i + 1) % STATIONS.length);
+        if (e.key === "Enter") { setPreview(false); sim.current = newSim(sim.current.seed); setMode("play"); }
+        e.preventDefault();
+        return;
+      }
       const k = KEYS[e.key];
       if (k) { input.current[k] = true; e.preventDefault(); }
       if (e.key === "p" || e.key === "Escape") setMode((m) => (m === "play" ? "paused" : m === "paused" ? "play" : m));
-      if (e.key === "Enter") setMode((m) => (m === "paused" ? "play" : m === "ready" && loadedRef.current ? "play" : m));
+      if (e.key === "Enter") { if (modeRef.current === "ready" && loadedRef.current) audio.unlock(); setMode((m) => (m === "paused" ? "play" : m === "ready" && loadedRef.current ? "radio" : m)); }
     };
     const up = (e: KeyboardEvent) => { const k = KEYS[e.key]; if (k) input.current[k] = false; };
     const blur = () => { input.current = { gas: false, brake: false, left: false, right: false }; setMode((m) => (m === "play" ? "paused" : m)); };
@@ -49,14 +72,21 @@ export default function App() {
 
   useEffect(() => {
     const cv = canvas.current!, ctx = cv.getContext("2d")!;
-    let raf = 0, last = performance.now(), acc = 0;
+    let raf = 0, last = performance.now(), acc = 0, seen: Sim | null = null, logged = 0, lastCallout: Sim["callout"] = null;
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
       const s = sim.current;
+      if (seen !== s) { seen = s; logged = 0; lastCallout = null; }
       acc += Math.min(0.1, (now - last) / 1000); last = now;
-      if (modeRef.current === "play") {
+      const playing = modeRef.current === "play";
+      if (playing) {
         while (acc >= STEP) { step(s, input.current, STEP, extend); acc -= STEP; }
         if (s.over) { if (s.score > best()) localStorage.setItem("pub.best", String(s.score)); setMode("over"); }
+        for (; logged < s.log.length; logged++) { const e = s.log[logged]; if (e.k === "pick") audio.sfx("pick"); else if (e.k === "drop") audio.sfx("drop"); else if (e.k === "wreck") audio.sfx("crash"); }
+        if (s.callout && s.callout !== lastCallout && /BUMP|SPIN/.test(s.callout.text)) audio.sfx("thud");
+        lastCallout = s.callout;
+        audio.engine(Math.abs(s.v) / TOP, input.current.gas); audio.skid(s.skid);
+        audio.fade(Math.min(1, (RUN - s.t) / 3)); // the song ends with the clock
       } else acc = 0;
       const dpr = Math.min(1.5, devicePixelRatio), w = cv.clientWidth * dpr, h = cv.clientHeight * dpr;
       if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
@@ -115,7 +145,20 @@ export default function App() {
         <div className="callout" id="callout" />
       </div>
       {mode === "ready" && (
-        <div className="overlay splash" onClick={() => loaded && setMode("play")}><p className="start">{loaded ? "CLICK TO START" : "LOADING"}</p></div>
+        <div className="overlay splash" onClick={() => { if (loaded) { audio.unlock(); setMode("radio"); } }}><p className="start">{loaded ? "CLICK TO START" : "LOADING"}</p></div>
+      )}
+      {mode === "radio" && (
+        <div className="overlay radio">
+          <h1>RADIO SELECT</h1>
+          <div className="stations">
+            {STATIONS.map((st, i) => <button key={st.id} className={i === station ? "on" : ""} onClick={() => setStation(i)}><span>{String(i + 1).padStart(2, "0")}</span><b>{st.title}</b><small>{st.mood}</small></button>)}
+          </div>
+          <p className="actions">
+            <button className="cyan" onClick={() => setPreview((p) => !p)}>{preview ? "STOP" : "PREVIEW"}</button>
+            <button className="cyan" onClick={() => setSoundOn(audio.toggle())}>{soundOn ? "SOUND ON" : "SOUND OFF"}</button>
+            <button className="pink" onClick={() => start(seed)}>DRIVE</button>
+          </p>
+        </div>
       )}
       {mode === "paused" && <div className="overlay" onClick={() => setMode("play")}><h1>PAUSED</h1><p>CLOCK STOPPED</p></div>}
       {mode === "over" && (
@@ -132,7 +175,7 @@ export default function App() {
             <div><span>STILL ON BOARD</span><b>{s.lost.length ? `LOST ${fmt(s.lost.reduce((a, r) => a + agePoints(r.age), 0))}` : "NO RIDERS LEFT"}</b></div>
             {s.lost.map((r, i) => <div key={i} className="rider"><span dangerouslySetInnerHTML={{ __html: face(r) + icon(r.dest) }} /><span>{r.name} / AGE {r.age}</span><b>{fmt(agePoints(r.age))} LOST</b></div>)}
           </div>
-          <p className="actions"><button className="cyan" onClick={() => start(seed)}>SAME RUN</button><button className="pink" onClick={() => start(seed + 1)}>NEW RUN</button></p>
+          <p className="actions"><button className="cyan" onClick={() => start(seed)}>SAME RUN</button><button className="pink" onClick={() => { sim.current = newSim(seed + 1); setSeed(seed + 1); setMode("radio"); }}>NEW RUN</button></p>
         </div>
       )}
       </div>

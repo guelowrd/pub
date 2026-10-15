@@ -105,8 +105,9 @@ Reuse `masm/challenge/*` untouched; write one `beats_target` (`masm/games/pub_sc
 ### M3: art, HUD, audio
 - [x] World art: v3/v4 sheets drawn at fixed anchors (hero poses, brake, spin; 6 traffic kinds with yaw + brake; hazards; lamps, district trees, venues, shelters, 48 people; destination buildings with the door beside the bay + 3 props each; drop markings + icon poles; skid smoke, wreck burst; skyline parallax) → verify: screenshots at a stop and a drop bay, no console errors
 - [x] Data v4: 48 characters, 12 pools (spending places have a pickup stop 110 m into the street, stop 0), radio station concepts (no audio) → verify: course tests pass, vectors regenerated
-- [ ] HUD: time, score, speed, radar, seats, gantry signs + phone direction row, callouts, results → verify: matches boards at 1280x960, 390x844, 740x340
-- [ ] Splash + menus on `Boomers`, radio select over the 14 level tracks, results on `Wireline Cosmos`, synth SFX (engine, skid, crash, ka-ching) → verify: no autoplay; reduced motion honoured
+- [x] HUD: time, score, speed, radar, seats, gantry signs + phone direction row, callouts, results → verify: matches the v4 boards at 1280x960 (screenshots); phone layouts still to check
+- [x] Splash + menus on `Boomers`, radio select over the 14 level tracks, results on `Wireline Cosmos`, synth SFX (engine, skid, crash, ka-ching) → verify: no autoplay (music starts on the splash click), reduced motion keeps the start prompt steady; songs in `web/public/music` (66 MB, slug names), M toggles sound
+- [ ] Course map in the HUD (open item 14) → verify: the pyramid shows district colours and your position, updates at each fork
 - [ ] Gaylord playtest on desktop + phone
 
 ### M4: onchain scoring
