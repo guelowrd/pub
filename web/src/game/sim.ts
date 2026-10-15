@@ -56,7 +56,7 @@ export interface Sim {
   boarding: number; // seconds the car stays put while someone gets in or out
   bumpCd: number;
   seats: (Rider | null)[];
-  banked: number; dist: number; score: number;
+  banked: number; dist: number; score: number; delivered: number;
   dx: number[]; // per segment: curvature, OutRun style (how much the lateral shift grows each segment)
   y: number[]; // per segment: road height (hills are visual only, like OutRun)
   course: Node[][]; // the pyramid, course[leg][k], all from the seed
@@ -89,7 +89,7 @@ export function newSim(seed: number): Sim {
   return {
     seed, rng: rngFrom(seed), t: 0, over: false,
     z: 20, x: 0, v: 0, steer: 0, brake: false, skid: false, hot: 99, spin: 0, oil: 0, boarding: 0, bumpCd: 0,
-    seats: [null, null, null], banked: 0, dist: 0, score: 0,
+    seats: [null, null, null], banked: 0, dist: 0, score: 0, delivered: 0,
     dx: [], y: [], course: [], streets: [], stops: [], hazards: [], traffic: [], forks: [], lights: [],
     callout: null, lost: [], log: [],
   };
@@ -235,6 +235,7 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
         if (out.length) {
           const award = out.reduce((a, r) => a + agePoints(r.age) * GROUP[out.length], 0);
           s.banked += award;
+          s.delivered += out.length;
           s.seats = s.seats.map((r) => (r && r.dest === st.drop ? null : r));
           s.boarding = 1;
           say(s, out.length > 1 ? `GROUP DROP X${GROUP[out.length]} +${award}` : `+${award}`, 2);
@@ -244,7 +245,7 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
         st.taken = true;
         s.seats[s.seats.indexOf(null)] = st.rider;
         s.boarding = 1.2;
-        say(s, s.hot < 2.5 ? `CRAZY STOP! AGE ${st.rider.age}` : `AGE ${st.rider.age}`, 2);
+        if (s.hot < 2.5) say(s, "CRAZY STOP!", 2);
         s.log.push({ k: "pick", stop: st.i, t: tick(s) });
       }
     }

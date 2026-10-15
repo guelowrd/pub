@@ -159,10 +159,18 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     ctx.fillStyle = "#e8e8e8"; ctx.fillRect(px - bw / 2 - 0.3 * k, top, 0.3 * k, 6 * k); ctx.fillRect(px + bw / 2, top, 0.3 * k, 6 * k);
     ctx.font = `${Math.max(6, k)}px "PUB Pixel", monospace`; ctx.textBaseline = "middle";
     const il = img(ICON[f.left]), ir = img(ICON[f.right]);
-    ctx.fillStyle = COLOR[f.left]; ctx.textAlign = "left"; ctx.fillText(`< ${NAME[f.left]}`, px - bw / 2 + 0.3 * k, top + 0.9 * k);
-    if (il) ctx.drawImage(il, px - 1.6 * k, top + 0.2 * k, 1.4 * k, 1.4 * k);
-    ctx.fillStyle = COLOR[f.right]; ctx.textAlign = "right"; ctx.fillText(`${NAME[f.right]} >`, px + bw / 2 - 0.3 * k, top + 0.9 * k);
-    if (ir) ctx.drawImage(ir, px + 0.2 * k, top + 0.2 * k, 1.4 * k, 1.4 * k);
+    if (il) ctx.drawImage(il, px - bw / 2 + 0.3 * k, top + 0.2 * k, 1.4 * k, 1.4 * k);
+    ctx.fillStyle = COLOR[f.left]; ctx.textAlign = "left"; ctx.fillText(`< ${NAME[f.left]}`, px - bw / 2 + 2 * k, top + 0.9 * k);
+    if (ir) ctx.drawImage(ir, px + bw / 2 - 1.7 * k, top + 0.2 * k, 1.4 * k, 1.4 * k);
+    ctx.fillStyle = COLOR[f.right]; ctx.textAlign = "right"; ctx.fillText(`${NAME[f.right]} >`, px + bw / 2 - 2 * k, top + 0.9 * k);
+    // badge: how many aboard want that side
+    for (const [side, d] of [[-1, f.left], [1, f.right]] as const) {
+      const n = s.seats.filter((r) => r && r.dest === d).length;
+      if (!n) continue;
+      const bx = px + side * (bw / 2 - 2.2 * k), by = top + 1.8 * k;
+      ctx.fillStyle = COLOR[d]; ctx.fillRect(bx - 1.2 * k, by, 2.4 * k, 1.3 * k);
+      ctx.fillStyle = "#080c24"; ctx.textAlign = "center"; ctx.fillText(`x${n}`, bx, by + 0.65 * k);
+    }
   });
   for (const p of puffs) {
     const ms = (s.t - p.t) * 1000, i = SMOKE_MS.findIndex((end) => ms < end);
