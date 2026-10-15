@@ -155,3 +155,6 @@ Feel pass (same day): lamp posts every 40 m, hills, 4:3 view, car bob, radar fro
 Bot run (`bot.test.ts`, report in `web/bot-run.txt`): 5.1 km, 4 streets, 10 picks, 1 drop, 10 wrecks. Wrecks are the
 thing to watch in the playtest: rear-ending 100 km/h traffic at 200 km/h is a wreck, and a wreck empties the car.
 Candidates if humans wreck as much: raise the wreck threshold, slow the car, thin traffic, or make traffic hold lanes.
+Playtest batch 2 (same day): top 220, traffic avoids hazards and slower cars like the player, curve push 75.
+Reverse: brake held past a standstill backs up at 20 km/h (REV), gas or letting go stops it. Reversing earns no distance;
+backing into a car behind stops you. Gaylord asked for it: the reflex after a missed stop is to keep braking.

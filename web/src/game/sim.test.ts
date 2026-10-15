@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { KMH, LANE, RUN, TOP, W, WRECK, agePoints, newSim, step, type Input, type Sim } from "./sim";
+import { KMH, LANE, REV, RUN, TOP, W, WRECK, agePoints, newSim, step, type Input, type Sim } from "./sim";
 import { extend } from "./course";
 
 const idle: Input = { gas: false, brake: false, left: false, right: false };
@@ -20,7 +20,12 @@ describe("driving", () => {
     s.dx.fill(0); // a straight: curves push an unsteered car into the curb
     run(s, { gas: true }, 8);
     expect(s.v).toBeCloseTo(TOP, 1);
-    run(s, { brake: true }, 3);
+    run(s, { brake: true }, 4);
+    expect(s.v).toBeCloseTo(-REV, 1); // brake held through the stop: reversing
+    const dist = s.dist;
+    run(s, { brake: true }, 1);
+    expect(s.dist).toBe(dist); // reversing earns nothing
+    run(s, {}, 3);
     expect(s.v).toBe(0);
     expect(s.score).toBeGreaterThan(0);
   });
@@ -89,6 +94,16 @@ describe("stops", () => {
     expect(st.taken).toBe(true);
     run(s, {}, 2);
     expect(s.seats.filter(Boolean)).toHaveLength(1);
+  });
+  it("backs into a missed bay on the brake", () => {
+    const s = newSim(1);
+    extend(s);
+    const st = s.stops.find((o) => o.rider)!;
+    park(s, st.z + st.len + 12); s.v = 5;
+    run(s, { brake: true, right: true }, 3); // past the bay, brake and steer into it, back up
+    run(s, { right: true }, 2); // off the brake, it stops in the bay
+    expect(s.seats[0]).toBe(st.rider);
+    expect(s.z).toBeLessThanOrEqual(st.z + st.len);
   });
   it("drops the matching riders with the group multiplier and banks the award", () => {
     const s = newSim(1);

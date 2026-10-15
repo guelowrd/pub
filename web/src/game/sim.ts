@@ -3,6 +3,7 @@
 
 export const KMH = 3.6;
 export const TOP = 220 / KMH; // top speed
+export const REV = 20 / KMH; // reverse speed, brake held at a standstill
 export const WRECK = 60 / KMH; // closing speed above which a hit is a wreck
 export const SEG = 5; // road segment length
 export const LANE = 3.5;
@@ -139,8 +140,10 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
     s.boarding -= dt;
     s.v = 0;
   } else {
-    s.v += (inp.brake ? -28 : inp.gas ? 12 : -4) * dt;
-    s.v = Math.min(TOP, Math.max(0, s.v));
+    // brake through a standstill and you reverse: the reflex when you've overshot a stop
+    if (inp.brake) s.v = Math.max(-REV, s.v - (s.v > 0 ? 28 : 8) * dt);
+    else if (inp.gas) s.v = Math.min(TOP, s.v + 12 * dt);
+    else s.v -= Math.sign(s.v) * Math.min(Math.abs(s.v), 4 * dt);
     s.skid = inp.brake && dir !== 0 && s.v > 15;
     const lat = dir * (4 + 10 * (s.v / TOP)) * (s.skid ? 1.5 : 1) * (s.oil > 0 ? 0.4 : 1);
     s.x += lat * dt;
@@ -154,7 +157,7 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
   if (s.x - CAR_W / 2 < l) { s.x = l + CAR_W / 2; s.v *= 1 - 1 * dt; }
 
   s.z += s.v * dt;
-  s.dist += s.v * dt;
+  s.dist += Math.max(0, s.v) * dt;
 
   // fork: crossing the decision line picks the side you're on, then you ride that branch
   for (const f of s.forks) {
@@ -182,7 +185,10 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
     c.x += Math.max(-3 * dt, Math.min(3 * dt, c.tx - c.x));
     c.z += c.v * dt;
     if (s.bumpCd === 0 && Math.abs(c.x - s.x) < CAR_W && Math.abs(c.z - s.z) < CAR_LEN) {
-      if (c.z < s.z) { c.v = s.v; c.z = s.z - CAR_LEN; continue; } // it ran into us: it stops
+      if (c.z < s.z) { // it ran into us: it stops. We backed into it: we stop
+        if (s.v < 0) { s.v = 0; s.z = c.z + CAR_LEN; } else { c.v = s.v; c.z = s.z - CAR_LEN; }
+        continue;
+      }
       if (s.v - c.v > WRECK) wreck(s);
       else { s.v = Math.min(s.v, c.v * 0.85); s.x += (s.x < c.x ? -1 : 1) * 0.8; say(s, "BUMP"); }
       s.bumpCd = 0.6;
@@ -202,7 +208,7 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
   }
 
   // stops: at rest with the door in the bay window, someone gets in or out
-  if (s.v < 0.3 && s.boarding <= 0 && s.spin <= 0) {
+  if (Math.abs(s.v) < 0.3 && s.boarding <= 0 && s.spin <= 0) {
     const st = s.stops.find((o) => !o.taken && s.z >= o.z && s.z <= o.z + o.len);
     if (st && s.x + CAR_W / 2 > W + 0.4) {
       if (st.drop) {
