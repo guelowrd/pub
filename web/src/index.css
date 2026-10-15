@@ -1,0 +1,23 @@
+* { box-sizing: border-box; margin: 0; }
+html, body, #root { height: 100%; background: #080c24; color: #fff3f4; font-family: ui-monospace, Menlo, monospace; overflow: hidden; }
+.app { position: relative; width: 100%; height: 100%; }
+canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.hud { position: absolute; inset: 0; pointer-events: none; text-transform: uppercase; }
+.hud small { display: block; color: #63e7ff; font-size: 12px; }
+.hud b { font-size: 28px; color: #ffe564; }
+.tl, .tr, .bl { position: absolute; background: rgba(11,16,45,.85); padding: 6px 12px; border: 1px solid #63e7ff; }
+.tl { top: 12px; left: 12px; } .tr { top: 12px; right: 12px; text-align: right; } .bl { bottom: 12px; left: 12px; }
+.rail { position: absolute; top: 90px; right: 12px; width: 220px; font-size: 13px; }
+.rail div { background: rgba(11,16,45,.85); padding: 4px 8px; margin-bottom: 4px; }
+.rail div[id^=seat] { border-left: 4px solid #555; }
+.rail #bank { color: #ffe564; } .rail #bank:empty { display: none; }
+.radar { color: #78ffcb; }
+.fork { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); font-size: 16px; color: #fff; white-space: pre; }
+.callout { position: absolute; top: 48%; left: 50%; transform: translateX(-50%); font-size: 26px; color: #78ffcb; text-shadow: 0 0 8px #000; white-space: nowrap; }
+.pad { display: none; position: absolute; bottom: 0; left: 0; right: 0; padding: 12px; gap: 10px; }
+.pad button { flex: 1; height: 72px; font: inherit; font-size: 16px; color: #63e7ff; background: rgba(11,16,45,.8); border: 2px solid #63e7ff; touch-action: none; user-select: none; -webkit-user-select: none; }
+.pad button:nth-child(3) { color: #ff40bd; border-color: #ff40bd; } .pad button:nth-child(4) { color: #ffe564; border-color: #ffe564; }
+@media (pointer: coarse) { .pad { display: flex; } .bl { bottom: 100px; } .rail { font-size: 11px; width: 170px; } }
+.overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: rgba(8,12,36,.8); text-transform: uppercase; text-align: center; }
+.overlay h1 { color: #ffe564; } .overlay .big { font-size: 48px; color: #ffe564; }
+.overlay button { font: inherit; font-size: 18px; padding: 10px 24px; color: #63e7ff; background: none; border: 2px solid #63e7ff; }
