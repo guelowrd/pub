@@ -63,12 +63,17 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .box .rider { gap: calc(16 * var(--u)); } .box .rider > span:first-child { position: relative; display: flex; } .box .rider .face { width: calc(72 * var(--u)); height: calc(72 * var(--u)); }
 .box .rider .icon { position: static; width: calc(24 * var(--u)); height: calc(24 * var(--u)); margin-left: calc(12 * var(--u)); align-self: center; }
 .box .rider > span:nth-child(2) { flex: 1; color: #fff3f4; }
-.radio { justify-content: flex-start; padding-top: calc(30 * var(--u)); gap: calc(16 * var(--u)); }
-.stations { display: grid; grid-template-columns: 1fr 1fr; gap: calc(10 * var(--u)) calc(20 * var(--u)); width: calc(980 * var(--u)); }
-.stations button { width: auto; display: grid; grid-template-columns: auto 1fr; column-gap: calc(14 * var(--u)); text-align: left; padding: calc(8 * var(--u)) calc(16 * var(--u)); font-size: calc(20 * var(--u)); border-color: #63e7ff; min-height: 44px; }
-.stations button span { grid-row: 1 / 3; color: #aca5d1; align-self: center; } .stations button b { font-weight: normal; } .stations button small { color: #63e7ff; font-size: calc(14 * var(--u)); }
-.stations button.on { border-color: #ffe564; box-shadow: inset calc(-6 * var(--u)) 0 #ffe564; } .stations button.on b { color: #ffe564; }
-.radio .actions button { width: calc(300 * var(--u)); } .radio .actions { gap: calc(30 * var(--u)); }
+/* the car radio: the designer's face scaled from its reference screen; layers are placed in reference pixels inside */
+.radio { padding: 0; display: block; overflow: hidden; }
+.radio-screen { position: absolute; left: 0; top: 0; transform-origin: top left; }
+.overlay .radio-title { position: absolute; left: 0; right: 0; top: 7%; text-align: center; font-size: 48px; color: #fff3f4; font-weight: normal; }
+.radio-face { position: absolute; }
+.radio-face img { pointer-events: none; user-select: none; }
+.lcd-text { position: absolute; overflow: hidden; }
+.lcd-text span { position: absolute; white-space: nowrap; font-family: "Boomer LCD", monospace; color: #aeffda; line-height: 1; }
+.lcd-no { position: absolute; font-family: "Boomer LCD", monospace; color: #aeffda; opacity: .7; }
+.hit { position: absolute; background: none; border: none; padding: 0; cursor: pointer; }
+.hit:focus-visible { outline: 2px solid #ffe564; }
 /* portrait phones: the scene on top, then the seat strip and the radar side by side, then the pad */
 @media (max-aspect-ratio: 1/1) {
   #root { justify-content: flex-start; }
@@ -85,6 +90,5 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
   .fork { font-size: calc(30 * var(--u)); } .callout { font-size: calc(56 * var(--u)); }
   .pad { margin-top: calc(300 * var(--u)); }
   .box { width: 94%; font-size: calc(32 * var(--u)); } .overlay button { width: 40%; font-size: calc(36 * var(--u)); }
-  .stations { width: 94%; grid-template-columns: 1fr; gap: calc(6 * var(--u)); } .stations button { width: 100%; font-size: calc(30 * var(--u)); padding: calc(6 * var(--u)) calc(16 * var(--u)); } .stations button small { font-size: calc(22 * var(--u)); }
-  .radio .actions button { width: 30%; }
+  .radio-title { font-size: 30px; top: 4%; }
 }

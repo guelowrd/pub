@@ -4,7 +4,8 @@ import { CHARACTERS, extend } from "./game/course";
 import { COLOR, draw, setSong } from "./game/render";
 import { ICON, loadArt } from "./game/art";
 import { MENU_TRACK, RESULTS_TRACK, STATIONS } from "./game/stations";
-import { audio } from "./audio";
+import { audio, sound as soundNow, volume as volumeNow } from "./audio";
+import Radio from "./Radio";
 
 type Mode = "ready" | "radio" | "play" | "paused" | "over";
 const STEP = 1 / 120;
@@ -35,7 +36,9 @@ export default function App() {
   const stationRef = useRef(0);
   stationRef.current = station;
   const [preview, setPreview] = useState(false);
-  const [soundOn, setSoundOn] = useState(true);
+  const [soundOn, setSoundOn] = useState(soundNow);
+  const [volume, setVolumeState] = useState(volumeNow);
+  const setVolume = (v: number) => { audio.volume(v); setVolumeState(v); };
   // music follows the screen: menus loop Boomers, the run plays the station from its first second, results loop Wireline Cosmos
   useEffect(() => {
     if (mode === "radio") { if (preview) audio.run(STATIONS[station].id); else audio.menu(MENU_TRACK); }
@@ -52,9 +55,11 @@ export default function App() {
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "m") setSoundOn(audio.toggle());
+      if (modeRef.current === "radio") setTimeout(() => setSoundOn(soundNow), 0);
       if (modeRef.current === "radio") {
-        if (e.key === "ArrowUp" || e.key === "ArrowLeft") setStation((i) => (i + STATIONS.length - 1) % STATIONS.length);
-        if (e.key === "ArrowDown" || e.key === "ArrowRight") setStation((i) => (i + 1) % STATIONS.length);
+        if (e.key === "ArrowLeft") { setStation((i) => (i + STATIONS.length - 1) % STATIONS.length); setPreview(true); }
+        if (e.key === "ArrowRight") { setStation((i) => (i + 1) % STATIONS.length); setPreview(true); }
+        if (e.key === "ArrowUp" || e.key === "ArrowDown") setVolume(Math.max(0, Math.min(1, volumeNow + (e.key === "ArrowUp" ? 0.1 : -0.1))));
         if (e.key === "Enter") { setPreview(false); sim.current = newSim(sim.current.seed); setMode("play"); }
         e.preventDefault();
         return;
@@ -149,15 +154,7 @@ export default function App() {
       )}
       {mode === "radio" && (
         <div className="overlay radio">
-          <h1>RADIO SELECT</h1>
-          <div className="stations">
-            {STATIONS.map((st, i) => <button key={st.id} className={i === station ? "on" : ""} onClick={() => setStation(i)}><span>{String(i + 1).padStart(2, "0")}</span><b>{st.title}</b><small>{st.mood}</small></button>)}
-          </div>
-          <p className="actions">
-            <button className="cyan" onClick={() => setPreview((p) => !p)}>{preview ? "STOP" : "PREVIEW"}</button>
-            <button className="cyan" onClick={() => setSoundOn(audio.toggle())}>{soundOn ? "SOUND ON" : "SOUND OFF"}</button>
-            <button className="pink" onClick={() => start(seed)}>DRIVE</button>
-          </p>
+          <Radio station={station} setStation={(i) => { setStation(i); setPreview(true); }} volume={volume} setVolume={setVolume} muted={!soundOn} onDrive={() => start(seed)} />
         </div>
       )}
       {mode === "paused" && <div className="overlay" onClick={() => setMode("play")}><h1>PAUSED</h1><p>CLOCK STOPPED</p></div>}

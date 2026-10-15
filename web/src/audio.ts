@@ -3,13 +3,19 @@
 const MUSIC = `${import.meta.env.BASE_URL}music/`;
 const music = new Audio();
 let ctx: AudioContext | null = null, master: GainNode, engineOsc: OscillatorNode, engineGain: GainNode, skidGain: GainNode;
+let analysers: AnalyserNode[] = [], musicGain: GainNode;
 let current = "";
-export let sound = true;
+export let sound = true, volume = 0.7;
 
 function ac() {
   if (ctx) return ctx;
   ctx = new AudioContext();
   master = ctx.createGain(); master.connect(ctx.destination);
+  // the music runs through the context so the radio's VU can read each channel
+  const src = ctx.createMediaElementSource(music), split = ctx.createChannelSplitter(2);
+  musicGain = ctx.createGain(); musicGain.gain.value = volume;
+  src.connect(musicGain).connect(master); musicGain.connect(split);
+  analysers = [0, 1].map((ch) => { const a = ctx!.createAnalyser(); a.fftSize = 256; split.connect(a, ch); return a; });
   engineOsc = ctx.createOscillator(); engineOsc.type = "sawtooth";
   const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 400;
   engineGain = ctx.createGain(); engineGain.gain.value = 0;
@@ -39,6 +45,13 @@ export const audio = {
   resume: () => { if (current) music.play().catch(() => {}); if (ctx) ctx.resume(); },
   fade: (v: number) => { music.volume = Math.max(0, Math.min(1, v)); },
   toggle: () => { sound = !sound; music.muted = !sound; if (ctx) master.gain.value = sound ? 1 : 0; return sound; },
+  volume: (v: number) => { volume = v; if (ctx) musicGain.gain.value = v; },
+  // left and right music levels, 0..1, for the radio's VU
+  levels: (): number[] => analysers.map((a) => {
+    const d = new Uint8Array(a.fftSize); a.getByteTimeDomainData(d);
+    let sum = 0; for (const x of d) sum += (x - 128) ** 2;
+    return Math.min(1, Math.sqrt(sum / d.length) / 40);
+  }).concat([0, 0]).slice(0, 2),
   // per frame while driving: pitch follows speed, volume the throttle; off the road screens call engine(0, false)
   engine: (speed: number, gas: boolean) => {
     if (!ctx) return;
