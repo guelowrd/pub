@@ -32,7 +32,7 @@ Onchain mechanic: GQ's champion/rival notes (`~/Code/gq`, `docs/build-your-own-g
 | radar | as designed: one honest range per passenger, TIGHT / FUZZY / WILD, contains the true age |
 | faces | bigger roster, fixed ages; later: "acts like a boomer" traits can lower points |
 | ramp | streets have their own character (designer's recipes), traffic thickens leg by leg |
-| music | in `temp/`: `Boomers` loops on splash and menus, `Wireline Cosmos` loops on results and challenge screens (record, claim), the other 14 are level tracks for radio select (all ~3:00); the song is the run |
+| music | in `temp/`: `Omotesandō (original tempo)` loops on splash and menus (decided 2026-10-15 evening, `Boomers` parked), `Wireline Cosmos` loops on results and challenge screens (record, claim), the other 13 are level tracks for radio select (all ~3:00, Omotesando is off the dial); the song is the run |
 | onchain verdict | decision log replayed by the note script |
 | record locks | course (seed) + song |
 | token | Gamecoin, shared with GQ |
