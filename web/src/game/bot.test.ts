@@ -1,4 +1,4 @@
-// A headless driver: full throttle, pulls into every bay it can use. Prints what a run looks like in numbers,
+// A headless driver: full throttle, pulls into every bay it can use, backs up on the brake when it overshoots one. Prints what a run looks like in numbers,
 // so tuning questions (is the bay reachable at speed, what does a stop cost, how far does a run go) get answers
 // before a human plays. Also the model the chain's feasibility check will share (M2).
 import { writeFileSync } from "node:fs";
@@ -12,12 +12,13 @@ function drive(s: Sim): Input {
   const target = useful ? c!.z + c!.len - 6 : null; // aim at the far end of the bay
   const brakeDist = (s.v * s.v) / (2 * 28) + 8;
   const inBay = target !== null && s.z >= c!.z && s.z <= c!.z + c!.len;
-  const stopping = target !== null && target - s.z < brakeDist && (inBay || s.v > 2); // short of the bay at rest: creep
+  const overshot = target !== null && s.z > c!.z + c!.len;
+  const stopping = target !== null && target - s.z < brakeDist && (inBay || overshot || s.v > 2); // short of the bay at rest: creep
   const laneX = stopping ? W + BAY - 1.2 : 0;
   // dodge what's in the lane ahead
   const ahead = [...s.traffic.map((c) => ({ z: c.z, x: c.x })), ...s.hazards.filter((h) => !h.hit)].find((o) => o.z > s.z && o.z < s.z + 80 && Math.abs(o.x - s.x) < 2.5);
   const want = ahead && !stopping ? (ahead.x > 0 ? ahead.x - 3.5 : ahead.x + 3.5) : laneX;
-  return { gas: !stopping, brake: stopping, left: want < s.x - 0.3, right: want > s.x + 0.3 };
+  return { gas: !stopping, brake: stopping && (s.v > 0 || overshot), left: want < s.x - 0.3, right: want > s.x + 0.3 };
 }
 
 describe("bot run", () => {

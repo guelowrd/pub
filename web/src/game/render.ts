@@ -1,5 +1,5 @@
 // Pseudo-3D view: road segments projected from a low chase camera, billboards sorted by segment.
-import { BAY, CAR_W, LANE, NAME, SEG, TOP, W, WALK, halfWidth, rightEdge, seg, stopAt, type District, type Sim } from "./sim";
+import { BAY, CAR_W, LANE, NAME, SEG, TOP, W, WALK, halfWidth, isRed, rightEdge, seg, stopAt, type District, type Sim } from "./sim";
 import { FORK_OUT, sidewalkX } from "./course";
 
 const N = 140; // segments drawn ahead
@@ -73,6 +73,12 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   for (const c of s.traffic) {
     box(c.z, c.x, CAR_W, 1.5, TRAFFIC[c.kind]);
     box(c.z, c.x, CAR_W * 0.9, 0.18, c.braking ? "#ff3040" : "#701018", 0.35);
+  }
+  // traffic lights: a head on each curb, a stop line across the road
+  for (const l of s.lights) {
+    const lamp = isRed(l, s.t) ? "#ff2030" : "#30e060";
+    box(l.z, 0, W * 2, 0.12, "#f0f0f0");
+    for (const x of [-(W + 0.8), W + 0.8]) { box(l.z, x, 0.25, 4, "#404048"); box(l.z, x, 0.7, 0.7, lamp, 4); }
   }
   for (const hz of s.hazards) {
     if (hz.hit) continue;

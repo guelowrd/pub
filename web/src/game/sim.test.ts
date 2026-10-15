@@ -72,6 +72,34 @@ describe("traffic", () => {
     if (car.tx === LANE) { expect(car.braking).toBe(true); expect(car.v).toBeLessThanOrEqual(slow.v + 0.01); }
     expect(s.hazards[0].hit).toBe(false);
   });
+  it("queues at a red light and goes on green", () => {
+    const s = newSim(1);
+    extend(s);
+    s.dx.fill(0);
+    s.lights = [{ z: 300, offset: 0 }]; // red for the first 8 s
+    const car = { z: 200, x: 0, tx: 0, v: 100 / KMH, cruise: 100 / KMH, kind: 0, braking: false };
+    s.traffic = [car];
+    run(s, {}, 6);
+    expect(car.v).toBe(0);
+    expect(car.z).toBeGreaterThan(280);
+    expect(car.z).toBeLessThan(300);
+    run(s, {}, 5);
+    expect(car.z).toBeGreaterThan(300);
+  });
+});
+
+describe("curbs", () => {
+  it("bite harder downtown than on the golf grass", () => {
+    const v = (d: Sim["streets"][0]["district"]) => {
+      const s = newSim(1);
+      extend(s);
+      s.streets[0].district = d; s.x = W + 5; s.v = 20;
+      step(s, idle, 1 / 120, extend);
+      return s.v;
+    };
+    expect(v("downtown")).toBeLessThan(v("golf"));
+    expect(v("golf")).toBeLessThan(20);
+  });
 });
 
 describe("stops", () => {
@@ -100,8 +128,8 @@ describe("stops", () => {
     extend(s);
     const st = s.stops.find((o) => o.rider)!;
     park(s, st.z + st.len + 12); s.v = 5;
-    run(s, { brake: true, right: true }, 3); // past the bay, brake and steer into it, back up
-    run(s, { right: true }, 2); // off the brake, it stops in the bay
+    run(s, { brake: true }, 3.5); // past the bay, brake, back up
+    run(s, { right: true }, 2); // off the brake, steer into the bay, it stops
     expect(s.seats[0]).toBe(st.rider);
     expect(s.z).toBeLessThanOrEqual(st.z + st.len);
   });

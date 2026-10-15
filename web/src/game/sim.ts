@@ -19,6 +19,9 @@ export type District = "downtown" | "waterfront" | "casino" | "golf";
 export const DISTRICTS: District[] = ["downtown", "waterfront", "casino", "golf"];
 export const NAME: Record<District, string> = { downtown: "DOWNTOWN", waterfront: "WATERFRONT", casino: "CASINO STRIP", golf: "GOLF HILLS" };
 export const PLACE: Record<District, string> = { downtown: "RESTAURANT", waterfront: "CRUISE", casino: "CASINO", golf: "GOLF" };
+export const CURB: Record<District, number> = { downtown: 3, casino: 2, waterfront: 1.5, golf: 1 }; // scrape drag per second: city curbs bite, golf is grass
+export const LIGHTS: Record<District, number> = { downtown: 3, casino: 2, waterfront: 1, golf: 0 }; // traffic lights per street
+export const RED = 8, GREEN = 10; // light cycle, seconds
 
 export interface Rider { name: string; age: number; dest: District; lo: number; hi: number }
 export interface Stop { z: number; len: number; rider: Rider | null; drop: District | null; taken: boolean }
@@ -29,6 +32,7 @@ export interface Hazard { z: number; x: number; kind: HazardKind; hit: boolean }
 // k: curvature of the right branch per segment from the decision line; off: that branch's offset from the trunk
 export interface Fork { z: number; zDecide: number; zEnd: number; left: District; right: District; side: -1 | 0 | 1; k: number[]; off: number[] }
 export interface Street { z0: number; z1: number; district: District }
+export interface Light { z: number; offset: number } // red when (t + offset) % (RED + GREEN) < RED
 export interface Input { gas: boolean; brake: boolean; left: boolean; right: boolean }
 
 export interface Sim {
@@ -49,7 +53,7 @@ export interface Sim {
   banked: number; dist: number; score: number;
   dx: number[]; // per segment: curvature, OutRun style (how much the lateral shift grows each segment)
   y: number[]; // per segment: road height (hills are visual only, like OutRun)
-  streets: Street[]; stops: Stop[]; hazards: Hazard[]; traffic: Traffic[]; forks: Fork[];
+  streets: Street[]; stops: Stop[]; hazards: Hazard[]; traffic: Traffic[]; forks: Fork[]; lights: Light[];
   callout: { text: string; t: number } | null;
   lost: Rider[]; // aboard at time-up
   log: string[]; // what happened, for tests and the decision log later
@@ -79,13 +83,15 @@ export function newSim(seed: number): Sim {
     seed, rng: rngFrom(seed), t: 0, over: false,
     z: 20, x: 0, v: 0, steer: 0, brake: false, skid: false, hot: 99, spin: 0, oil: 0, boarding: 0, bumpCd: 0,
     seats: [null, null, null], banked: 0, dist: 0, score: 0,
-    dx: [], y: [], streets: [], stops: [], hazards: [], traffic: [], forks: [],
+    dx: [], y: [], streets: [], stops: [], hazards: [], traffic: [], forks: [], lights: [],
     callout: null, lost: [], log: [],
   };
 }
 
 export const seg = (z: number) => Math.floor(z / SEG);
 export const curvature = (s: Sim, z: number) => s.dx[seg(z)] ?? 0;
+export const districtAt = (s: Sim, z: number) => s.streets.find((st) => z >= st.z0 && z < st.z1)?.district;
+export const isRed = (l: Light, t: number) => (t + l.offset) % (RED + GREEN) < RED;
 
 export function activeFork(s: Sim, z: number): Fork | undefined {
   return s.forks.find((f) => z >= f.z && z < f.zEnd);
@@ -151,10 +157,10 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
   }
   s.x -= curvature(s, s.z) * (s.v / TOP) ** 2 * 75 * dt; // the curve throws you outward; hold the wheel against it
 
-  // curbs are walls: scrape and slow
-  const r = rightEdge(s, s.z), l = -halfWidth(s, s.z);
-  if (s.x + CAR_W / 2 > r) { s.x = r - CAR_W / 2; s.v *= 1 - 1 * dt; }
-  if (s.x - CAR_W / 2 < l) { s.x = l + CAR_W / 2; s.v *= 1 - 1 * dt; }
+  // curbs are walls: scrape and slow, harder in the city
+  const r = rightEdge(s, s.z), l = -halfWidth(s, s.z), curb = CURB[districtAt(s, s.z) ?? "golf"];
+  if (s.x + CAR_W / 2 > r) { s.x = r - CAR_W / 2; s.v *= 1 - curb * dt; }
+  if (s.x - CAR_W / 2 < l) { s.x = l + CAR_W / 2; s.v *= 1 - curb * dt; }
 
   s.z += s.v * dt;
   s.dist += Math.max(0, s.v) * dt;
@@ -171,17 +177,22 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
     }
   }
 
-  // traffic drives by the same rules as you: it brakes behind slower cars and moves out of the way of hazards
-  const blockers = [...s.traffic, { z: s.z, x: s.x, v: s.v }, ...s.hazards.filter((h) => !h.hit).map((h) => ({ z: h.z, x: h.x, v: 0 }))];
+  // traffic drives by the same rules as you: it brakes behind slower cars, stops at red lights, moves out of the way of hazards
+  const blockers = [
+    ...s.traffic, { z: s.z, x: s.x, v: Math.max(0, s.v) },
+    ...s.hazards.filter((h) => !h.hit).map((h) => ({ z: h.z, x: h.x, v: 0 })),
+    ...s.lights.filter((l) => isRed(l, s.t)).flatMap((l) => [-LANE, 0, LANE].map((x) => ({ z: l.z, x, v: 0 }))),
+  ];
   for (const c of s.traffic) {
     const inLane = (x: number, o: { x: number }) => Math.abs(o.x - x) < LANE * 0.8;
-    const ahead = blockers.find((o) => o !== c && o.z > c.z && o.z - c.z < 70 && inLane(c.tx, o));
+    const ahead = blockers.find((o) => o !== c && o.z > c.z && o.z - c.z < 90 && inLane(c.tx, o));
     if (ahead) {
-      const free = [c.tx - LANE, c.tx + LANE].filter((x) => Math.abs(x) <= LANE + 0.1 && !blockers.some((o) => o !== c && inLane(x, o) && o.z - c.z > -30 && o.z - c.z < 70));
+      const free = [c.tx - LANE, c.tx + LANE].filter((x) => Math.abs(x) <= LANE + 0.1 && !blockers.some((o) => o !== c && inLane(x, o) && o.z - c.z > -30 && o.z - c.z < 90));
       if (free.length) c.tx = free[Math.floor(s.rng() * free.length)];
     }
-    c.braking = !!ahead && ahead.z - c.z < 35 && ahead.v < c.v + 1;
-    c.v = c.braking ? Math.max(c.v - 10 * dt, Math.min(ahead!.v, c.v)) : Math.min(c.v + 2 * dt, c.cruise);
+    // brake when the gap is shorter than the stopping distance at 10 m/s² plus a car length or two
+    c.braking = !!ahead && ahead.v < c.v + 1 && ahead.z - c.z < 8 + Math.max(0, c.v ** 2 - ahead.v ** 2) / 20;
+    c.v = c.braking ? Math.max(c.v - 10 * dt, Math.min(ahead!.v, c.v)) : Math.min(c.v + 3 * dt, c.cruise);
     c.x += Math.max(-3 * dt, Math.min(3 * dt, c.tx - c.x));
     c.z += c.v * dt;
     if (s.bumpCd === 0 && Math.abs(c.x - s.x) < CAR_W && Math.abs(c.z - s.z) < CAR_LEN) {

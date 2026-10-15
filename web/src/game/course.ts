@@ -1,6 +1,6 @@
 // Builds the road ahead from the seed: streets, their curves, stops, hazards, forks, and keeps traffic flowing.
 // ponytail: a linear chain of streets for M1; the pyramid and venue pools land in M2.
-import { DISTRICTS, KMH, LANE, SEG, W, WALK, seg, type District, type Hazard, type Rider, type Sim } from "./sim";
+import { DISTRICTS, GREEN, KMH, LANE, LIGHTS, RED, SEG, W, WALK, seg, type District, type Hazard, type Rider, type Sim } from "./sim";
 
 export const STREET = 1200;
 export const FORK_IN = 120; // the trunk widens over this before the decision line
@@ -60,6 +60,12 @@ function addStreet(s: Sim, z0: number, district: District, first: boolean) {
     const x = lane();
     s.hazards.push({ z: hz, x, kind, hit: false });
     if (kind === "barrier") for (let j = 1; j <= 4; j++) s.hazards.push({ z: hz + 15 * j, x, kind: "cone", hit: false });
+  }
+  // traffic lights, clear of the stops; traffic queues at a red, you thread through or wait
+  for (let i = 0; i < LIGHTS[district]; i++) {
+    const lz = z0 + 150 + rng() * (STREET - 350);
+    if (s.stops.some((o) => Math.abs(o.z + 15 - lz) < 60)) continue;
+    s.lights.push({ z: lz, offset: rng() * (RED + GREEN) });
   }
   // fork
   const [left, right] = others(district).sort(() => rng() - 0.5);
