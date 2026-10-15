@@ -120,8 +120,8 @@ Reuse `masm/challenge/*` untouched; write one `beats_target` (`masm/games/pub_sc
 - [ ] Gaylord playtest on desktop + phone
 
 ### M4: onchain scoring
-- [ ] Copy `masm/challenge/*` and the `integration` crate from GQ
-- [ ] `pub_score.masm` replaying the log, failing tests first: win, loss, broken route, too-fast gap, 4th rider, wrong drop, over 3:00 → verify: `cargo test -p integration --release` green, MASM pinned to `rules/vectors.json`
+- [x] Copy `masm/challenge/*` and the `integration` crate from GQ (storage, scripts, helpers, funding, auth args, gamecoin bin; GQ's quiz/rules replaced by `game.rs`)
+- [x] `pub_score.masm` replaying the log: win, loss, broken route, too-fast gap, stop twice, 4th rider, wrong drop, nobody aboard, over 3:00, time backwards, distance → verify: `cargo test -p integration --test pub_test` green (4 tests, 52 s), MASM pinned to `rules/vectors.json` (4 runs: score - 1 settles, score is refused); `web/public/scripts/{record,shot}.bin` built by `cargo run --bin build_scripts`
 
 ### M5: challenge flows
 - [ ] Copy GQ's `bread.ts`, `notes.ts`, `flow.ts`, hub/boards; own note tag; Gamecoin; record = seed + song → verify: record, shot, settle, collect on testnet via `?local=1` / `?local=2`
@@ -203,3 +203,14 @@ mouth per branch with the district's trim colour, lit ceiling inside, walls clim
 traffic spawns beyond the draw distance (760-1160 m) so cars come into view instead of popping in; the designer's chrome
 CLICK TO START lettering (components/start-prompt.css) replaces the plain blink. Steering poses kept as drawn: nose left
 shows the right flank, OutRun's convention; Gaylord read it as turning right, flip is one line in render.ts if he wants.
+
+### M4 (2026-10-16, night)
+Chain data: game data = SEED(4) | song, rules version, 0, 0 | COURSE_COMMIT(4); the course (28 streets x 8 felts:
+district*16+count, then stops as dest<<24 | points<<12 | z/5) and the log ([n, distance, events as kind<<24 | arg<<16 | t])
+travel in the advice map under their commitments (`note::compute_storage_commitment`, same as GQ's answers). The script
+replays with the car's position: fork at the decision line, pick at the bay's middle, drop at the bay, dwell 1.2 s / 1 s,
+top speed 0.83 m per tick, 60 m of reversing allowed, distance >= last event. `rules.ts` mirrors those checks so the sim,
+the TypeScript replay and MASM agree on the vectors. One bug on the way: a u32gte operand order (the reverse check) refused
+every second event; the error-code lookup (MasmError::from_static_str(msg).code()) found it in one run.
+Left: M5 (the four transactions in the web app, GQ's bread.ts/notes.ts/flow.ts, Gamecoin from gq/gamecoin.json, own tag
+0x50420001), wired to the designer's head unit when it lands.

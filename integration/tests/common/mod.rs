@@ -52,6 +52,7 @@ pub struct Setup {
     pub faucet: Account,
     pub champion: Account,
     pub rival: Account,
+    #[allow(dead_code)]
     pub stranger: Account,
     pub record: Note,
     pub record_storage: ChallengeStorage,

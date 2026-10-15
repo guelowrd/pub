@@ -133,7 +133,7 @@ proc arrive
     mem_load.HAVE_Z_PTR
     if.true
         # no more than REVERSE_M behind the previous event
-        dup add.REVERSE_M mem_load.LAST_Z_PTR swap u32gte assert.err=ERR_REVERSE
+        dup add.REVERSE_M mem_load.LAST_Z_PTR u32gte assert.err=ERR_REVERSE
         # => [z, t]
         mem_load.LAST_Z_PTR dup.1 swap u32gt
         # => [z > last_z, z, t]
