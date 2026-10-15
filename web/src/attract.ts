@@ -11,9 +11,9 @@ const RULES = [
   "DROP THEM WHERE THEY WANT", "YOUR CAR GOT THREE SEATS", "DON'T CRASH! BOOMERS WILL LEAVE YOUR CAR", "EACH DRIVE SESSION IS 3-MIN LONG", "DRIVE MORE = MORE POINTS",
 ].join("      •      ");
 const RIBBON_PX_PER_S = 140;
-// a car pulls away up the far left lane. The painting's road lines converge at y 392 (its width is 880 px at the bottom
-// edge and 400 px at y 650) but the road visibly ends at the water around y 580, so the car fades out there
-const LANE_NEAR = [330, 1010] as const, VANISH = [625, 392] as const, CAR_PERIOD = 6, PX_PER_M_NEAR = 95, CAR_END = 0.32;
+// a car pulls away from the far left of the bottom edge toward where the road meets the water, centre screen. Its size
+// follows the painting's own perspective, whose lines converge at y 392: 95 px per metre at the bottom edge
+const LANE_NEAR = [110, 1010] as const, VANISH = [535, 560] as const, CAR_PERIOD = 6, PX_PER_M_NEAR = 95, CAR_END = 0.14; // the path keeps to the left side
 
 export function startAttract(cv: HTMLCanvasElement): () => void {
   const ctx = cv.getContext("2d")!;
@@ -26,12 +26,15 @@ export function startAttract(cv: HTMLCanvasElement): () => void {
     ctx.clearRect(0, 0, w, h);
     // the car: its apparent size falls off as 1 / distance, so it lingers near and shrinks fast toward the horizon
     const cn = Math.floor(t / CAR_PERIOD), cu = (t % CAR_PERIOD) / CAR_PERIOD, sheet0 = TRAFFIC[(cn * 5) % TRAFFIC.length], car = img(sheet0.file);
-    const sc = 1 / (1 + 2.3 * cu); // 1 at the bottom edge, CAR_END where the road meets the water
+    const sc = 1 / (1 + 8 * cu); // 1 at the bottom edge, CAR_END where the road meets the water
     if (car && sc > CAR_END) {
       const cx = VANISH[0] + (LANE_NEAR[0] - VANISH[0]) * sc, cy = VANISH[1] + (LANE_NEAR[1] - VANISH[1]) * sc;
-      const f = (2 * PX_PER_M_NEAR * sc) / sheet0.ppm; // a 2 m wide car at the lane's scale
+      const f = (2 * PX_PER_M_NEAR * (cy - 392) / (LANE_NEAR[1] - 392)) / sheet0.ppm; // a 2 m wide car at that height's scale
       ctx.save(); ctx.globalAlpha = Math.min(1, (sc - CAR_END) / 0.06);
-      ctx.drawImage(car, sheet0.cw, 0, sheet0.cw, sheet0.ch, (cx - sheet0.ax * f) * k, (cy - sheet0.ay * f) * k, sheet0.cw * f * k, sheet0.ch * f * k);
+      // on the left of the road we see the car's right flank (the sheet's first yaw cell), and it leans a few degrees
+      // toward where the road goes, so it reads as heading up the lane
+      ctx.translate(cx * k, cy * k); ctx.rotate(Math.atan2(VANISH[0] - LANE_NEAR[0], LANE_NEAR[1] - VANISH[1]) * 0.15);
+      ctx.drawImage(car, 0, 0, sheet0.cw, sheet0.ch, -sheet0.ax * f * k, -sheet0.ay * f * k, sheet0.cw * f * k, sheet0.ch * f * k);
       ctx.restore();
     }
     // one rider per period: walks in over the first 60%, boards (fades) over the next 15%, then a pause
