@@ -49,6 +49,7 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .overlay button.cyan { border-color: #63e7ff; } .overlay button.pink { border-color: #ff40bd; }
 .actions { display: flex; gap: calc(50 * var(--u)); }
 .splash { background: #080c24 url("/art/title-scene.webp") center / cover no-repeat; }
+.attract { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 /* the designer's chrome CLICK TO START (Boomer GT), centred in the title-to-car gap, 1.6 s blink */
 .start-prompt { position: absolute; left: 50%; top: 43.5417%; transform: translate(-50%, -50%); width: calc(860 * var(--u)); animation: pub-blink 1.6s steps(1, end) infinite; filter: drop-shadow(0 0 calc(5 * var(--u)) #bd41b955); }
 .start-prompt img { display: block; width: 100%; }

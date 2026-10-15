@@ -6,6 +6,7 @@ import { ICON, loadArt } from "./game/art";
 import { MENU_TRACK, RESULTS_TRACK, STATIONS } from "./game/stations";
 import { audio, sound as soundNow, volume as volumeNow } from "./audio";
 import Radio from "./Radio";
+import { startAttract } from "./attract";
 
 type Mode = "ready" | "radio" | "play" | "paused" | "over";
 const STEP = 1 / 120;
@@ -23,6 +24,7 @@ const best = () => Number(localStorage.getItem("pub.best") ?? 0);
 export default function App() {
   const canvas = useRef<HTMLCanvasElement>(null);
   const hud = useRef<HTMLDivElement>(null);
+  const attract = useRef<HTMLCanvasElement>(null);
   const sim = useRef<Sim>(newSim(1));
   const input = useRef<Input>({ gas: false, brake: false, left: false, right: false });
   const [mode, setMode] = useState<Mode>("ready");
@@ -32,6 +34,7 @@ export default function App() {
   const [seed, setSeed] = useState(1);
   const [loaded, setLoaded] = useState(false);
   useEffect(() => { loadArt().then(() => { loadedRef.current = true; setLoaded(true); }, (e) => console.error(e)); }, []);
+  useEffect(() => { if (mode === "ready" && loaded && attract.current) return startAttract(attract.current); }, [mode, loaded]);
   const [station, setStation] = useState(0);
   const stationRef = useRef(0);
   stationRef.current = station;
@@ -151,7 +154,10 @@ export default function App() {
         <div className="callout" id="callout" />
       </div>
       {mode === "ready" && (
-        <div className="overlay splash" onClick={() => { if (loaded) { audio.unlock(); setMode("radio"); } }}>{loaded ? <div className="start-prompt"><img src={`${ART}click-to-start-chrome.png`} alt="CLICK TO START" /></div> : <p className="loading">LOADING</p>}</div>
+        <div className="overlay splash" onClick={() => { if (loaded) { audio.unlock(); setMode("radio"); } }}>
+          <canvas className="attract" ref={attract} />
+          {loaded ? <div className="start-prompt"><img src={`${ART}click-to-start-chrome.png`} alt="CLICK TO START" /></div> : <p className="loading">LOADING</p>}
+        </div>
       )}
       {mode === "radio" && (
         <div className="overlay radio">

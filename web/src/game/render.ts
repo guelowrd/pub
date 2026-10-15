@@ -80,13 +80,13 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   };
   // tunnels join the areas: from where the branches run straight to the first metres of the next street. Inside it is
   // dark; the headlights click on a beat after the mouth; the wall strips glow; the exit blooms
-  const TUN_H = 12, TUN_TEX = 6, TUN_IN = FORK_OUT / 2, TUN_OUT = 30;
+  const TUN_H = 12, TUN_TEX = 6, TUN_IN = FORK_OUT / 2, TUN_OUT = 100; // 200 m of tunnel
   const tunnelAt = (z: number) => s.forks.find((o) => z >= o.zDecide + TUN_IN && z < o.zEnd + TUN_OUT);
   const inside = tunnelAt(s.z);
   if (inside && !wasIn) inT = s.t;
   if (!inside && wasIn) exitT = s.t;
   wasIn = !!inside;
-  const headlights = !!inside && s.t - inT > 0.8;
+  const headlights = !!inside && s.t - inT > 0.35;
   const lightAt = (z: number) => {
     const f = tunnelAt(z);
     if (!f) return 1;

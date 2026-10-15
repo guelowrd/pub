@@ -39,8 +39,8 @@ function node(rng: () => number, district: District, leg: number): Node {
     z += len + 60;
   }
   const n = 3 + Math.floor(rng() * 3), stops: Node["stops"] = [];
-  if (leg > 0) stops.push({ z: 110, venue: VENUE_OF[district], rider: rider(rng, VENUE_OF[district], district) }); // someone leaving the spending place
-  let sz = 220;
+  if (leg > 0) stops.push({ z: 190, venue: VENUE_OF[district], rider: rider(rng, VENUE_OF[district], district) }); // someone leaving the spending place, after the drop bay
+  let sz = 300;
   for (let i = 0; i < n; i++) {
     sz += 120 + rng() * ((STREET - 250 - sz) / (n - i) - 120);
     const venue = VENUES[district][i % 2];
@@ -49,7 +49,7 @@ function node(rng: () => number, district: District, leg: number): Node {
   // hazards, clear of the stops and the fork; a barrier trails 4 cones (roadworks)
   const hazards: Hazard[] = [], lane = () => (Math.floor(rng() * 3) - 1) * LANE;
   for (let i = 0; i < 7; i++) {
-    const hz = 120 + rng() * (STREET - 350);
+    const hz = 160 + rng() * (STREET - 400);
     if (stops.some((o) => Math.abs(o.z + 15 - hz) < 60)) continue;
     const kind = pick(rng, ["cone", "cone", "oil", "pothole", "barrier"] as Hazard["kind"][]), x = lane();
     hazards.push({ z: hz, x, kind, hit: false });
@@ -57,7 +57,7 @@ function node(rng: () => number, district: District, leg: number): Node {
   }
   const lights: Node["lights"] = [];
   for (let i = 0; i < LIGHTS[district]; i++) {
-    const lz = 150 + rng() * (STREET - 350);
+    const lz = 200 + rng() * (STREET - 400);
     if (stops.some((o) => Math.abs(o.z + 15 - lz) < 60)) continue;
     lights.push([lz, rng() * (RED + GREEN)]);
   }
@@ -97,7 +97,7 @@ function place(s: Sim, leg: number, k: number, z0: number) {
   for (let i = seg(z0); i < seg(z1 + FORK_IN + FORK_OUT); i++) { s.dx[i] = 0; s.y[i] = 0; }
   for (const [a, b, strength] of n.curves) setCurve(s, z0 + a, z0 + b, strength);
   for (const [a, b, h] of n.hills) setHill(s, z0 + a, z0 + b, h);
-  if (leg > 0) s.stops.push({ z: z0 + 50, len: 30, rider: null, drop: n.district, taken: false, i: -1, venue: null });
+  if (leg > 0) s.stops.push({ z: z0 + 130, len: 30, rider: null, drop: n.district, taken: false, i: -1, venue: null }); // the tunnel runs 100 m into the street
   n.stops.forEach((o, i) => s.stops.push({ z: z0 + o.z, len: 30, rider: o.rider, drop: null, taken: false, i, venue: o.venue }));
   for (const h of n.hazards) s.hazards.push({ ...h, z: z0 + h.z });
   for (const [z, offset] of n.lights) s.lights.push({ z: z0 + z, offset });

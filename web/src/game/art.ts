@@ -63,14 +63,14 @@ export const ROAD_TINT: Record<District, [string, number]> = { waterfront: ["#17
 export const DROP: Record<District, Sheet> = { downtown: SHEETS.dropDowntown, waterfront: SHEETS.dropWaterfront, casino: SHEETS.dropCasino, golf: SHEETS.dropGolf };
 export const ICON: Record<District, string> = { downtown: "destination-restaurant.png", waterfront: "destination-cruise.png", casino: "destination-casino.png", golf: "destination-golf.png" };
 export const SKYLINE = "skyline.webp";
-export const TITLE = "title-scene.webp";
+export const TITLE = "title-scene.webp", SPLASH_CAR = "car-straight.webp"; // the splash car sits on the title scene (board 01)
 
 const images = new Map<string, HTMLImageElement>();
 export const img = (file: string) => images.get(file);
 export let ready = false;
 
 export function loadArt(): Promise<void> {
-  const files = new Set<string>([...Object.values(SHEETS).map((s) => s.file), ...Object.values(ICON), ...Object.values(PANO), ...Object.values(FILLERS).flat().map((s) => s.file), ...Object.values(FORK_STRUCT).flatMap((st) => [`fork-${st}.webp`, `fork-${st}-left.png`, `fork-${st}-right.png`]), ...Object.values(TUNNEL), LIGHT_RED.file, LIGHT_GREEN.file, SKYLINE, TITLE]);
+  const files = new Set<string>([...Object.values(SHEETS).map((s) => s.file), ...Object.values(ICON), ...Object.values(PANO), ...Object.values(FILLERS).flat().map((s) => s.file), ...Object.values(FORK_STRUCT).flatMap((st) => [`fork-${st}.webp`, `fork-${st}-left.png`, `fork-${st}-right.png`]), ...Object.values(TUNNEL), LIGHT_RED.file, LIGHT_GREEN.file, SKYLINE, TITLE, SPLASH_CAR]);
   return Promise.all([...files].map((file) => new Promise<void>((ok, bad) => {
     const im = new Image();
     im.onload = () => { images.set(file, im); ok(); };
