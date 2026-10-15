@@ -1,10 +1,9 @@
-// Attract mode on the painted splash: riders walk down the right sidewalk to the car's door, board, and the callouts
-// tell the loop (pull in, age reveal, points to bank). Drawn over the title scene in its 1280x960 reference space.
+// Attract mode on the painted splash: boomers walk down the right sidewalk to the car's door and board, one after
+// another. No words besides CLICK TO START. Drawn over the title scene in its 1280x960 reference space.
 import { CHARACTERS } from "./game/course";
 import { PEOPLE, SPLASH_CAR, img } from "./game/art";
-import { agePoints } from "./game/sim";
 
-const IDS = Object.keys(CHARACTERS).filter((id) => CHARACTERS[id].age >= 50); // the demo shows riders worth picking up
+const IDS = Object.keys(CHARACTERS).filter((id) => CHARACTERS[id].age >= 40); // boomers only on the splash
 const CAR = [345, 506, 590, 393] as const; // the splash car on the title scene, as composed on board 01
 const DOOR = [962, 852] as const, FAR = [1150, 600] as const; // where the rider ends up (ground point) and where they appear
 const PERIOD = 7; // seconds per rider
@@ -35,15 +34,6 @@ export function startAttract(cv: HTMLCanvasElement): () => void {
       ctx.save(); ctx.globalAlpha = alpha;
       ctx.drawImage(im, sx, sy, sheet.cw, sheet.ch, (gx - sheet.ax * f) * k, (gy - sheet.ay * f) * k, sheet.cw * f * k, sheet.ch * f * k);
       ctx.restore();
-    }
-    // callouts: PULL IN while they walk, CRAZY STOP! as they board, then the age and the points
-    const text = u < 0.55 ? "PULL IN" : u < 0.72 ? "CRAZY STOP!" : u < 0.95 ? `AGE ${ch.age}   ${agePoints(ch.age).toLocaleString("en-US")} TO BANK` : "";
-    if (text) {
-      ctx.font = `${34 * k}px "Boomer GT", monospace`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillStyle = u < 0.55 ? "#ffe564" : u < 0.72 ? "#78ffcb" : "#fff3f4";
-      ctx.shadowColor = "#080c24"; ctx.shadowBlur = 10 * k;
-      ctx.fillText(text, 640 * k, 490 * k);
-      ctx.shadowBlur = 0;
     }
   };
   raf = requestAnimationFrame(frame);
