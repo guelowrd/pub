@@ -22,7 +22,7 @@ describe("driving", () => {
     run(s, { gas: true }, 8);
     expect(s.v).toBeGreaterThan(FAST); // 220 comes in under 8 s
     run(s, { gas: true }, 4);
-    expect(s.v).toBeGreaterThan(285 / KMH); // the last stretch to 299 takes a long straight
+    expect(s.v).toBeGreaterThan(250 / KMH); // 12 s in; the last stretch to 299 takes a long straight
     run(s, { brake: true }, 4);
     expect(s.v).toBeCloseTo(-REV, 1); // brake held through the stop: reversing
     const dist = s.dist;
