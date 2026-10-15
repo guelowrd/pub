@@ -39,7 +39,7 @@ function addStreet(s: Sim, z0: number, district: District, first: boolean) {
   let z = z0 + 150;
   while (z < z1 - 300) {
     const len = 150 + rng() * 200;
-    if (rng() < 0.7) setCurve(s, z, z + len, (rng() - 0.5) * 2.4);
+    if (rng() < 0.7) setCurve(s, z, z + len, (rng() - 0.5) * 0.08);
     if (rng() < 0.5) setHill(s, z - 50, z + len + 50, (rng() - 0.3) * 12);
     z += len + 60;
   }
@@ -63,10 +63,14 @@ function addStreet(s: Sim, z0: number, district: District, first: boolean) {
   }
   // fork
   const [left, right] = others(district).sort(() => rng() - 0.5);
-  const k: number[] = [];
-  const segs = FORK_OUT / SEG;
-  for (let i = 0; i < segs; i++) k.push(1.0 * Math.min(1, i / 8, (segs - 1 - i) / 12));
-  s.forks.push({ z: z1, zDecide: z1 + FORK_IN, zEnd: z1 + FORK_IN + FORK_OUT, left, right, side: 0, k });
+  // the branches bend away over the first half of FORK_OUT, then run straight; off[] integrates that twice
+  const segs = FORK_OUT / SEG, k: number[] = [], off = [W];
+  for (let i = 0, bdx = 0; i < segs * 2; i++) {
+    k.push(i < segs / 2 ? 0.05 : 0);
+    bdx += k[i];
+    off.push(off[i] + bdx);
+  }
+  s.forks.push({ z: z1, zDecide: z1 + FORK_IN, zEnd: z1 + FORK_IN + FORK_OUT, left, right, side: 0, k, off });
 }
 
 export function extend(s: Sim) {

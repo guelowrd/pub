@@ -24,7 +24,8 @@ export interface Stop { z: number; len: number; rider: Rider | null; drop: Distr
 export interface Traffic { z: number; x: number; v: number; kind: number; braking: boolean }
 export type HazardKind = "cone" | "oil" | "pothole" | "barrier";
 export interface Hazard { z: number; x: number; kind: HazardKind; hit: boolean }
-export interface Fork { z: number; zDecide: number; zEnd: number; left: District; right: District; side: -1 | 0 | 1; k: number[] }
+// k: curvature of the right branch per segment from the decision line; off: that branch's offset from the trunk
+export interface Fork { z: number; zDecide: number; zEnd: number; left: District; right: District; side: -1 | 0 | 1; k: number[]; off: number[] }
 export interface Street { z0: number; z1: number; district: District }
 export interface Input { gas: boolean; brake: boolean; left: boolean; right: boolean }
 
@@ -44,7 +45,7 @@ export interface Sim {
   bumpCd: number;
   seats: (Rider | null)[];
   banked: number; dist: number; score: number;
-  dx: number[]; // per segment: lateral shift of the road centre (m per segment); its change is the curvature
+  dx: number[]; // per segment: curvature, OutRun style (how much the lateral shift grows each segment)
   y: number[]; // per segment: road height (hills are visual only, like OutRun)
   streets: Street[]; stops: Stop[]; hazards: Hazard[]; traffic: Traffic[]; forks: Fork[];
   callout: { text: string; t: number } | null;
@@ -82,7 +83,7 @@ export function newSim(seed: number): Sim {
 }
 
 export const seg = (z: number) => Math.floor(z / SEG);
-export const curvature = (s: Sim, z: number) => (s.dx[seg(z) + 1] ?? 0) - (s.dx[seg(z)] ?? 0);
+export const curvature = (s: Sim, z: number) => s.dx[seg(z)] ?? 0;
 
 export function activeFork(s: Sim, z: number): Fork | undefined {
   return s.forks.find((f) => z >= f.z && z < f.zEnd);
@@ -144,12 +145,12 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
     s.x += lat * dt;
     if (s.oil > 0) s.x += (s.rng() - 0.5) * 12 * dt;
   }
-  s.x -= curvature(s, s.z) * (s.v / TOP) ** 2 * 30 * dt;
+  s.x -= curvature(s, s.z) * (s.v / TOP) ** 2 * 60 * dt; // the curve throws you outward; hold the wheel against it
 
   // curbs are walls: scrape and slow
   const r = rightEdge(s, s.z), l = -halfWidth(s, s.z);
-  if (s.x + CAR_W / 2 > r) { s.x = r - CAR_W / 2; s.v *= 1 - 2 * dt; }
-  if (s.x - CAR_W / 2 < l) { s.x = l + CAR_W / 2; s.v *= 1 - 2 * dt; }
+  if (s.x + CAR_W / 2 > r) { s.x = r - CAR_W / 2; s.v *= 1 - 1 * dt; }
+  if (s.x - CAR_W / 2 < l) { s.x = l + CAR_W / 2; s.v *= 1 - 1 * dt; }
 
   s.z += s.v * dt;
   s.dist += s.v * dt;

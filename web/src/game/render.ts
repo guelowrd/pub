@@ -11,21 +11,21 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   const cx = w / 2, hy = h * 0.42, focal = h * 0.9;
   const camZ = s.z - CAM_BACK, i0 = seg(camZ), frac = camZ / SEG - i0;
   const dxAt = (i: number) => s.dx[i] ?? 0;
-  const dxCam = dxAt(i0) * (1 - frac) + dxAt(i0 + 1) * frac;
 
   const sky = ctx.createLinearGradient(0, 0, 0, hy);
   sky.addColorStop(0, "#14102e"); sky.addColorStop(1, "#5a2a6e");
   ctx.fillStyle = sky; ctx.fillRect(0, 0, w, hy);
   ctx.fillStyle = "#1a241a"; ctx.fillRect(0, hy, w, h - hy);
 
-  // road centre offset (in the camera's frame, so the road under us is straight) and projection per segment start
+  // road centre offset and projection per segment start. OutRun's trick: the road is a parabola from the camera out,
+  // the curvature accumulates into the shift, the shift into the offset, so a curve keeps bending as you drive it.
   const yAt = (i: number) => s.y[i] ?? 0;
   const camY = CAM_H + yAt(i0) * (1 - frac) + yAt(i0 + 1) * frac;
   const xo: number[] = [], sy: number[] = [], sc: number[] = [];
-  let acc = -frac * dxAt(i0);
-  for (let n = 0; n <= N + 1; n++) {
-    xo[n] = acc - (n - frac) * dxCam;
-    acc += dxAt(i0 + n);
+  for (let n = 0, x = 0, dx = -dxAt(i0) * frac; n <= N + 1; n++) {
+    xo[n] = x;
+    x += dx;
+    dx += dxAt(i0 + n);
     sc[n] = focal / Math.max(0.3, (i0 + n) * SEG - camZ);
     sy[n] = hy + (camY - yAt(i0 + n)) * sc[n];
   }
@@ -103,17 +103,14 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   // segments, far to near
   for (let n = N; n >= 0; n--) {
     const i = i0 + n, z1 = i * SEG, z2 = z1 + SEG, alt = (i >> 1) % 2 === 0;
-    // past a decision line the road is two branches: trunk ± (W + bend so far). The main road is the chosen
-    // branch (or the trunk before choosing), so branch σ sits at xo + (σ - side) * (W + K).
+    // past a decision line the road is two branches at trunk ± off. The main road is the chosen branch (or the
+    // trunk before choosing), so branch σ sits at xo + (σ - side) * off.
     const f = s.forks.find((o) => z1 >= o.zDecide && z1 < o.zEnd + FORK_OUT);
     if (f) {
       const d = i - seg(f.zDecide);
-      let K1 = 0;
-      for (let j = 0; j < d && j < f.k.length; j++) K1 += f.k[j];
-      const K2 = K1 + (f.k[d] ?? 0);
       for (const side of [-1, 1] as const) {
         if (side === f.side) continue;
-        road(n, (side - f.side) * (W + K1), (side - f.side) * (W + K2), W, W, W, W, alt);
+        road(n, (side - f.side) * f.off[d], (side - f.side) * f.off[d + 1], W, W, W, W, alt);
       }
       if (f.side === 0) continue;
     }

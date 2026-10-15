@@ -16,6 +16,8 @@ describe("age points", () => {
 describe("driving", () => {
   it("reaches top speed and stops again", () => {
     const s = newSim(1);
+    extend(s);
+    s.dx.fill(0); // a straight: curves push an unsteered car into the curb
     run(s, { gas: true }, 8);
     expect(s.v).toBeCloseTo(TOP, 1);
     run(s, { brake: true }, 3);
