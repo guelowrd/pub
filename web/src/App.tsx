@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { KMH, NAME, PLACE, RATE, RUN, TOP, agePoints, candidate, newSim, step, tick, type District, type Input, type Rider, type Sim } from "./game/sim";
 import { CHARACTERS, extend } from "./game/course";
-import { COLOR, draw, setSong } from "./game/render";
+import { COLOR, draw, setBeat, setSong } from "./game/render";
 import { ICON, loadArt } from "./game/art";
 import { MENU_TRACK, RESULTS_TRACK, STATIONS } from "./game/stations";
 import { audio, sound as soundNow, volume as volumeNow } from "./audio";
@@ -96,6 +96,7 @@ export default function App() {
       const dpr = Math.min(1.5, devicePixelRatio), w = cv.clientWidth * dpr, h = cv.clientHeight * dpr;
       if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
       if (s.streets.length === 0) extend(s);
+      setBeat(audio.levels()[0]);
       draw(ctx, s, w, h);
       const el = hud.current!;
       const set = (id: string, text: string) => { const n = el.querySelector<HTMLElement>(`#${id}`)!; if (n.textContent !== text) n.textContent = text; };

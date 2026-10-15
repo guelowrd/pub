@@ -54,8 +54,9 @@ export const FILLERS: Record<District, Sheet[]> = {
   casino: [FL("filler-casino-strip-1.webp", 66), FL("filler-casino-strip-2.webp", 30), FL("filler-casino-strip-3.webp", 83)],
   golf: [FL("filler-golf-hills-1.webp", 38), FL("filler-golf-hills-2.webp", 21), FL("filler-golf-hills-3.webp", 55)],
 };
-// portals: the painted mouth is 7 m wide at its native scale; drawn at 50 px/m the mouth spans the road
-export const PORTAL: Record<District, Sheet> = { waterfront: SH("portal-waterfront.webp", 1024, 768, 1, 512, 708, 50), downtown: SH("portal-downtown.webp", 1024, 768, 1, 512, 708, 50), casino: SH("portal-casino.webp", 1024, 768, 1, 512, 708, 50), golf: SH("portal-golf.webp", 1024, 768, 1, 512, 708, 50) };
+// tunnel kit: one shared two-mouth structure per fork, chosen by the street you're on; wall and ceiling materials; glow cookies
+export const FORK_STRUCT: Record<District, string> = { waterfront: "harbour-causeway", downtown: "tower-podium", casino: "highway-overpass", golf: "wooded-ridge" };
+export const TUNNEL = { wall: "tunnel-wall.webp", ceiling: "tunnel-ceiling.webp", strip: "tunnel-strip.png", headlight: "headlight.webp", flare: "flare.webp" };
 export const LIGHT_RED = SH("light-red.webp", 512, 1024, 1, 256, 980, 600), LIGHT_GREEN = SH("light-green.webp", 512, 1024, 1, 256, 980, 600);
 // road material tints (source-atop on the asphalt only)
 export const ROAD_TINT: Record<District, [string, number]> = { waterfront: ["#175e79", 0.12], downtown: ["#655071", 0.12], casino: ["#7d285f", 0.14], golf: ["#2c6255", 0.12] };
@@ -69,7 +70,7 @@ export const img = (file: string) => images.get(file);
 export let ready = false;
 
 export function loadArt(): Promise<void> {
-  const files = new Set<string>([...Object.values(SHEETS).map((s) => s.file), ...Object.values(ICON), ...Object.values(PANO), ...Object.values(FILLERS).flat().map((s) => s.file), ...Object.values(PORTAL).map((s) => s.file), LIGHT_RED.file, LIGHT_GREEN.file, SKYLINE, TITLE]);
+  const files = new Set<string>([...Object.values(SHEETS).map((s) => s.file), ...Object.values(ICON), ...Object.values(PANO), ...Object.values(FILLERS).flat().map((s) => s.file), ...Object.values(FORK_STRUCT).flatMap((st) => [`fork-${st}.webp`, `fork-${st}-left.png`, `fork-${st}-right.png`]), ...Object.values(TUNNEL), LIGHT_RED.file, LIGHT_GREEN.file, SKYLINE, TITLE]);
   return Promise.all([...files].map((file) => new Promise<void>((ok, bad) => {
     const im = new Image();
     im.onload = () => { images.set(file, im); ok(); };
