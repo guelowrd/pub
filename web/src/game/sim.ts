@@ -144,7 +144,7 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
   s.hot = s.v > 60 / KMH ? 0 : s.hot + dt;
 
   const dir = (inp.right ? 1 : 0) - (inp.left ? 1 : 0);
-  s.steer = dir;
+  s.steer += (dir - s.steer) * Math.min(1, 8 * dt); // the wheel takes a beat to turn: steering has lag
   s.brake = inp.brake;
   if (s.spin > 0) {
     s.spin -= dt;
@@ -159,7 +159,7 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
     else if (inp.gas) s.v = Math.min(TOP, s.v + 12 * dt);
     else s.v -= Math.sign(s.v) * Math.min(Math.abs(s.v), 4 * dt);
     s.skid = inp.brake && dir !== 0 && s.v > 15;
-    const lat = dir * (4 + 10 * (s.v / TOP)) * (s.skid ? 1.5 : 1) * (s.oil > 0 ? 0.4 : 1);
+    const lat = s.steer * (4 + 10 * (s.v / TOP)) * (s.skid ? 1.5 : 1) * (s.oil > 0 ? 0.4 : 1);
     s.x += lat * dt;
     if (s.oil > 0) s.x += (s.rng() - 0.5) * 12 * dt;
   }

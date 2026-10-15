@@ -162,3 +162,18 @@ describe("fork", () => {
     expect(s.streets[1].district).toBe(f.left);
   });
 });
+
+describe("steering", () => {
+  it("lags behind the stick", () => {
+    const s = newSim(1);
+    extend(s);
+    s.dx.fill(0); s.v = 20;
+    const x0 = s.x;
+    run(s, { right: true }, 0.05);
+    expect(s.steer).toBeGreaterThan(0.2);
+    expect(s.steer).toBeLessThan(0.6);
+    run(s, { right: true }, 0.5);
+    expect(s.steer).toBeCloseTo(1, 1);
+    expect(s.x).toBeGreaterThan(x0 + 1);
+  });
+});
