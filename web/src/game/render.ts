@@ -1,5 +1,5 @@
 // Pseudo-3D view: road segments projected from a low chase camera, billboards sorted by segment.
-import { BAY, CAR_W, LANE, NAME, SEG, W, WALK, halfWidth, rightEdge, seg, stopAt, type District, type Sim } from "./sim";
+import { BAY, CAR_W, LANE, NAME, SEG, TOP, W, WALK, halfWidth, rightEdge, seg, stopAt, type District, type Sim } from "./sim";
 import { FORK_OUT, sidewalkX } from "./course";
 
 const N = 140; // segments drawn ahead
@@ -19,13 +19,15 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   ctx.fillStyle = "#1a241a"; ctx.fillRect(0, hy, w, h - hy);
 
   // road centre offset (in the camera's frame, so the road under us is straight) and projection per segment start
+  const yAt = (i: number) => s.y[i] ?? 0;
+  const camY = CAM_H + yAt(i0) * (1 - frac) + yAt(i0 + 1) * frac;
   const xo: number[] = [], sy: number[] = [], sc: number[] = [];
   let acc = -frac * dxAt(i0);
   for (let n = 0; n <= N + 1; n++) {
     xo[n] = acc - (n - frac) * dxCam;
     acc += dxAt(i0 + n);
     sc[n] = focal / Math.max(0.3, (i0 + n) * SEG - camZ);
-    sy[n] = hy + CAM_H * sc[n];
+    sy[n] = hy + (camY - yAt(i0 + n)) * sc[n];
   }
   const X = (n: number, xr: number) => cx + (xo[n] + xr - s.x) * sc[n];
   const quad = (n: number, l1: number, r1: number, l2: number, r2: number, color: string) => {
@@ -55,12 +57,19 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   };
   const place = (z: number, x: number) => {
     const n = seg(z) - i0, t = z / SEG - seg(z), k = focal / Math.max(0.3, z - camZ);
-    return { px: cx + (xo[n] + (xo[n + 1] - xo[n]) * t + x - s.x) * k, py: hy + CAM_H * k, k };
+    const y = yAt(seg(z)) * (1 - t) + yAt(seg(z) + 1) * t;
+    return { px: cx + (xo[n] + (xo[n + 1] - xo[n]) * t + x - s.x) * k, py: hy + (camY - y) * k, k };
   };
   const box = (z: number, x: number, bw: number, bh: number, color: string, lift = 0) => at(z, () => {
     const { px, py, k } = place(z, x);
     ctx.fillStyle = color; ctx.fillRect(px - (bw * k) / 2, py - (bh + lift) * k, bw * k, bh * k);
   });
+  // lamp posts every 40 m: the eye reads speed off them
+  for (let i = Math.ceil(i0 / 8) * 8; i <= i0 + N; i += 8) {
+    const z = i * SEG, f = s.forks.find((o) => z >= o.z && z < o.zEnd + FORK_OUT);
+    if (f) continue;
+    for (const x of [-(W + WALK + 0.8), W + BAY + WALK + 0.8]) { box(z, x, 0.3, 6, "#9a9ab0"); box(z, x, 1, 0.4, "#fff0a0", 6); }
+  }
   for (const c of s.traffic) {
     box(c.z, c.x, CAR_W, 1.5, TRAFFIC[c.kind]);
     box(c.z, c.x, CAR_W * 0.9, 0.18, c.braking ? "#ff3040" : "#701018", 0.35);
@@ -116,8 +125,9 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
 
   // hero car, fixed on screen; leans with the steer, spins on a wreck
   const k = focal / CAM_BACK, py = hy + CAM_H * k;
+  const bob = Math.sin(s.dist * 0.7) * 0.025 * k * (s.v / TOP);
   ctx.save();
-  ctx.translate(cx, py - 0.6 * k);
+  ctx.translate(cx, py - 0.6 * k + bob);
   if (s.spin > 0) ctx.rotate(((2.5 - s.spin) / 2.5) * Math.PI * 4);
   else ctx.transform(1, 0, -s.steer * 0.12, 1, 0, 0);
   if (s.skid) {

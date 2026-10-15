@@ -26,15 +26,21 @@ function setCurve(s: Sim, z0: number, z1: number, strength: number) {
   }
 }
 
+function setHill(s: Sim, z0: number, z1: number, height: number) {
+  const a = seg(z0), b = seg(z1);
+  for (let i = a; i < b; i++) s.y[i] += (height * (1 - Math.cos((2 * Math.PI * (i - a)) / (b - a)))) / 2;
+}
+
 function addStreet(s: Sim, z0: number, district: District, first: boolean) {
   const rng = s.rng, z1 = z0 + STREET;
   s.streets.push({ z0, z1, district });
-  for (let i = seg(z0); i < seg(z1 + FORK_IN + FORK_OUT); i++) s.dx[i] = 0;
-  // curves
+  for (let i = seg(z0); i < seg(z1 + FORK_IN + FORK_OUT); i++) { s.dx[i] = 0; s.y[i] = 0; }
+  // curves and hills
   let z = z0 + 150;
   while (z < z1 - 300) {
     const len = 150 + rng() * 200;
     if (rng() < 0.7) setCurve(s, z, z + len, (rng() - 0.5) * 2.4);
+    if (rng() < 0.5) setHill(s, z - 50, z + len + 50, (rng() - 0.3) * 12);
     z += len + 60;
   }
   if (!first) s.stops.push({ z: z0 + 50, len: 30, rider: null, drop: district, taken: false });

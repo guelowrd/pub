@@ -45,6 +45,7 @@ export interface Sim {
   seats: (Rider | null)[];
   banked: number; dist: number; score: number;
   dx: number[]; // per segment: lateral shift of the road centre (m per segment); its change is the curvature
+  y: number[]; // per segment: road height (hills are visual only, like OutRun)
   streets: Street[]; stops: Stop[]; hazards: Hazard[]; traffic: Traffic[]; forks: Fork[];
   callout: { text: string; t: number } | null;
   lost: Rider[]; // aboard at time-up
@@ -75,7 +76,7 @@ export function newSim(seed: number): Sim {
     seed, rng: rngFrom(seed), t: 0, over: false,
     z: 20, x: 0, v: 0, steer: 0, brake: false, skid: false, hot: 99, spin: 0, oil: 0, boarding: 0, bumpCd: 0,
     seats: [null, null, null], banked: 0, dist: 0, score: 0,
-    dx: [], streets: [], stops: [], hazards: [], traffic: [], forks: [],
+    dx: [], y: [], streets: [], stops: [], hazards: [], traffic: [], forks: [],
     callout: null, lost: [], log: [],
   };
 }
@@ -191,7 +192,7 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
 
   // stops: at rest with the door in the bay window, someone gets in or out
   if (s.v < 0.3 && s.boarding <= 0 && s.spin <= 0) {
-    const st = s.stops.find((o) => !o.taken && Math.abs(o.z + o.len / 2 - s.z) < 4);
+    const st = s.stops.find((o) => !o.taken && s.z >= o.z && s.z <= o.z + o.len);
     if (st && s.x + CAR_W / 2 > W + 0.4) {
       if (st.drop) {
         const out = s.seats.filter((r) => r && r.dest === st.drop) as Rider[];
@@ -217,5 +218,5 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
 
 // the stop whose face and radar the HUD shows
 export function candidate(s: Sim): Stop | undefined {
-  return s.stops.find((o) => !o.taken && o.z + o.len > s.z - 10 && o.z < s.z + 150);
+  return s.stops.find((o) => !o.taken && o.z + o.len > s.z - 10 && o.z < s.z + 250);
 }

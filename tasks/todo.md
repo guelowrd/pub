@@ -151,3 +151,7 @@ tabs throttle requestAnimationFrame: the Y fork, gantry, stop + boarding callout
 Starting numbers: top 200 km/h, 0-200 in ~6 s, brake 28 m/s², wreck above 60 km/h closing speed, streets 1200 m,
 fork 120 m trunk + 200 m bend, distance 0.5 pt/m. Not done: Gaylord's playtest and the handling tune.
 Skipped on purpose: pyramid, venue pools and characters (M2), any art (M3), sound.
+Feel pass (same day): lamp posts every 40 m, hills, 4:3 view, car bob, radar from 250 m, boarding anywhere in the bay.
+Bot run (`bot.test.ts`, report in `web/bot-run.txt`): 5.1 km, 4 streets, 10 picks, 1 drop, 10 wrecks. Wrecks are the
+thing to watch in the playtest: rear-ending 100 km/h traffic at 200 km/h is a wreck, and a wreck empties the car.
+Candidates if humans wreck as much: raise the wreck threshold, slow the car, thin traffic, or make traffic hold lanes.

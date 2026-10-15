@@ -78,7 +78,8 @@ export default function App() {
   const s = sim.current;
 
   return (
-    <div className="app">
+    <>
+      <div className="app">
       <canvas ref={canvas} />
       <div className="hud" ref={hud}>
         <div className="tl"><small>TIME</small><b id="time" /></div>
@@ -91,12 +92,6 @@ export default function App() {
         </div>
         <div className="fork" id="fork" />
         <div className="callout" id="callout" />
-      </div>
-      <div className="pad">
-        <button {...hold("left")}>LEFT</button>
-        <button {...hold("right")}>RIGHT</button>
-        <button {...hold("brake")}>BRAKE</button>
-        <button {...hold("gas")}>GAS</button>
       </div>
       {mode === "ready" && (
         <div className="overlay" onClick={() => setMode("play")}><h1>PICK UP BOOMERS</h1><p>CLICK TO START</p><p><small>arrows / WASD, P pauses</small></p></div>
@@ -111,6 +106,13 @@ export default function App() {
           <p><button onClick={() => start(seed)}>SAME RUN</button> <button onClick={() => start(seed + 1)}>NEW RUN</button></p>
         </div>
       )}
-    </div>
+      </div>
+      <div className="pad">
+        <button {...hold("left")}>LEFT</button>
+        <button {...hold("right")}>RIGHT</button>
+        <button {...hold("brake")}>BRAKE</button>
+        <button {...hold("gas")}>GAS</button>
+      </div>
+    </>
   );
 }

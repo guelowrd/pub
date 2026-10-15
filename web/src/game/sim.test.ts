@@ -61,7 +61,10 @@ describe("stops", () => {
     park(s, st.z + st.len / 2); s.x = 0;
     step(s, idle, 1 / 120, extend);
     expect(s.seats[0]).toBeNull();
-    park(s, st.z + st.len / 2);
+    park(s, st.z - 1);
+    step(s, idle, 1 / 120, extend);
+    expect(s.seats[0]).toBeNull();
+    park(s, st.z + 2);
     step(s, idle, 1 / 120, extend);
     expect(s.seats[0]).toBe(st.rider);
     expect(st.taken).toBe(true);
