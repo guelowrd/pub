@@ -2,7 +2,8 @@
 // Units: metres, seconds, m/s. z runs along the road, x across it (0 = road centre, right positive).
 
 export const KMH = 3.6;
-export const TOP = 220 / KMH; // top speed
+export const TOP = 299 / KMH; // top speed; the power tapers, so 220 comes easy and the last 80 are earned
+export const FAST = 220 / KMH; // where the curves start to throw you and the wheel gets lazy
 export const REV = 20 / KMH; // reverse speed, brake held at a standstill
 export const WRECK = 60 / KMH; // closing speed above which a hit is a wreck
 export const SEG = 5; // road segment length
@@ -144,7 +145,8 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
   s.hot = s.v > 60 / KMH ? 0 : s.hot + dt;
 
   const dir = (inp.right ? 1 : 0) - (inp.left ? 1 : 0);
-  s.steer += (dir - s.steer) * Math.min(1, 8 * dt); // the wheel takes a beat to turn: steering has lag
+  // the wheel takes a beat to turn, and more of a beat the faster you go: at the top it answers in a third of a second
+  s.steer += (dir - s.steer) * Math.min(1, 8 * (1 - 0.6 * (Math.abs(s.v) / TOP) ** 2) * dt);
   s.brake = inp.brake;
   if (s.spin > 0) {
     s.spin -= dt;
@@ -156,14 +158,15 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
   } else {
     // brake through a standstill and you reverse: the reflex when you've overshot a stop
     if (inp.brake) s.v = Math.max(-REV, s.v - (s.v > 0 ? 28 : 8) * dt);
-    else if (inp.gas) s.v = Math.min(TOP, s.v + 12 * dt);
+    else if (inp.gas) s.v = Math.min(TOP, s.v + (13 * (1 - (Math.max(0, s.v) / TOP) ** 3) + 0.5) * dt);
+    if (s.v > 0 && dir !== 0) s.v -= Math.abs(s.steer) * (s.v / TOP) ** 3 * 10 * dt; // turning at speed scrubs it off, hard when flat out
     else s.v -= Math.sign(s.v) * Math.min(Math.abs(s.v), 4 * dt);
     s.skid = inp.brake && dir !== 0 && s.v > 15;
     const lat = s.steer * (4 + 10 * (s.v / TOP)) * (s.skid ? 1.5 : 1) * (s.oil > 0 ? 0.4 : 1);
     s.x += lat * dt;
     if (s.oil > 0) s.x += (s.rng() - 0.5) * 12 * dt;
   }
-  s.x -= curvature(s, s.z) * (s.v / TOP) ** 2 * 75 * dt; // the curve throws you outward; hold the wheel against it
+  s.x -= curvature(s, s.z) * (s.v / FAST) ** 2 * 75 * dt; // the curve throws you outward; hold the wheel against it; past 220 it is dangerous
 
   // curbs are walls: scrape and slow, harder in the city
   const r = rightEdge(s, s.z), l = -halfWidth(s, s.z), curb = CURB[districtAt(s, s.z) ?? "golf"];

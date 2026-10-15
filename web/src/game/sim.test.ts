@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GREEN, KMH, LANE, RED, REV, RUN, TOP, W, WRECK, agePoints, newSim, step, type District, type Input, type Rider, type Sim } from "./sim";
+import { FAST, GREEN, KMH, LANE, RED, REV, RUN, TOP, W, WRECK, agePoints, newSim, step, type District, type Input, type Rider, type Sim } from "./sim";
 import { extend } from "./course";
 
 const idle: Input = { gas: false, brake: false, left: false, right: false };
@@ -20,7 +20,9 @@ describe("driving", () => {
     extend(s);
     s.dx.fill(0); // a straight: curves push an unsteered car into the curb
     run(s, { gas: true }, 8);
-    expect(s.v).toBeCloseTo(TOP, 1);
+    expect(s.v).toBeGreaterThan(FAST); // 220 comes in under 8 s
+    run(s, { gas: true }, 4);
+    expect(s.v).toBeGreaterThan(285 / KMH); // the last stretch to 299 takes a long straight
     run(s, { brake: true }, 4);
     expect(s.v).toBeCloseTo(-REV, 1); // brake held through the stop: reversing
     const dist = s.dist;
@@ -175,5 +177,19 @@ describe("steering", () => {
     run(s, { right: true }, 0.5);
     expect(s.steer).toBeCloseTo(1, 1);
     expect(s.x).toBeGreaterThan(x0 + 1);
+  });
+});
+
+describe("speed", () => {
+  it("turning flat out scrubs speed, and the wheel answers slower", () => {
+    const s = newSim(1);
+    extend(s);
+    s.dx.fill(0); s.v = TOP; s.x = 0;
+    run(s, { gas: true, right: true }, 0.05);
+    expect(s.steer).toBeLessThan(0.2); // slower than the 0.33 it reaches at 20 m/s
+    run(s, { gas: true, left: true, right: true }, 0); // no net steer, just to keep typing honest
+    s.x = 0;
+    run(s, { gas: true, right: true }, 1);
+    expect(s.v).toBeLessThan(TOP - 5); // lost more than 18 km/h in a second of full lock
   });
 });
