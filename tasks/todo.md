@@ -107,7 +107,8 @@ Reuse `masm/challenge/*` untouched; write one `beats_target` (`masm/games/pub_sc
 - [x] Data v4: 48 characters, 12 pools (spending places have a pickup stop 110 m into the street, stop 0), radio station concepts (no audio) → verify: course tests pass, vectors regenerated
 - [x] HUD: time, score, speed, radar, seats, gantry signs + phone direction row, callouts, results → verify: matches the v4 boards at 1280x960 (screenshots); phone layouts still to check
 - [x] Splash + menus on `Boomers`, radio select over the 14 level tracks, results on `Wireline Cosmos`, synth SFX (engine, skid, crash, ka-ching) → verify: no autoplay (music starts on the splash click), reduced motion keeps the start prompt steady; songs in `web/public/music` (66 MB, slug names), M toggles sound
-- [ ] Course map in the HUD (open item 14) → verify: the pyramid shows district colours and your position, updates at each fork
+- [x] Course map in the HUD (open item 14) → verify: the pyramid shows district colours and your position, updates at each fork (screenshot)
+- [x] Portrait phone layout: scene on top, seat strip + radar below, pad under; radio and results fixed to the viewport → verify: 420x900 window screenshots. Landscape 740x340 not yet checked
 - [ ] Gaylord playtest on desktop + phone
 
 ### M4: onchain scoring
@@ -180,3 +181,12 @@ cases and 4 bot runs (seeds 7, 8, careful and fast); regenerate with `GEN_VECTOR
 Sizing kept: STREET 1200, RATE 0.5. Bot: careful ends on leg 5 on both seeds (7.4 km / 6.1 km, scores 4,099 and 11,733,
 distance ~3,000-3,700 points, so a third of a good run), fast reaches leg 6 with 8-11 wrecks (~4,300). Gaylord's playtest
 on the pyramid is the open item; the course map in the HUD moves to M3.
+
+### M3 (2026-10-15, evening)
+World art, HUD, splash, radio + music, SFX, course map and the portrait layout are in (commits eb6dbaa..). Art pipeline:
+`art.ts` holds one Sheet per designer atlas (cell size, columns, fixed anchor, pixels per metre from the metadata's visible
+bounds and world sizes); `render.ts` draws whole cells at the anchor, props and buildings with their own ppm. The 48 people
+come from three sheets (a: 256x384 cells, b/c: 512x512). Audio: `audio.ts`, one audio element for music, WebAudio for
+engine/skid/events; songs are `web/public/music/<slug>.mp3` (66 MB, pushed; `git config http.postBuffer` raised for it).
+Hot reload gotcha: the frame loop closes over `draw`, so render.ts changes need a page reload to show.
+Left for M3: landscape phone check, Gaylord's playtest on desktop + phone, the designer's .partial cleanup is done upstream.

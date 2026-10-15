@@ -209,4 +209,31 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   if (s.spin > 0) cell(ctx, SHEETS.heroSpin, Math.floor((2.5 - s.spin) * 16) % 8, cx, py + bob, k);
   else cell(ctx, s.brake ? SHEETS.heroBrake : SHEETS.hero, s.steer < -0.3 ? 0 : s.steer > 0.3 ? 2 : 1, cx, py + bob, k);
   if (!img(SHEETS.hero.file)) { ctx.fillStyle = "#d0d0dc"; ctx.fillRect(cx - (CAR_W / 2) * k, py - 1.1 * k, CAR_W * k, 1.1 * k); }
+  map(ctx, s, w, h);
+}
+
+// course map, bottom right: the pyramid in district colours, leg 1 at the bottom, the streets driven joined, you ringed
+function map(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number) {
+  const rows = s.course.length;
+  if (!rows) return;
+  const mw = w * 0.17, mh = h * 0.2, mx = w - mw - w * 0.02, my = h - mh - h * 0.025, pad = mh * 0.12;
+  const at = (leg: number, k: number) => ({ x: mx + mw / 2 + (k - leg / 2) * (mw * 0.9 / rows), y: my + mh - pad - leg * ((mh - 2 * pad) / (rows - 1)) });
+  ctx.fillStyle = "rgba(11,16,45,.88)"; ctx.fillRect(mx, my, mw, mh);
+  ctx.strokeStyle = "#63e7ff"; ctx.lineWidth = Math.max(1, w * 0.0015); ctx.strokeRect(mx, my, mw, mh);
+  ctx.lineWidth = Math.max(1, w * 0.001); ctx.strokeStyle = "rgba(172,165,209,.4)";
+  for (let leg = 0; leg + 1 < rows; leg++) for (let k = 0; k <= leg; k++) for (const kk of [k, k + 1]) {
+    const a = at(leg, k), b = at(leg + 1, kk);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+  ctx.strokeStyle = "#fff3f4"; ctx.lineWidth = Math.max(1.5, w * 0.0025);
+  ctx.beginPath();
+  s.streets.forEach((st, i) => { const p = at(st.leg, st.k); if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); });
+  ctx.stroke();
+  const r = mw * 0.022;
+  s.course.forEach((row, leg) => row.forEach((n, k) => {
+    const p = at(leg, k);
+    ctx.fillStyle = COLOR[n.district]; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, 7); ctx.fill();
+  }));
+  const cur = s.streets[s.streets.length - 1], p = at(cur.leg, cur.k);
+  ctx.strokeStyle = "#fff3f4"; ctx.beginPath(); ctx.arc(p.x, p.y, r * (1.8 + 0.3 * Math.sin(s.t * 6)), 0, 7); ctx.stroke();
 }
