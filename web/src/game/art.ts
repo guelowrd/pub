@@ -66,7 +66,6 @@ export const TITLE = "title-scene.webp";
 
 const images = new Map<string, HTMLImageElement>();
 export const img = (file: string) => images.get(file);
-export let ready = false;
 
 export function loadArt(): Promise<void> {
   const files = new Set<string>([...Object.values(SHEETS).map((s) => s.file), ...Object.values(ICON), ...Object.values(PANO), ...Object.values(FILLERS).flat().map((s) => s.file), ...Object.values(FORK_STRUCT).flatMap((st) => [`fork-${st}.webp`, `fork-${st}-left.png`, `fork-${st}-right.png`]), ...Object.values(TUNNEL), LIGHT_RED.file, LIGHT_GREEN.file, TITLE]);
@@ -75,5 +74,5 @@ export function loadArt(): Promise<void> {
     im.src = `${import.meta.env.BASE_URL}art/${file}`;
     // decode now: a 2048 px sheet decoded on its first draw costs a frame of half a second
     im.decode().then(() => { images.set(file, im); ok(); }, () => bad(new Error(`art: ${file}`)));
-  }))).then(() => { ready = true; });
+  }))).then(() => undefined);
 }
