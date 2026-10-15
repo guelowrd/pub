@@ -3,7 +3,7 @@
 import { CHARACTERS } from "./game/course";
 import { PEOPLE, img } from "./game/art";
 
-const IDS = Object.keys(CHARACTERS).filter((id) => CHARACTERS[id].age >= 40); // boomers only on the splash
+const IDS = Object.keys(CHARACTERS).filter((id) => CHARACTERS[id].age >= 50); // boomers only on the splash
 const DOOR = [965, 850] as const, FAR = [1150, 590] as const; // where the rider ends up (ground point) and where they appear
 const PERIOD = 7; // seconds per rider
 const RULES = [
