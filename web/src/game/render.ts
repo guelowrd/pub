@@ -231,7 +231,11 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   const k = focal / CAM_BACK, py = hy + CAM_H * k;
   const bob = Math.sin(s.dist * 0.7) * 0.025 * k * (s.v / TOP);
   if (s.spin > 0) cell(ctx, SHEETS.heroSpin, Math.floor((2.5 - s.spin) * 16) % 8, cx, py + bob, k);
-  else cell(ctx, s.brake ? SHEETS.heroBrake : SHEETS.hero, s.steer < -0.3 ? 0 : s.steer > 0.3 ? 2 : 1, cx, py + bob, k);
+  else {
+    // Gaylord reads the poses the other way round when driving forward, so the flank shown is the side you steer to; reversing keeps the sheet's order
+    const pose = s.v < 0 ? s.steer : -s.steer;
+    cell(ctx, s.brake ? SHEETS.heroBrake : SHEETS.hero, pose < -0.3 ? 0 : pose > 0.3 ? 2 : 1, cx, py + bob, k);
+  }
   if (!img(SHEETS.hero.file)) { ctx.fillStyle = "#d0d0dc"; ctx.fillRect(cx - (CAR_W / 2) * k, py - 1.1 * k, CAR_W * k, 1.1 * k); }
   map(ctx, s, w, h);
 }
