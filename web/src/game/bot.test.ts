@@ -48,7 +48,7 @@ describe("bot runs", () => {
       const vectors = {
         version: 1, run_seconds: RUN, rate: RATE, group: GROUP, legs: LEGS,
         age_points: [[18, 0], [20, 0], [50, 600], [60, 800], [65, 900], [69, 980], [70, 1000], [80, 1000], [81, 950], [90, 500], [99, 50], [100, 0]],
-        runs: runs.map(({ s }) => ({ seed: s.seed, dist: Math.round(s.dist), banked: s.banked, score: s.score, log: s.log })),
+        runs: runs.map(({ s }) => ({ seed: s.seed, dist: Math.floor(s.dist), banked: s.banked, score: s.score, log: s.log })),
       };
       const text = JSON.stringify(vectors, null, 1)
         .replace(/\[\s+((?:-?[\d.]+,\s+)*-?[\d.]+)\s+\]/g, (_, xs: string) => `[${xs.replace(/\s+/g, " ")}]`)

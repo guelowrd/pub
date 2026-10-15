@@ -103,7 +103,8 @@ Reuse `masm/challenge/*` untouched; write one `beats_target` (`masm/games/pub_sc
 - [x] Full 5-leg run with gantry signs, seats, drop-offs, ramp → verify: careful vs fast play on one seed both score meaningfully; no district always wins (course map in the HUD is M3)
 
 ### M3: art, HUD, audio
-- [ ] Integrate the three packages + the next delivery (world-metadata.json crops, arcade atlases with fixed anchors, PUB Pixel) → verify: feet and props stay beyond the curb on straights, both branches and both phone layouts
+- [x] World art: v3/v4 sheets drawn at fixed anchors (hero poses, brake, spin; 6 traffic kinds with yaw + brake; hazards; lamps, district trees, venues, shelters, 48 people; destination buildings with the door beside the bay + 3 props each; drop markings + icon poles; skid smoke, wreck burst; skyline parallax) → verify: screenshots at a stop and a drop bay, no console errors
+- [x] Data v4: 48 characters, 12 pools (spending places have a pickup stop 110 m into the street, stop 0), radio station concepts (no audio) → verify: course tests pass, vectors regenerated
 - [ ] HUD: time, score, speed, radar, seats, gantry signs + phone direction row, callouts, results → verify: matches boards at 1280x960, 390x844, 740x340
 - [ ] Splash + menus on `Boomers`, radio select over the 14 level tracks, results on `Wireline Cosmos`, synth SFX (engine, skid, crash, ka-ching) → verify: no autoplay; reduced motion honoured
 - [ ] Gaylord playtest on desktop + phone

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { KMH, NAME, PLACE, RATE, RUN, agePoints, candidate, newSim, step, type Input, type Sim } from "./game/sim";
 import { extend } from "./game/course";
 import { COLOR, draw } from "./game/render";
+import { loadArt } from "./game/art";
 
 type Mode = "ready" | "play" | "paused" | "over";
 const STEP = 1 / 120;
@@ -15,7 +16,10 @@ export default function App() {
   const [mode, setMode] = useState<Mode>("ready");
   const modeRef = useRef(mode);
   modeRef.current = mode;
+  const loadedRef = useRef(false);
   const [seed, setSeed] = useState(1);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => { loadArt().then(() => { loadedRef.current = true; setLoaded(true); }, (e) => console.error(e)); }, []);
 
   const start = (sd: number) => { sim.current = newSim(sd); setSeed(sd); setMode("play"); };
   // dev hook: drive the sim from the console (window.pub.run({gas:true}, 5))
@@ -26,7 +30,7 @@ export default function App() {
       const k = KEYS[e.key];
       if (k) { input.current[k] = true; e.preventDefault(); }
       if (e.key === "p" || e.key === "Escape") setMode((m) => (m === "play" ? "paused" : m === "paused" ? "play" : m));
-      if (e.key === "Enter") setMode((m) => (m === "paused" ? "play" : m === "ready" ? "play" : m));
+      if (e.key === "Enter") setMode((m) => (m === "paused" ? "play" : m === "ready" && loadedRef.current ? "play" : m));
     };
     const up = (e: KeyboardEvent) => { const k = KEYS[e.key]; if (k) input.current[k] = false; };
     const blur = () => { input.current = { gas: false, brake: false, left: false, right: false }; setMode((m) => (m === "play" ? "paused" : m)); };
@@ -94,7 +98,7 @@ export default function App() {
         <div className="callout" id="callout" />
       </div>
       {mode === "ready" && (
-        <div className="overlay" onClick={() => setMode("play")}><h1>PICK UP BOOMERS</h1><p>CLICK TO START</p><p><small>arrows / WASD, P pauses</small></p></div>
+        <div className="overlay" onClick={() => loaded && setMode("play")}><h1>PICK UP BOOMERS</h1><p>{loaded ? "CLICK TO START" : "LOADING"}</p><p><small>arrows / WASD, P pauses</small></p></div>
       )}
       {mode === "paused" && <div className="overlay" onClick={() => setMode("play")}><h1>PAUSED</h1><p>CLOCK STOPPED</p></div>}
       {mode === "over" && (

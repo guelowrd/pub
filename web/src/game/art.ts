@@ -1,0 +1,64 @@
+// The designer's sheets (v3 arcade batch): equal cells, a fixed anchor per cell, and a pixels-per-metre scale per
+// sheet taken from the visible bounds and world sizes in atlas-metadata.json. Draw whole cells at the anchor.
+import type { District } from "./sim";
+
+export interface Sheet { file: string; cw: number; ch: number; cols: number; ax: number; ay: number; ppm: number }
+const SH = (file: string, cw: number, ch: number, cols: number, ax: number, ay: number, ppm: number): Sheet => ({ file, cw, ch, cols, ax, ay, ppm });
+
+export const SHEETS = {
+  hero: SH("car-poses.webp", 724, 724, 3, 362, 565, 329), // left, straight, right
+  heroBrake: SH("hero-brake.webp", 724, 724, 3, 362, 565, 329),
+  heroSpin: SH("hero-spin.webp", 724, 724, 4, 362, 565, 255), // 8 directions, rear first, clockwise
+  // traffic: 3 yaws (left, straight, right) x 2 rows (normal, brake); index = yaw + (brake ? 3 : 0)
+  suv: SH("traffic-suv.webp", 724, 724, 3, 362, 565, 257),
+  sedan: SH("traffic-sedan.webp", 724, 724, 3, 362, 565, 290),
+  rv: SH("traffic-rv.webp", 724, 724, 3, 362, 565, 166),
+  convertible: SH("traffic-convertible.webp", 724, 724, 3, 362, 565, 305),
+  van: SH("traffic-van.webp", 724, 724, 3, 362, 565, 238),
+  bus: SH("traffic-bus.webp", 724, 724, 3, 362, 565, 192),
+  cone: SH("cone.webp", 512, 512, 1, 256, 460, 573),
+  oil: SH("oil.webp", 512, 512, 1, 256, 460, 195), // pre-squashed ground sprite
+  pothole: SH("pothole.webp", 512, 512, 1, 256, 460, 299),
+  barrier: SH("barrier.webp", 512, 512, 1, 256, 460, 187),
+  smoke: SH("skid-smoke.webp", 512, 512, 3, 256, 460, 150), // 6 frames
+  burst: SH("wreck-burst.webp", 724, 724, 1, 362, 660, 220),
+  venues: SH("scenery-venues.webp", 512, 512, 4, 256, 460, 28), // school, nursing-home, aquagym, bar, bingo, arcade, market, garage
+  props: SH("scenery-props.webp", 512, 512, 4, 256, 460, 50), // palm, broadleaf, cypress, jacaranda, agave, hedge, lamp, shelter; ppm per prop below
+  people: SH("passengers.webp", 256, 384, 4, 128, 384, 211), // the first 16 characters by atlasIndex, waving
+  peopleB: SH("passengers-b.webp", 512, 512, 4, 256, 466, 209), // characters with atlasSet b
+  peopleC: SH("passengers-c.webp", 512, 512, 4, 256, 466, 209), // atlasSet c
+  buildings: SH("buildings-atlas.webp", 1024, 768, 2, 512, 708, 60), // casino, cruise, golf, restaurant; ppm per building below
+  dprops: SH("props-atlas.webp", 512, 512, 4, 256, 468, 200), // destination props; ppm per prop below
+  dropDowntown: SH("dropoff-restaurant.png", 300, 150, 1, 150, 150, 60),
+  dropWaterfront: SH("dropoff-cruise.png", 300, 150, 1, 150, 150, 60),
+  dropCasino: SH("dropoff-casino.png", 300, 150, 1, 150, 150, 60),
+  dropGolf: SH("dropoff-golf.png", 300, 150, 1, 150, 150, 60),
+};
+export const TRAFFIC: Sheet[] = [SHEETS.suv, SHEETS.sedan, SHEETS.rv, SHEETS.convertible, SHEETS.van, SHEETS.bus]; // by Traffic.kind
+export const VENUE_CELL: Record<string, number> = { school: 0, "nursing-home": 1, aquagym: 2, bar: 3, bingo: 4, arcade: 5, market: 6, garage: 7 };
+// prop cell and its own pixels per metre (a palm is 8 m tall, a hedge 4 m wide)
+export const PROP = { palm: [0, 49], broadleaf: [1, 45], cypress: [2, 56], jacaranda: [3, 40], agave: [4, 160], hedge: [5, 107], lamp: [6, 54], shelter: [7, 89] } as const;
+export const TREES: Record<District, (keyof typeof PROP)[]> = { downtown: ["broadleaf", "jacaranda"], waterfront: ["palm", "agave"], casino: ["jacaranda", "palm"], golf: ["cypress", "hedge"] };
+export const PEOPLE: Record<string, Sheet> = { a: SHEETS.people, b: SHEETS.peopleB, c: SHEETS.peopleC };
+// destination building: cell, pixels per metre (visible height / world height), entrance offset from the anchor in metres
+export const BUILDING: Record<District, [number, number, number]> = { casino: [0, 62, -1.4], waterfront: [1, 39, -4.6], golf: [2, 71, -2.1], downtown: [3, 70, -2.3] };
+export const DPROP: Record<string, [number, number]> = { "casino-fountain": [0, 168], "gold-palm-planter": [1, 183], "slot-machine": [2, 209], "mooring-bollard": [3, 428], yacht: [4, 102], "luggage-trolley": [5, 219], "golf-cart": [6, 211], "fairway-fence": [7, 286], sprinkler: [8, 360], "valet-podium": [9, 365], "velvet-rope": [10, 309], "spiral-topiary": [11, 175] };
+export const DPROPS: Record<District, string[]> = { casino: ["casino-fountain", "gold-palm-planter", "slot-machine"], waterfront: ["mooring-bollard", "yacht", "luggage-trolley"], golf: ["golf-cart", "fairway-fence", "sprinkler"], downtown: ["valet-podium", "velvet-rope", "spiral-topiary"] };
+export const DROP: Record<District, Sheet> = { downtown: SHEETS.dropDowntown, waterfront: SHEETS.dropWaterfront, casino: SHEETS.dropCasino, golf: SHEETS.dropGolf };
+export const ICON: Record<District, string> = { downtown: "destination-restaurant.png", waterfront: "destination-cruise.png", casino: "destination-casino.png", golf: "destination-golf.png" };
+export const SKYLINE = "skyline.webp";
+export const TITLE = "title-scene.webp";
+
+const images = new Map<string, HTMLImageElement>();
+export const img = (file: string) => images.get(file);
+export let ready = false;
+
+export function loadArt(): Promise<void> {
+  const files = new Set<string>([...Object.values(SHEETS).map((s) => s.file), ...Object.values(ICON), SKYLINE, TITLE]);
+  return Promise.all([...files].map((file) => new Promise<void>((ok, bad) => {
+    const im = new Image();
+    im.onload = () => { images.set(file, im); ok(); };
+    im.onerror = () => bad(new Error(`art: ${file}`));
+    im.src = `${import.meta.env.BASE_URL}art/${file}`;
+  }))).then(() => { ready = true; });
+}

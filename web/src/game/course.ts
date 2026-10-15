@@ -11,9 +11,10 @@ export const FORK_OUT = 200; // the branches bend away over this after it
 export const LEGS = 7; // generated depth; a good run ends around leg 5 and the clock ends it
 // pickup venues per district: pairs chosen so the expected rider points per district stay close (see course.test.ts)
 export const VENUES: Record<District, [string, string]> = { downtown: ["market", "garage"], waterfront: ["aquagym", "arcade"], casino: ["bar", "bingo"], golf: ["nursing-home", "school"] };
+export const VENUE_OF: Record<District, string> = { downtown: "restaurant", waterfront: "cruise", casino: "casino", golf: "golf" }; // the spending place, with its own pickup pool
 
-export const POOLS = Object.fromEntries(venuesFile.venues.map((v) => [v.id, v.candidates]));
-export const CHARACTERS = Object.fromEntries(characters.map((c) => [c.id, c]));
+export const POOLS: Record<string, { character_id: string; relative_weight: number }[]> = Object.fromEntries(venuesFile.venues.map((v) => [v.id, v.candidates]));
+export const CHARACTERS: Record<string, { id: string; name: string; age: number; atlasIndex: number; atlasSet?: string }> = Object.fromEntries(characters.map((c) => [c.id, c]));
 const others = (d: District) => DISTRICTS.filter((o) => o !== d);
 const pick = <T,>(rng: () => number, xs: T[]) => xs[Math.floor(rng() * xs.length)];
 
@@ -28,7 +29,7 @@ function rider(rng: () => number, venue: string, district: District): Rider {
   return { id: ch.id, name: ch.name, age: ch.age, dest: pick(rng, others(district)), lo: Math.max(18, lo), hi: Math.min(99, hi), cls };
 }
 
-function node(rng: () => number, district: District): Node {
+function node(rng: () => number, district: District, leg: number): Node {
   const curves: Node["curves"] = [], hills: Node["hills"] = [];
   let z = 150;
   while (z < STREET - 300) {
@@ -38,6 +39,7 @@ function node(rng: () => number, district: District): Node {
     z += len + 60;
   }
   const n = 3 + Math.floor(rng() * 3), stops: Node["stops"] = [];
+  if (leg > 0) stops.push({ z: 110, venue: VENUE_OF[district], rider: rider(rng, VENUE_OF[district], district) }); // someone leaving the spending place
   let sz = 220;
   for (let i = 0; i < n; i++) {
     sz += 120 + rng() * ((STREET - 250 - sz) / (n - i) - 120);
@@ -69,7 +71,7 @@ export function pyramid(seed: number): Node[][] {
     const row: Node[] = [];
     for (let k = 0; k <= leg; k++) {
       const used = [course[leg - 1]?.[k - 1], course[leg - 1]?.[k], row[k - 1]].map((o) => o?.district);
-      row.push(node(rng, pick(rng, DISTRICTS.filter((d) => !used.includes(d)))));
+      row.push(node(rng, pick(rng, DISTRICTS.filter((d) => !used.includes(d))), leg));
     }
     course.push(row);
   }

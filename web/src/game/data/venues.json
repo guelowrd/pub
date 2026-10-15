@@ -1,8 +1,8 @@
 {
-  "version": 1,
+  "version": 2,
   "status": "authored initial tuning data; validate balance through playtests",
   "age_policy": "fixed per character; hidden until accepted pickup",
-  "sampling": "Seed candidates and honest ranges before play; fork cards may preview faces and radar class; exact ages remain hidden until automatic boarding.",
+  "sampling": "Seed district branches, candidate identities, destination wishes and honest ranges before play. Forks show districts and aboard counts only. Choose from positive relative weights without replacement within a visible stop; do not spawn someone already aboard. Reveal a face and honest range on stop approach, exact age after boarding.",
   "venues": [
     {
       "id": "school",
@@ -30,9 +30,31 @@
         {
           "character_id": "mei",
           "relative_weight": 1
+        },
+        {
+          "character_id": "ivy",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "jo",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "faye",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "pearl",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "walt",
+          "relative_weight": 2
         }
       ],
-      "weights_are_design_starting_points": true
+      "weights_are_design_starting_points": true,
+      "role": "pickup_place",
+      "who_waits_outside": "Parents, adult students, staff, grandparents"
     },
     {
       "id": "nursing-home",
@@ -64,9 +86,35 @@
         {
           "character_id": "nina",
           "relative_weight": 1
+        },
+        {
+          "character_id": "grace",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "rosa",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "nell",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "ed",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "tom",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "tess",
+          "relative_weight": 2
         }
       ],
-      "weights_are_design_starting_points": true
+      "weights_are_design_starting_points": true,
+      "role": "pickup_place",
+      "who_waits_outside": "Residents, visitors, staff"
     },
     {
       "id": "aquagym",
@@ -102,9 +150,27 @@
         {
           "character_id": "ida",
           "relative_weight": 1
+        },
+        {
+          "character_id": "cora",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "sue",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "vince",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "hanna",
+          "relative_weight": 2
         }
       ],
-      "weights_are_design_starting_points": true
+      "weights_are_design_starting_points": true,
+      "role": "pickup_place",
+      "who_waits_outside": "Older regulars, mixed classes, instructors"
     },
     {
       "id": "bar",
@@ -136,9 +202,27 @@
         {
           "character_id": "al",
           "relative_weight": 1
+        },
+        {
+          "character_id": "bo",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "des",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "glen",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "suki",
+          "relative_weight": 2
         }
       ],
-      "weights_are_design_starting_points": true
+      "weights_are_design_starting_points": true,
+      "role": "pickup_place",
+      "who_waits_outside": "Friends out, regulars, staff, music fans"
     },
     {
       "id": "bingo",
@@ -170,9 +254,23 @@
         {
           "character_id": "nina",
           "relative_weight": 1
+        },
+        {
+          "character_id": "hank",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "marc",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "joy",
+          "relative_weight": 2
         }
       ],
-      "weights_are_design_starting_points": true
+      "weights_are_design_starting_points": true,
+      "role": "pickup_place",
+      "who_waits_outside": "Regulars, visitors, staff"
     },
     {
       "id": "arcade",
@@ -200,9 +298,23 @@
         {
           "character_id": "ray",
           "relative_weight": 2
+        },
+        {
+          "character_id": "ruy",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "max",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "basil",
+          "relative_weight": 2
         }
       ],
-      "weights_are_design_starting_points": true
+      "weights_are_design_starting_points": true,
+      "role": "pickup_place",
+      "who_waits_outside": "Young players, parents, retro fans"
     },
     {
       "id": "market",
@@ -238,9 +350,23 @@
         {
           "character_id": "ida",
           "relative_weight": 1
+        },
+        {
+          "character_id": "luz",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "ana",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "betty",
+          "relative_weight": 2
         }
       ],
-      "weights_are_design_starting_points": true
+      "weights_are_design_starting_points": true,
+      "role": "pickup_place",
+      "who_waits_outside": "Shoppers, traders, delivery workers"
     },
     {
       "id": "garage",
@@ -272,16 +398,258 @@
         {
           "character_id": "nina",
           "relative_weight": 1
+        },
+        {
+          "character_id": "paco",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "omar",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "vito",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "gus",
+          "relative_weight": 2
         }
       ],
-      "weights_are_design_starting_points": true
+      "weights_are_design_starting_points": true,
+      "role": "pickup_place",
+      "who_waits_outside": "Mechanics, owners, collectors"
+    },
+    {
+      "id": "casino",
+      "sign": "CASINO",
+      "art": "destination-casino",
+      "role": "delivery_destination_with_pickup_stop",
+      "district_id": "casino_strip",
+      "destination_id": "casino",
+      "who_waits_outside": "Retired regulars, high rollers, dealers, night staff.",
+      "population_clue": "Retired regulars, high rollers, dealers, night staff.",
+      "surprise": "A retired high roller can be ideal. A young dealer dressed sharply can look older. A ninety-eight-year-old regular is too far past the target.",
+      "candidates": [
+        {
+          "character_id": "hanna",
+          "relative_weight": 3
+        },
+        {
+          "character_id": "pearl",
+          "relative_weight": 3
+        },
+        {
+          "character_id": "marc",
+          "relative_weight": 3
+        },
+        {
+          "character_id": "glen",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "betty",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "vito",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "ed",
+          "relative_weight": 1
+        },
+        {
+          "character_id": "ivy",
+          "relative_weight": 1
+        },
+        {
+          "character_id": "paco",
+          "relative_weight": 1
+        }
+      ],
+      "weights_are_design_starting_points": true,
+      "dropoff_entrance": "assets/destinations/metadata.json#casino",
+      "props": [
+        "casino-fountain",
+        "gold-palm-planter",
+        "slot-machine"
+      ],
+      "pickup_and_dropoff": "Use separate marked stopping zones along the same right sidewalk. Never accept pickup and dropoff in the same frame. Dropoff eligibility takes precedence for matching riders aboard."
+    },
+    {
+      "id": "cruise",
+      "sign": "CRUISE",
+      "art": "destination-cruise",
+      "role": "delivery_destination_with_pickup_stop",
+      "district_id": "waterfront",
+      "destination_id": "cruise",
+      "who_waits_outside": "Cruise regulars, families, crew, luggage porters.",
+      "population_clue": "Cruise regulars, families, crew, luggage porters.",
+      "surprise": "A fit seventy-five-year-old cruiser beats a younger porter. White hair alone can mean twenty-eight or ninety-four.",
+      "candidates": [
+        {
+          "character_id": "ana",
+          "relative_weight": 4
+        },
+        {
+          "character_id": "walt",
+          "relative_weight": 3
+        },
+        {
+          "character_id": "vince",
+          "relative_weight": 3
+        },
+        {
+          "character_id": "joy",
+          "relative_weight": 3
+        },
+        {
+          "character_id": "bo",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "suki",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "tom",
+          "relative_weight": 1
+        },
+        {
+          "character_id": "ruy",
+          "relative_weight": 1
+        },
+        {
+          "character_id": "max",
+          "relative_weight": 1
+        }
+      ],
+      "weights_are_design_starting_points": true,
+      "dropoff_entrance": "assets/destinations/metadata.json#cruise",
+      "props": [
+        "mooring-bollard",
+        "yacht",
+        "luggage-trolley"
+      ],
+      "pickup_and_dropoff": "Use separate marked stopping zones along the same right sidewalk. Never accept pickup and dropoff in the same frame. Dropoff eligibility takes precedence for matching riders aboard."
+    },
+    {
+      "id": "golf",
+      "sign": "GOLF",
+      "art": "destination-golf",
+      "role": "delivery_destination_with_pickup_stop",
+      "district_id": "golf_hills",
+      "destination_id": "golf",
+      "who_waits_outside": "Club members, partners, coaches, grounds staff.",
+      "population_clue": "Club members, partners, coaches, grounds staff.",
+      "surprise": "A golf visor does not prove age. The coach may be sixty-two and the fit member seventy-five.",
+      "candidates": [
+        {
+          "character_id": "basil",
+          "relative_weight": 4
+        },
+        {
+          "character_id": "marc",
+          "relative_weight": 3
+        },
+        {
+          "character_id": "vince",
+          "relative_weight": 3
+        },
+        {
+          "character_id": "hank",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "sue",
+          "relative_weight": 3
+        },
+        {
+          "character_id": "omar",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "faye",
+          "relative_weight": 1
+        },
+        {
+          "character_id": "rosa",
+          "relative_weight": 1
+        }
+      ],
+      "weights_are_design_starting_points": true,
+      "dropoff_entrance": "assets/destinations/metadata.json#golf",
+      "props": [
+        "golf-cart",
+        "fairway-fence",
+        "sprinkler"
+      ],
+      "pickup_and_dropoff": "Use separate marked stopping zones along the same right sidewalk. Never accept pickup and dropoff in the same frame. Dropoff eligibility takes precedence for matching riders aboard."
+    },
+    {
+      "id": "restaurant",
+      "sign": "DINING",
+      "art": "destination-restaurant",
+      "role": "delivery_destination_with_pickup_stop",
+      "district_id": "downtown",
+      "destination_id": "restaurant",
+      "who_waits_outside": "Diners, shoppers, valet staff, cooks after work.",
+      "population_clue": "Diners, shoppers, valet staff, cooks after work.",
+      "surprise": "Cosmetic work hides some clues. Fine clothes can belong to a young worker or a much older diner.",
+      "candidates": [
+        {
+          "character_id": "pearl",
+          "relative_weight": 3
+        },
+        {
+          "character_id": "hanna",
+          "relative_weight": 3
+        },
+        {
+          "character_id": "suki",
+          "relative_weight": 3
+        },
+        {
+          "character_id": "betty",
+          "relative_weight": 3
+        },
+        {
+          "character_id": "glen",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "liz",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "luz",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "jo",
+          "relative_weight": 1
+        },
+        {
+          "character_id": "nell",
+          "relative_weight": 1
+        }
+      ],
+      "weights_are_design_starting_points": true,
+      "dropoff_entrance": "assets/destinations/metadata.json#restaurant",
+      "props": [
+        "valet-podium",
+        "velvet-rope",
+        "spiral-topiary"
+      ],
+      "pickup_and_dropoff": "Use separate marked stopping zones along the same right sidewalk. Never accept pickup and dropoff in the same frame. Dropoff eligibility takes precedence for matching riders aboard."
     }
   ],
   "target_band": [
     70,
     80
   ],
-  "role": "pickup-side places within the four delivery districts; not additional delivery destinations",
+  "role": "Four districts, each with its one destination drop bay; eight pickup places may line streets in any district. Four spending places also have their own seeded pickup pools.",
   "pickup_place_pair_examples": [
     [
       "school",
@@ -315,5 +683,17 @@
     "waterfront": "cruise",
     "casino_strip": "casino",
     "golf_hills": "golf"
+  },
+  "dropoff_destinations": [
+    "casino",
+    "cruise",
+    "golf",
+    "restaurant"
+  ],
+  "sampling_limits": {
+    "ages_hidden_until_boarding": true,
+    "no_waiting_face_previews_at_forks": true,
+    "weights_are_relative_not_percentages": true,
+    "no_duplicate_visible_or_aboard_character": true
   }
 }

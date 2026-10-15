@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DISTRICTS, agePoints, type District } from "./sim";
-import { CHARACTERS, LEGS, POOLS, VENUES, pyramid } from "./course";
+import { CHARACTERS, LEGS, POOLS, VENUES, VENUE_OF, pyramid } from "./course";
 
 describe("course", () => {
   it("same seed, same course; another seed, another course", () => {
@@ -18,9 +18,10 @@ describe("course", () => {
             const [l, r] = [c[leg + 1][k].district, c[leg + 1][k + 1].district];
             expect(l).not.toBe(n.district); expect(r).not.toBe(n.district); expect(l).not.toBe(r);
           }
-          expect(n.stops.length).toBeGreaterThanOrEqual(3);
+          expect(n.stops.length).toBeGreaterThanOrEqual(leg ? 4 : 3);
+          if (leg) expect(n.stops[0].venue).toBe(VENUE_OF[n.district]);
           for (const st of n.stops) {
-            expect(VENUES[n.district]).toContain(st.venue);
+            expect([...VENUES[n.district], VENUE_OF[n.district]]).toContain(st.venue);
             expect(st.rider.dest).not.toBe(n.district);
             expect(st.rider.age).toBe(CHARACTERS[st.rider.id].age);
             expect(st.rider.lo).toBeLessThanOrEqual(st.rider.age);
@@ -35,7 +36,7 @@ describe("course", () => {
       const pool = POOLS[venue], w = pool.reduce((a, c) => a + c.relative_weight, 0);
       return pool.reduce((a, c) => a + c.relative_weight * agePoints(CHARACTERS[c.character_id].age), 0) / w;
     };
-    const expected = Object.fromEntries(DISTRICTS.map((d) => [d, (mean(VENUES[d][0]) + mean(VENUES[d][1])) / 2])) as Record<District, number>;
+    const expected = Object.fromEntries(DISTRICTS.map((d) => [d, (mean(VENUES[d][0]) + mean(VENUES[d][1]) + mean(VENUE_OF[d])) / 3])) as Record<District, number>;
     const xs = Object.values(expected);
     expect(Math.max(...xs) / Math.min(...xs)).toBeLessThan(1.35);
   });
