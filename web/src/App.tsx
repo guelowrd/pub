@@ -61,7 +61,7 @@ export default function App() {
         el.querySelector<HTMLElement>(`#seat${i}`)!.style.borderColor = r ? COLOR[r.dest] : "#555";
       });
       const c = candidate(s), full = !s.seats.includes(null);
-      set("radar", c?.rider ? (full ? `CAR FULL` : `${c.rider.name}  ${c.rider.lo}-${c.rider.hi}  > ${PLACE[c.rider.dest]}`) : c?.drop ? `DROP OFF ${PLACE[c.drop]}` : "SEARCHING");
+      set("radar", c?.rider ? (full ? `CAR FULL` : `${c.rider.name}  ${c.rider.lo}-${c.rider.hi} ${c.rider.cls}  > ${PLACE[c.rider.dest]}`) : c?.drop ? `DROP OFF ${PLACE[c.drop]}` : "SEARCHING");
       const f = s.forks.find((o) => o.side === 0 && o.z - 400 < s.z && s.z < o.zDecide);
       set("fork", f ? `< ${NAME[f.left]}   ${NAME[f.right]} >` : "");
       set("callout", s.callout?.text ?? "");

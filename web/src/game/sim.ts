@@ -23,15 +23,21 @@ export const CURB: Record<District, number> = { downtown: 3, casino: 2, waterfro
 export const LIGHTS: Record<District, number> = { downtown: 3, casino: 2, waterfront: 0, golf: 0 }; // traffic lights per street
 export const RED = 2, GREEN = 10; // light cycle, seconds
 
-export interface Rider { name: string; age: number; dest: District; lo: number; hi: number }
-export interface Stop { z: number; len: number; rider: Rider | null; drop: District | null; taken: boolean }
+export type RadarClass = "TIGHT" | "FUZZY" | "WILD";
+export interface Rider { id: string; name: string; age: number; dest: District; lo: number; hi: number; cls: RadarClass }
+// i: index among the street's rider stops (the decision log names a pickup by it); venue: where they wait
+export interface Stop { z: number; len: number; rider: Rider | null; drop: District | null; taken: boolean; i: number; venue: string | null }
+// one street of the pyramid, positions relative to its start; placed on the road when you turn into it
+export interface Node { district: District; stops: { z: number; venue: string; rider: Rider }[]; hazards: Hazard[]; lights: [number, number][]; curves: [number, number, number][]; hills: [number, number, number][] }
+// the decision log: what the chain replays. t in 10 ms ticks
+export type Event = { k: "fork"; side: -1 | 1; t: number } | { k: "pick"; stop: number; t: number } | { k: "drop"; t: number } | { k: "wreck"; t: number };
 // tx: the lane it's moving to; cruise: its own speed when the lane is clear
 export interface Traffic { z: number; x: number; tx: number; v: number; cruise: number; kind: number; braking: boolean }
 export type HazardKind = "cone" | "oil" | "pothole" | "barrier";
 export interface Hazard { z: number; x: number; kind: HazardKind; hit: boolean }
 // k: curvature of the right branch per segment from the decision line; off: that branch's offset from the trunk
 export interface Fork { z: number; zDecide: number; zEnd: number; left: District; right: District; side: -1 | 0 | 1; k: number[]; off: number[] }
-export interface Street { z0: number; z1: number; district: District }
+export interface Street { z0: number; z1: number; district: District; leg: number; k: number }
 export interface Light { z: number; offset: number } // red when (t + offset) % (RED + GREEN) < RED
 export interface Input { gas: boolean; brake: boolean; left: boolean; right: boolean }
 
@@ -53,10 +59,11 @@ export interface Sim {
   banked: number; dist: number; score: number;
   dx: number[]; // per segment: curvature, OutRun style (how much the lateral shift grows each segment)
   y: number[]; // per segment: road height (hills are visual only, like OutRun)
+  course: Node[][]; // the pyramid, course[leg][k], all from the seed
   streets: Street[]; stops: Stop[]; hazards: Hazard[]; traffic: Traffic[]; forks: Fork[]; lights: Light[];
   callout: { text: string; t: number } | null;
   lost: Rider[]; // aboard at time-up
-  log: string[]; // what happened, for tests and the decision log later
+  log: Event[]; // the decision log
 }
 
 export function agePoints(age: number): number {
@@ -83,7 +90,7 @@ export function newSim(seed: number): Sim {
     seed, rng: rngFrom(seed), t: 0, over: false,
     z: 20, x: 0, v: 0, steer: 0, brake: false, skid: false, hot: 99, spin: 0, oil: 0, boarding: 0, bumpCd: 0,
     seats: [null, null, null], banked: 0, dist: 0, score: 0,
-    dx: [], y: [], streets: [], stops: [], hazards: [], traffic: [], forks: [], lights: [],
+    dx: [], y: [], course: [], streets: [], stops: [], hazards: [], traffic: [], forks: [], lights: [],
     callout: null, lost: [], log: [],
   };
 }
@@ -92,6 +99,7 @@ export const seg = (z: number) => Math.floor(z / SEG);
 export const curvature = (s: Sim, z: number) => s.dx[seg(z)] ?? 0;
 export const districtAt = (s: Sim, z: number) => s.streets.find((st) => z >= st.z0 && z < st.z1)?.district;
 export const isRed = (l: Light, t: number) => (t + l.offset) % (RED + GREEN) < RED;
+export const tick = (s: Sim) => Math.round(s.t * 100);
 
 export function activeFork(s: Sim, z: number): Fork | undefined {
   return s.forks.find((f) => z >= f.z && z < f.zEnd);
@@ -118,7 +126,7 @@ function wreck(s: Sim) {
   s.skid = false;
   say(s, s.seats.some(Boolean) ? "WRECK! RIDERS BAILED" : "WRECK!", 2);
   s.seats = [null, null, null];
-  s.log.push(`wreck ${s.t.toFixed(2)}`);
+  s.log.push({ k: "wreck", t: tick(s) });
 }
 
 export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
@@ -172,7 +180,7 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
       s.x -= f.side * W;
       const d = seg(f.zDecide);
       f.k.forEach((k, i) => { s.dx[d + i] = f.side * k; });
-      s.log.push(`fork ${f.side < 0 ? "L" : "R"} ${s.t.toFixed(2)}`);
+      s.log.push({ k: "fork", side: f.side, t: tick(s) });
       extend(s); // the chosen street is built now
     }
   }
@@ -230,14 +238,14 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
           s.seats = s.seats.map((r) => (r && r.dest === st.drop ? null : r));
           s.boarding = 1;
           say(s, out.length > 1 ? `GROUP DROP X${GROUP[out.length]} +${award}` : `+${award}`, 2);
-          s.log.push(`drop ${st.drop} ${out.length} ${s.t.toFixed(2)}`);
+          s.log.push({ k: "drop", t: tick(s) });
         }
       } else if (st.rider && s.seats.includes(null)) {
         st.taken = true;
         s.seats[s.seats.indexOf(null)] = st.rider;
         s.boarding = 1.2;
         say(s, s.hot < 2.5 ? `CRAZY STOP! AGE ${st.rider.age}` : `AGE ${st.rider.age}`, 2);
-        s.log.push(`pick ${st.rider.name} ${s.t.toFixed(2)}`);
+        s.log.push({ k: "pick", stop: st.i, t: tick(s) });
       }
     }
   }

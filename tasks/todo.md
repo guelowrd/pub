@@ -97,10 +97,10 @@ Reuse `masm/challenge/*` untouched; write one `beats_target` (`masm/games/pub_sc
 - [ ] Gaylord playtest, tune handling together
 
 ### M2: rules + course
-- [ ] `rules/vectors.json`: age points, group multiplier, distance, a few full logs with scores (test first) → verify: TS tests read the vectors
-- [ ] Seeded course generator (pyramid, districts, pools from venues.json, stops, ranges, rider destinations, traffic, hazards) → verify: same seed gives a byte-identical course
-- [ ] Headless run model (top speed, stop cost, street length; the same model the chain's feasibility check uses) → verify: a bot run sizes street length so a good run ends around leg 5, and sets the distance rate near a third of its score
-- [ ] Full 5-leg run with gantry signs, seats, drop-offs, ramp → verify: careful vs fast play on one seed both score meaningfully; no district always wins
+- [x] `rules/vectors.json`: age points, group multiplier, distance, a few full logs with scores (test first) → verify: TS tests read the vectors
+- [x] Seeded course generator (pyramid, districts, pools from venues.json, stops, ranges, rider destinations, traffic, hazards) → verify: same seed gives a byte-identical course
+- [x] Headless run model (top speed, stop cost, street length; the same model the chain's feasibility check uses) → verify: a bot run sizes street length so a good run ends around leg 5, and sets the distance rate near a third of its score
+- [x] Full 5-leg run with gantry signs, seats, drop-offs, ramp → verify: careful vs fast play on one seed both score meaningfully; no district always wins (course map in the HUD is M3)
 
 ### M3: art, HUD, audio
 - [ ] Integrate the three packages + the next delivery (world-metadata.json crops, arcade atlases with fixed anchors, PUB Pixel) → verify: feet and props stay beyond the curb on straights, both branches and both phone layouts
@@ -134,7 +134,9 @@ Reuse `masm/challenge/*` untouched; write one `beats_target` (`masm/games/pub_sc
    "Midnight Pursuit" renamed "Midnight Chase" (file too). Assumed his to ship, like GQ's tracks.
 10. SFX synthesized in code (WebAudio), no audio files.
 12. Nobody wants the district they're picked up in, so every delivery crosses a fork (and street 1 never drops).
-13. Pickup venues per district: 2 of the 8 each, set in M2 against the pools so no district always wins.
+13. Pickup venues per district (set in M2, expected rider points per pair from the pools in brackets): Downtown market + garage
+    (630), Waterfront aquagym + arcade (610), Casino Strip bar + bingo (737), Golf Hills nursing home + school (574).
+    Spread 1.28x, the test caps it at 1.35x.
 14. Course map in the HUD (review 2026-10-15): the pyramid with district colours and your position. Without it a fork is a
     coin flip for riders whose place isn't on the next sign; with it the game has a planning layer, like reading OutRun's map live.
 15. A record is a known course: the rival regenerates it from the seed and can practise it before shooting (SAME RUN does the
@@ -163,3 +165,16 @@ Traffic lights per street (LIGHTS: downtown 3, casino 2, waterfront 0, golf 0), 
 A red is a stopped blocker in every lane, so traffic queues at it and pulls away at 3 m/s² on green; you thread the
 queue or wait. Traffic now brakes by stopping distance (10 m/s² plus 8 m) instead of a flat 35 m. The player gets no
 penalty for running a red, only the queue itself. Bot: 6.6 km, 12 picks, 5 wrecks (full throttle into queues).
+
+### M2 (2026-10-15)
+Course: `pyramid(seed)` builds all 7 legs (28 streets) up front with one rng, so the course is a pure function of the seed
+(test: same seed, same JSON). Each street: district (differs from both parents and its leg neighbour), 3-5 stops at the
+district's two venues, riders from venues.json pools by weight with the characters' fixed ages, honest range + class,
+destination never the pickup district, hazards, lights, curves, hills. Streets are placed on the road as you turn into them;
+past leg 7 the road runs on empty (no fork). Decision log is now typed events in 10 ms ticks: fork (side), pick (stop index
+on the street), drop, wreck. `rules.ts` replays a log on a course to the score and rejects broken logs (stop twice, 4th
+rider, drop on street 1, time backwards, after 3:00, fork past the last leg). `rules/vectors.json` pins constants, age
+cases and 4 bot runs (seeds 7, 8, careful and fast); regenerate with `GEN_VECTORS=1 yarn vitest run bot` in `web/`.
+Sizing kept: STREET 1200, RATE 0.5. Bot: careful ends on leg 5 on both seeds (7.4 km / 6.1 km, scores 4,099 and 11,733,
+distance ~3,000-3,700 points, so a third of a good run), fast reaches leg 6 with 8-11 wrecks (~4,300). Gaylord's playtest
+on the pyramid is the open item; the course map in the HUD moves to M3.

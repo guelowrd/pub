@@ -1,0 +1,130 @@
+[
+  {
+    "id": "leo",
+    "name": "LEO",
+    "age": 18,
+    "coat": "#e9b839",
+    "clues": "Dark curls, round face, yellow hoodie",
+    "atlasIndex": 0
+  },
+  {
+    "id": "nina",
+    "name": "NINA",
+    "age": 24,
+    "coat": "#3b69ac",
+    "clues": "Ponytail, denim, bright eyes",
+    "atlasIndex": 1
+  },
+  {
+    "id": "gus",
+    "name": "GUS",
+    "age": 29,
+    "coat": "#327863",
+    "clues": "Red hair and a moustache",
+    "atlasIndex": 2
+  },
+  {
+    "id": "milo",
+    "name": "MILO",
+    "age": 34,
+    "coat": "#62613d",
+    "clues": "Tired eyes and a patched work jacket",
+    "atlasIndex": 3
+  },
+  {
+    "id": "june",
+    "name": "JUNE",
+    "age": 41,
+    "coat": "#c54383",
+    "clues": "Pink windbreaker, short curls",
+    "atlasIndex": 4
+  },
+  {
+    "id": "rex",
+    "name": "REX",
+    "age": 48,
+    "coat": "#292b49",
+    "clues": "Early silver hair, leather jacket",
+    "atlasIndex": 5
+  },
+  {
+    "id": "ken",
+    "name": "KEN",
+    "age": 55,
+    "coat": "#425c9e",
+    "clues": "Square jaw, dark gray hair",
+    "atlasIndex": 6
+  },
+  {
+    "id": "sol",
+    "name": "SOL",
+    "age": 59,
+    "coat": "#c37536",
+    "clues": "Silver streak, warm grin, orange scarf",
+    "atlasIndex": 7
+  },
+  {
+    "id": "bev",
+    "name": "BEV",
+    "age": 63,
+    "coat": "#388f91",
+    "clues": "Curly gray hair and a teal coat",
+    "atlasIndex": 8
+  },
+  {
+    "id": "dolly",
+    "name": "DOLLY",
+    "age": 65,
+    "coat": "#cf3e93",
+    "clues": "Blonde hair, glossy lips, pink faux fur",
+    "atlasIndex": 9
+  },
+  {
+    "id": "otis",
+    "name": "OTIS",
+    "age": 67,
+    "coat": "#303d68",
+    "clues": "Gray hair, red hat, navy coat",
+    "atlasIndex": 10
+  },
+  {
+    "id": "ray",
+    "name": "RAY",
+    "age": 70,
+    "coat": "#d9a52c",
+    "clues": "Lively eyes, gray moustache, yellow jacket",
+    "atlasIndex": 11
+  },
+  {
+    "id": "mei",
+    "name": "MEI",
+    "age": 72,
+    "coat": "#85528e",
+    "clues": "Tied silver hair, purple jacket",
+    "atlasIndex": 12
+  },
+  {
+    "id": "al",
+    "name": "AL",
+    "age": 77,
+    "coat": "#8b6249",
+    "clues": "White side hair, brown cardigan",
+    "atlasIndex": 13
+  },
+  {
+    "id": "ida",
+    "name": "IDA",
+    "age": 85,
+    "coat": "#478459",
+    "clues": "White curls and green coat",
+    "atlasIndex": 14
+  },
+  {
+    "id": "abe",
+    "name": "ABE",
+    "age": 99,
+    "coat": "#784e89",
+    "clues": "Sparse white hair, glasses, violet scarf",
+    "atlasIndex": 15
+  }
+]

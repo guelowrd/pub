@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { GREEN, KMH, LANE, RED, REV, RUN, TOP, W, WRECK, agePoints, newSim, step, type Input, type Sim } from "./sim";
+import { GREEN, KMH, LANE, RED, REV, RUN, TOP, W, WRECK, agePoints, newSim, step, type District, type Input, type Rider, type Sim } from "./sim";
 import { extend } from "./course";
 
 const idle: Input = { gas: false, brake: false, left: false, right: false };
 const run = (s: Sim, inp: Partial<Input>, secs: number) => { for (let t = 0; t < secs; t += 1 / 120) step(s, { ...idle, ...inp }, 1 / 120, extend); };
 const park = (s: Sim, z: number) => { s.z = z; s.x = W + 0.2; s.v = 0; };
+const R = (name: string, age: number, dest: District): Rider => ({ id: name.toLowerCase(), name, age, dest, lo: age, hi: age, cls: "TIGHT" });
 
 describe("age points", () => {
   it("matches the designer's fixtures", () => {
@@ -32,7 +33,7 @@ describe("driving", () => {
   it("clock ends the run and keeps riders aboard as lost", () => {
     const s = newSim(1);
     extend(s);
-    s.seats[0] = { name: "RAY", age: 70, dest: "golf", lo: 68, hi: 72 };
+    s.seats[0] = R("RAY", 70, "golf");
     run(s, {}, RUN + 1);
     expect(s.over).toBe(true);
     expect(s.lost.map((r) => r.name)).toEqual(["RAY"]);
@@ -44,7 +45,7 @@ describe("hits", () => {
   it("a slow hit on traffic is a bump, a fast one wrecks and ejects riders", () => {
     const s = newSim(1);
     extend(s);
-    s.seats[0] = { name: "RAY", age: 70, dest: "golf", lo: 68, hi: 72 };
+    s.seats[0] = R("RAY", 70, "golf");
     s.traffic = [{ z: s.z + 3, x: 0, tx: 0, v: 100 / KMH, cruise: 100 / KMH, kind: 0, braking: false }];
     s.v = 100 / KMH + WRECK - 1;
     step(s, idle, 1 / 120, extend);
@@ -140,7 +141,7 @@ describe("stops", () => {
     s.z = f.zDecide + 1; s.x = 1; step(s, idle, 1 / 120, extend);
     extend(s);
     const drop = s.stops.find((o) => o.drop)!;
-    s.seats = [{ name: "A", age: 70, dest: drop.drop!, lo: 70, hi: 70 }, { name: "B", age: 60, dest: drop.drop!, lo: 60, hi: 60 }, { name: "C", age: 70, dest: f.side < 0 ? f.right : f.left, lo: 70, hi: 70 }];
+    s.seats = [R("A", 70, drop.drop!), R("B", 60, drop.drop!), R("C", 70, f.side < 0 ? f.right : f.left)];
     park(s, drop.z + drop.len / 2);
     step(s, idle, 1 / 120, extend);
     expect(s.banked).toBe((1000 + 800) * 1.5);

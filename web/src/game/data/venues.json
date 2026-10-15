@@ -1,0 +1,319 @@
+{
+  "version": 1,
+  "status": "authored initial tuning data; validate balance through playtests",
+  "age_policy": "fixed per character; hidden until accepted pickup",
+  "sampling": "Seed candidates and honest ranges before play; fork cards may preview faces and radar class; exact ages remain hidden until automatic boarding.",
+  "venues": [
+    {
+      "id": "school",
+      "sign": "SCHOOL",
+      "art": "school",
+      "population_clue": "Parents, adult students, staff, grandparents",
+      "surprise": "A grandparent near 70 can be a better pickup than a young teacher.",
+      "candidates": [
+        {
+          "character_id": "leo",
+          "relative_weight": 1
+        },
+        {
+          "character_id": "nina",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "june",
+          "relative_weight": 3
+        },
+        {
+          "character_id": "ray",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "mei",
+          "relative_weight": 1
+        }
+      ],
+      "weights_are_design_starting_points": true
+    },
+    {
+      "id": "nursing-home",
+      "sign": "NURSING HOME",
+      "art": "nursing-home",
+      "population_clue": "Residents, visitors, staff",
+      "surprise": "A resident can be far past 70. A visitor may be closer.",
+      "candidates": [
+        {
+          "character_id": "ida",
+          "relative_weight": 3
+        },
+        {
+          "character_id": "abe",
+          "relative_weight": 1
+        },
+        {
+          "character_id": "al",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "ken",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "bev",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "nina",
+          "relative_weight": 1
+        }
+      ],
+      "weights_are_design_starting_points": true
+    },
+    {
+      "id": "aquagym",
+      "sign": "AQUAGYM",
+      "art": "aquagym",
+      "population_clue": "Older regulars, mixed classes, instructors",
+      "surprise": "A young instructor or a very old regular can spoil the easy guess.",
+      "candidates": [
+        {
+          "character_id": "ray",
+          "relative_weight": 3
+        },
+        {
+          "character_id": "mei",
+          "relative_weight": 3
+        },
+        {
+          "character_id": "otis",
+          "relative_weight": 3
+        },
+        {
+          "character_id": "bev",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "june",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "nina",
+          "relative_weight": 1
+        },
+        {
+          "character_id": "ida",
+          "relative_weight": 1
+        }
+      ],
+      "weights_are_design_starting_points": true
+    },
+    {
+      "id": "bar",
+      "sign": "BAR",
+      "art": "bar",
+      "population_clue": "Friends out, regulars, staff, music fans",
+      "surprise": "Older people go out too. The barman may be much younger.",
+      "candidates": [
+        {
+          "character_id": "rex",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "dolly",
+          "relative_weight": 3
+        },
+        {
+          "character_id": "ray",
+          "relative_weight": 3
+        },
+        {
+          "character_id": "sol",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "nina",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "al",
+          "relative_weight": 1
+        }
+      ],
+      "weights_are_design_starting_points": true
+    },
+    {
+      "id": "bingo",
+      "sign": "BINGO",
+      "art": "bingo",
+      "population_clue": "Regulars, visitors, staff",
+      "surprise": "Older does not always mean closer to 70.",
+      "candidates": [
+        {
+          "character_id": "ray",
+          "relative_weight": 3
+        },
+        {
+          "character_id": "bev",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "al",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "ida",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "abe",
+          "relative_weight": 1
+        },
+        {
+          "character_id": "nina",
+          "relative_weight": 1
+        }
+      ],
+      "weights_are_design_starting_points": true
+    },
+    {
+      "id": "arcade",
+      "sign": "ARCADE",
+      "art": "arcade",
+      "population_clue": "Young players, parents, retro fans",
+      "surprise": "A silver-haired regular can know every machine.",
+      "candidates": [
+        {
+          "character_id": "leo",
+          "relative_weight": 3
+        },
+        {
+          "character_id": "nina",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "rex",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "ken",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "ray",
+          "relative_weight": 2
+        }
+      ],
+      "weights_are_design_starting_points": true
+    },
+    {
+      "id": "market",
+      "sign": "MARKET",
+      "art": "market",
+      "population_clue": "Shoppers, traders, delivery workers",
+      "surprise": "A familiar-looking shopper might be far younger or older.",
+      "candidates": [
+        {
+          "character_id": "nina",
+          "relative_weight": 1
+        },
+        {
+          "character_id": "milo",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "june",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "ken",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "sol",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "ray",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "ida",
+          "relative_weight": 1
+        }
+      ],
+      "weights_are_design_starting_points": true
+    },
+    {
+      "id": "garage",
+      "sign": "GARAGE",
+      "art": "garage",
+      "population_clue": "Mechanics, owners, collectors",
+      "surprise": "A young mechanic can look weathered. A classic-car owner may be near 70.",
+      "candidates": [
+        {
+          "character_id": "milo",
+          "relative_weight": 3
+        },
+        {
+          "character_id": "ken",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "sol",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "ray",
+          "relative_weight": 3
+        },
+        {
+          "character_id": "otis",
+          "relative_weight": 2
+        },
+        {
+          "character_id": "nina",
+          "relative_weight": 1
+        }
+      ],
+      "weights_are_design_starting_points": true
+    }
+  ],
+  "target_band": [
+    70,
+    80
+  ],
+  "role": "pickup-side places within the four delivery districts; not additional delivery destinations",
+  "pickup_place_pair_examples": [
+    [
+      "school",
+      "aquagym"
+    ],
+    [
+      "bar",
+      "nursing-home"
+    ],
+    [
+      "bingo",
+      "arcade"
+    ],
+    [
+      "market",
+      "garage"
+    ]
+  ],
+  "fork_examples": [
+    [
+      "golf_hills",
+      "casino_strip"
+    ],
+    [
+      "downtown",
+      "waterfront"
+    ]
+  ],
+  "delivery_districts": {
+    "downtown": "restaurant",
+    "waterfront": "cruise",
+    "casino_strip": "casino",
+    "golf_hills": "golf"
+  }
+}
