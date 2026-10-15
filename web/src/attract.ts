@@ -4,7 +4,7 @@ import { CHARACTERS } from "./game/course";
 import { PEOPLE, img } from "./game/art";
 
 const IDS = Object.keys(CHARACTERS).filter((id) => CHARACTERS[id].age >= 50); // boomers only on the splash
-const DOOR = [965, 850] as const, FAR = [1150, 590] as const; // where the rider ends up (ground point) and where they appear
+const DOOR = [965, 850] as const, FAR = [1150, 590] as const; // where the rider ends up (ground point) and where they appear; mirrored for the left side
 const PERIOD = 7; // seconds per rider
 const RULES = [
   "PICK UP BOOMERS AT THE CURB", "AGES 70 TO 80 = MAX POINTS!!!", "MILLENIALS AND GEN Z ARE NOT WORTH YOUR CAR", "READ THE BOOMER RADAR BEFORE YOU STOP",
@@ -23,14 +23,16 @@ export function startAttract(cv: HTMLCanvasElement): () => void {
     ctx.clearRect(0, 0, w, h);
     // one rider per period: walks in over the first 60%, boards (fades) over the next 15%, then a pause
     const ch = CHARACTERS[IDS[(n * 7) % IDS.length]], sheet = PEOPLE[ch.atlasSet ?? "a"], im = img(sheet.file);
-    const walk = Math.min(1, u / 0.6), e = walk * walk * (3 - 2 * walk);
-    const gx = FAR[0] + (DOOR[0] - FAR[0]) * e, gy = FAR[1] + (DOOR[1] - FAR[1]) * e;
+    const walk = Math.min(1, u / 0.6), e = walk * walk * (3 - 2 * walk), fromLeft = n % 2 === 1;
+    const gx0 = FAR[0] + (DOOR[0] - FAR[0]) * e, gx = fromLeft ? 1280 - gx0 : gx0, gy = FAR[1] + (DOOR[1] - FAR[1]) * e;
     const ppm = 150 + 110 * e, hgt = 1.75 * ppm; // pixels per metre grows as they come down the sidewalk
     const alpha = u < 0.6 ? 1 : u < 0.75 ? 1 - (u - 0.6) / 0.15 : 0;
     if (im && alpha > 0) {
       const f = hgt / 366, sx = (ch.atlasIndex % sheet.cols) * sheet.cw, sy = Math.floor(ch.atlasIndex / sheet.cols) * sheet.ch;
       ctx.save(); ctx.globalAlpha = alpha;
-      ctx.drawImage(im, sx, sy, sheet.cw, sheet.ch, (gx - sheet.ax * f) * k, (gy - sheet.ay * f) * k, sheet.cw * f * k, sheet.ch * f * k);
+      ctx.translate(gx * k, gy * k);
+      if (fromLeft) ctx.scale(-1, 1); // from the left they wave the other hand
+      ctx.drawImage(im, sx, sy, sheet.cw, sheet.ch, -sheet.ax * f * k, -sheet.ay * f * k, sheet.cw * f * k, sheet.ch * f * k);
       ctx.restore();
     }
     // the rules ribbon, right to left, looping

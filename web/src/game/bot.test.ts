@@ -16,7 +16,7 @@ function drive(s: Sim, careful: boolean): Input {
   const inBay = target !== null && s.z >= c!.z && s.z <= c!.z + c!.len;
   const overshot = target !== null && s.z > c!.z + c!.len;
   const stopping = target !== null && target - s.z < brakeDist && (inBay || overshot || s.v > 2); // short of the bay at rest: creep
-  const laneX = stopping ? W + BAY - 1.2 : 0;
+  const laneX = stopping ? c!.side * (W + BAY - 1.2) : 0;
   // dodge what's in the lane ahead
   const ahead = [...s.traffic.map((c) => ({ z: c.z, x: c.x })), ...s.hazards.filter((h) => !h.hit)].find((o) => o.z > s.z && o.z < s.z + 80 && Math.abs(o.x - s.x) < 2.5);
   const want = ahead && !stopping ? (ahead.x > 0 ? ahead.x - 3.5 : ahead.x + 3.5) : laneX;

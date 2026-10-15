@@ -27,9 +27,10 @@ export const RED = 2, GREEN = 10; // light cycle, seconds
 export type RadarClass = "TIGHT" | "FUZZY" | "WILD";
 export interface Rider { id: string; name: string; age: number; dest: District; lo: number; hi: number; cls: RadarClass }
 // i: index among the street's rider stops (the decision log names a pickup by it); venue: where they wait
-export interface Stop { z: number; len: number; rider: Rider | null; drop: District | null; taken: boolean; i: number; venue: string | null }
+// side: 1 the bay is on the right curb, -1 on the left (a one-way boulevard: pickups on either curb, drops on the right)
+export interface Stop { z: number; len: number; rider: Rider | null; drop: District | null; taken: boolean; i: number; venue: string | null; side: 1 | -1 }
 // one street of the pyramid, positions relative to its start; placed on the road when you turn into it
-export interface Node { district: District; stops: { z: number; venue: string; rider: Rider }[]; hazards: Hazard[]; lights: [number, number][]; curves: [number, number, number][]; hills: [number, number, number][] }
+export interface Node { district: District; stops: { z: number; venue: string; rider: Rider; side: 1 | -1 }[]; hazards: Hazard[]; lights: [number, number][]; curves: [number, number, number][]; hills: [number, number, number][] }
 // the decision log: what the chain replays. t in 10 ms ticks
 export type Event = { k: "fork"; side: -1 | 1; t: number } | { k: "pick"; stop: number; t: number } | { k: "drop"; t: number } | { k: "wreck"; t: number };
 // tx: the lane it's moving to; cruise: its own speed when the lane is clear
@@ -115,7 +116,12 @@ export function halfWidth(s: Sim, z: number): number {
   return W;
 }
 export function rightEdge(s: Sim, z: number): number {
-  return halfWidth(s, z) + (stopAt(s, z) ? BAY : 0);
+  const st = stopAt(s, z);
+  return halfWidth(s, z) + (st && st.side > 0 ? BAY : 0);
+}
+export function leftEdge(s: Sim, z: number): number {
+  const st = stopAt(s, z);
+  return halfWidth(s, z) + (st && st.side < 0 ? BAY : 0);
 }
 
 function say(s: Sim, text: string, t = 1.2) {
@@ -169,7 +175,7 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
   s.x -= curvature(s, s.z) * (s.v / FAST) ** 2 * 75 * dt; // the curve throws you outward; hold the wheel against it; past 220 it is dangerous
 
   // curbs are walls: scrape and slow, harder in the city
-  const r = rightEdge(s, s.z), l = -halfWidth(s, s.z), curb = CURB[districtAt(s, s.z) ?? "golf"];
+  const r = rightEdge(s, s.z), l = -leftEdge(s, s.z), curb = CURB[districtAt(s, s.z) ?? "golf"];
   if (s.x + CAR_W / 2 > r) { s.x = r - CAR_W / 2; s.v *= 1 - curb * dt; }
   if (s.x - CAR_W / 2 < l) { s.x = l + CAR_W / 2; s.v *= 1 - curb * dt; }
 
@@ -232,7 +238,7 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
   // stops: at rest with the door in the bay window, someone gets in or out
   if (Math.abs(s.v) < 0.3 && s.boarding <= 0 && s.spin <= 0) {
     const st = s.stops.find((o) => !o.taken && s.z >= o.z && s.z <= o.z + o.len);
-    if (st && s.x + CAR_W / 2 > W + 0.4) {
+    if (st && (st.side > 0 ? s.x + CAR_W / 2 > W + 0.4 : s.x - CAR_W / 2 < -(W + 0.4))) { // the door on the bay's side is in the bay
       if (st.drop) {
         const out = s.seats.filter((r) => r && r.dest === st.drop) as Rider[];
         if (out.length) {

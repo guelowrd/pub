@@ -1,5 +1,5 @@
 // Pseudo-3D view: road segments projected from a low chase camera, sprites sorted by segment and drawn at their anchors.
-import { BAY, CAR_W, LANE, NAME, SEG, TOP, W, WALK, halfWidth, isRed, rightEdge, seg, stopAt, type District, type Sim } from "./sim";
+import { BAY, CAR_W, LANE, NAME, SEG, TOP, W, WALK, isRed, leftEdge, rightEdge, seg, stopAt, type District, type Sim } from "./sim";
 import { CHARACTERS, FORK_OUT, sidewalkX } from "./course";
 import { BUILDING, DPROP, DPROPS, DROP, FILLERS, FORK_STRUCT, ICON, LIGHT_GREEN, LIGHT_RED, PANO, PANO_HORIZON, PEOPLE, PROP, ROAD_TINT, SHEETS, TRAFFIC, TREES, TUNNEL, VENUE_CELL, img, type Sheet } from "./art";
 import { DEFAULT_SKY, SKY } from "./stations";
@@ -187,7 +187,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     const z = i * SEG, st = s.streets.find((o) => z >= o.z0 + 210 && z < o.z1 - 40);
     if (!st) continue;
     const fl = FILLERS[st.district], side = (i >> 4) % 2 ? 1 : -1;
-    if (side > 0 && s.stops.some((o) => o.rider && Math.abs(o.z + 15 - z) < 45)) continue;
+    if (s.stops.some((o) => o.rider && o.side === side && Math.abs(o.z + 15 - z) < 45)) continue;
     spr(z, side * (W + BAY + WALK + 7 + ((i >> 5) % 3) * 4), fl[(i >> 3) % 3], 0, fl[(i >> 3) % 3].ppm, side < 0, 1, 0, 0.65);
   }
   for (const c of s.traffic) {
@@ -213,11 +213,13 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   for (const st of s.stops) {
     const zc = st.z + st.len / 2;
     if (st.rider) {
-      if (st.venue! in VENUE_CELL) spr(zc + 6, W + BAY + WALK + 9, SHEETS.venues, VENUE_CELL[st.venue!]);
+      // a left-curb stop mirrors its venue, shelter and person
+      const m = st.side, flip = m < 0;
+      if (st.venue! in VENUE_CELL) spr(zc + 6, m * (W + BAY + WALK + 9), SHEETS.venues, VENUE_CELL[st.venue!], undefined, flip);
       if (!st.taken) {
-        prop(st.z + 8, sidewalkX + 1.5, "shelter");
+        prop(st.z + 8, m * (sidewalkX + 1.5), "shelter", flip);
         const ch = CHARACTERS[st.rider.id];
-        spr(zc, sidewalkX, PEOPLE[ch.atlasSet ?? "a"], ch.atlasIndex);
+        spr(zc, m * sidewalkX, PEOPLE[ch.atlasSet ?? "a"], ch.atlasIndex, undefined, flip);
       }
     } else {
       // the spending place: its door beside the bay, its props along the sidewalk, never in the bay or the waiting patch
@@ -289,10 +291,10 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
       }
     }
     if (!f || f.side !== 0) {
-      road(n, 0, 0, halfWidth(s, z1), halfWidth(s, z2), rightEdge(s, z1), rightEdge(s, z2), alt);
+      road(n, 0, 0, leftEdge(s, z1), leftEdge(s, z2), rightEdge(s, z1), rightEdge(s, z2), alt);
       if (tun) tunnel(n, 0, 0, W, tun.side < 0 ? tun.left : tun.right);
       const st = stopAt(s, z1);
-      if (st && !st.taken) quad(n, W + 0.3, W + BAY - 0.2, W + 0.3, W + BAY - 0.2, st.drop ? COLOR[st.drop] + "66" : alt ? "#8a7a20" : "#a08a20");
+      if (st && !st.taken) quad(n, st.side * (W + 0.3), st.side * (W + BAY - 0.2), st.side * (W + 0.3), st.side * (W + BAY - 0.2), st.drop ? COLOR[st.drop] + "66" : alt ? "#8a7a20" : "#a08a20");
     }
     if (f && mouth) {
       // one shared structure holds both mouths: scaled so its two openings sit on the two branches, fading out as we reach it
