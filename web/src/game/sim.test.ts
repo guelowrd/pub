@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { KMH, RUN, TOP, W, WRECK, agePoints, newSim, step, type Input, type Sim } from "./sim";
+import { KMH, LANE, RUN, TOP, W, WRECK, agePoints, newSim, step, type Input, type Sim } from "./sim";
 import { extend } from "./course";
 
 const idle: Input = { gas: false, brake: false, left: false, right: false };
@@ -40,7 +40,7 @@ describe("hits", () => {
     const s = newSim(1);
     extend(s);
     s.seats[0] = { name: "RAY", age: 70, dest: "golf", lo: 68, hi: 72 };
-    s.traffic = [{ z: s.z + 3, x: 0, v: 100 / KMH, kind: 0, braking: false }];
+    s.traffic = [{ z: s.z + 3, x: 0, tx: 0, v: 100 / KMH, cruise: 100 / KMH, kind: 0, braking: false }];
     s.v = 100 / KMH + WRECK - 1;
     step(s, idle, 1 / 120, extend);
     expect(s.spin).toBe(0);
@@ -49,6 +49,23 @@ describe("hits", () => {
     step(s, idle, 1 / 120, extend);
     expect(s.spin).toBeGreaterThan(0);
     expect(s.seats).toEqual([null, null, null]);
+  });
+});
+
+describe("traffic", () => {
+  it("changes lane for a hazard and brakes behind a slower car", () => {
+    const s = newSim(1);
+    extend(s);
+    s.dx.fill(0);
+    s.hazards = [{ z: 400, x: 0, kind: "cone", hit: false }];
+    const car = { z: 350, x: 0, tx: 0, v: 100 / KMH, cruise: 100 / KMH, kind: 0, braking: false };
+    const slow = { z: 420, x: LANE, tx: LANE, v: 50 / KMH, cruise: 50 / KMH, kind: 0, braking: false };
+    s.traffic = [car, slow];
+    run(s, {}, 2);
+    expect(Math.abs(car.tx)).toBe(LANE); // moved out of the cone's lane
+    run(s, {}, 2);
+    if (car.tx === LANE) { expect(car.braking).toBe(true); expect(car.v).toBeLessThanOrEqual(slow.v + 0.01); }
+    expect(s.hazards[0].hit).toBe(false);
   });
 });
 

@@ -2,7 +2,7 @@
 // Units: metres, seconds, m/s. z runs along the road, x across it (0 = road centre, right positive).
 
 export const KMH = 3.6;
-export const TOP = 200 / KMH; // top speed
+export const TOP = 220 / KMH; // top speed
 export const WRECK = 60 / KMH; // closing speed above which a hit is a wreck
 export const SEG = 5; // road segment length
 export const LANE = 3.5;
@@ -21,7 +21,8 @@ export const PLACE: Record<District, string> = { downtown: "RESTAURANT", waterfr
 
 export interface Rider { name: string; age: number; dest: District; lo: number; hi: number }
 export interface Stop { z: number; len: number; rider: Rider | null; drop: District | null; taken: boolean }
-export interface Traffic { z: number; x: number; v: number; kind: number; braking: boolean }
+// tx: the lane it's moving to; cruise: its own speed when the lane is clear
+export interface Traffic { z: number; x: number; tx: number; v: number; cruise: number; kind: number; braking: boolean }
 export type HazardKind = "cone" | "oil" | "pothole" | "barrier";
 export interface Hazard { z: number; x: number; kind: HazardKind; hit: boolean }
 // k: curvature of the right branch per segment from the decision line; off: that branch's offset from the trunk
@@ -145,7 +146,7 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
     s.x += lat * dt;
     if (s.oil > 0) s.x += (s.rng() - 0.5) * 12 * dt;
   }
-  s.x -= curvature(s, s.z) * (s.v / TOP) ** 2 * 60 * dt; // the curve throws you outward; hold the wheel against it
+  s.x -= curvature(s, s.z) * (s.v / TOP) ** 2 * 75 * dt; // the curve throws you outward; hold the wheel against it
 
   // curbs are walls: scrape and slow
   const r = rightEdge(s, s.z), l = -halfWidth(s, s.z);
@@ -167,12 +168,21 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
     }
   }
 
-  // traffic
+  // traffic drives by the same rules as you: it brakes behind slower cars and moves out of the way of hazards
+  const blockers = [...s.traffic, { z: s.z, x: s.x, v: s.v }, ...s.hazards.filter((h) => !h.hit).map((h) => ({ z: h.z, x: h.x, v: 0 }))];
   for (const c of s.traffic) {
-    if (c.braking) c.v = Math.max(c.v - 6 * dt, 40 / KMH); else c.v = Math.min(c.v + 2 * dt, c.kind === 2 || c.kind === 5 ? 90 / KMH : 130 / KMH);
-    if (s.rng() < 0.3 * dt) c.braking = !c.braking && s.rng() < 0.3;
+    const inLane = (x: number, o: { x: number }) => Math.abs(o.x - x) < LANE * 0.8;
+    const ahead = blockers.find((o) => o !== c && o.z > c.z && o.z - c.z < 70 && inLane(c.tx, o));
+    if (ahead) {
+      const free = [c.tx - LANE, c.tx + LANE].filter((x) => Math.abs(x) <= LANE + 0.1 && !blockers.some((o) => o !== c && inLane(x, o) && o.z - c.z > -30 && o.z - c.z < 70));
+      if (free.length) c.tx = free[Math.floor(s.rng() * free.length)];
+    }
+    c.braking = !!ahead && ahead.z - c.z < 35 && ahead.v < c.v + 1;
+    c.v = c.braking ? Math.max(c.v - 10 * dt, Math.min(ahead!.v, c.v)) : Math.min(c.v + 2 * dt, c.cruise);
+    c.x += Math.max(-3 * dt, Math.min(3 * dt, c.tx - c.x));
     c.z += c.v * dt;
     if (s.bumpCd === 0 && Math.abs(c.x - s.x) < CAR_W && Math.abs(c.z - s.z) < CAR_LEN) {
+      if (c.z < s.z) { c.v = s.v; c.z = s.z - CAR_LEN; continue; } // it ran into us: it stops
       if (s.v - c.v > WRECK) wreck(s);
       else { s.v = Math.min(s.v, c.v * 0.85); s.x += (s.x < c.x ? -1 : 1) * 0.8; say(s, "BUMP"); }
       s.bumpCd = 0.6;

@@ -39,7 +39,7 @@ function addStreet(s: Sim, z0: number, district: District, first: boolean) {
   let z = z0 + 150;
   while (z < z1 - 300) {
     const len = 150 + rng() * 200;
-    if (rng() < 0.7) setCurve(s, z, z + len, (rng() - 0.5) * 0.08);
+    if (rng() < 0.7) setCurve(s, z, z + len, (rng() - 0.5) * 0.1);
     if (rng() < 0.5) setHill(s, z - 50, z + len + 50, (rng() - 0.3) * 12);
     z += len + 60;
   }
@@ -79,12 +79,13 @@ export function extend(s: Sim) {
   if (f.side !== 0 && s.streets.length === s.forks.length) addStreet(s, f.zEnd, f.side < 0 ? f.left : f.right, false);
   // traffic: keep a few cars ahead, in lanes, slower than us
   const ahead = s.traffic.filter((c) => c.z > s.z).length;
-  const want = 3 + Math.min(4, Math.floor(s.t / 40));
+  const want = 4 + Math.min(4, Math.floor(s.t / 30));
   if (ahead < want && s.rng() < 0.5) {
     const z = s.z + 300 + s.rng() * 500;
     const x = (Math.floor(s.rng() * 3) - 1) * LANE;
-    if (!s.traffic.some((c) => Math.abs(c.z - z) < 30 && c.x === x))
-      s.traffic.push({ z, x, v: (70 + s.rng() * 50) / KMH, kind: Math.floor(s.rng() * 6), braking: false });
+    const kind = Math.floor(s.rng() * 6), cruise = (kind === 2 || kind === 5 ? 70 + s.rng() * 30 : 90 + s.rng() * 50) / KMH;
+    if (!s.traffic.some((c) => Math.abs(c.z - z) < 30 && c.tx === x))
+      s.traffic.push({ z, x, tx: x, v: cruise, cruise, kind, braking: false });
   }
 }
 
