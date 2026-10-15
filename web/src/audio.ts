@@ -4,6 +4,7 @@ const MUSIC = `${import.meta.env.BASE_URL}music/`;
 const music = new Audio();
 let ctx: AudioContext | null = null, master: GainNode, engineOsc: OscillatorNode, engineGain: GainNode, skidGain: GainNode;
 let analysers: AnalyserNode[] = [], musicGain: GainNode;
+const samples = new Uint8Array(256); // reused every frame by levels()
 let current = "";
 export let sound = true, volume = 0.7;
 
@@ -48,9 +49,9 @@ export const audio = {
   volume: (v: number) => { volume = v; if (ctx) musicGain.gain.value = v; },
   // left and right music levels, 0..1, for the radio's VU
   levels: (): number[] => analysers.map((a) => {
-    const d = new Uint8Array(a.fftSize); a.getByteTimeDomainData(d);
-    let sum = 0; for (const x of d) sum += (x - 128) ** 2;
-    return Math.min(1, Math.sqrt(sum / d.length) / 40);
+    a.getByteTimeDomainData(samples);
+    let sum = 0; for (const x of samples) sum += (x - 128) ** 2;
+    return Math.min(1, Math.sqrt(sum / samples.length) / 40);
   }).concat([0, 0]).slice(0, 2),
   // per frame while driving: pitch follows speed, volume the throttle; off the road screens call engine(0, false)
   engine: (speed: number, gas: boolean) => {

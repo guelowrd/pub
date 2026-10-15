@@ -19,6 +19,10 @@ export const setBeat = (b: number) => { beat = b; };
 let wasIn = false, inT = -1, exitT = -1;
 // masks tinted with a district colour, cached: the fork trims and the wall strip lens
 const tinted = new Map<string, HTMLCanvasElement>();
+// repeating patterns per image, made once; a scratch canvas darkens sprites without a canvas filter
+const patterns = new Map<CanvasImageSource, CanvasPattern>();
+let scratch: HTMLCanvasElement | null = null;
+const SHADE = (light: number) => `rgba(5,4,16,${(1 - light).toFixed(3)})`;
 function tintMask(file: string, color: string, w: number, h: number): HTMLCanvasElement | undefined {
   const key = `${file}|${color}`, hit = tinted.get(key);
   if (hit) return hit;
@@ -102,19 +106,20 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     const u0 = ((z1 % 8) + 8) % 8 / 8 * 1024; // the materials repeat every 8 m along the tunnel
     const poly = (pts: number[][]) => { ctx.beginPath(); pts.forEach(([x, y], j) => (j ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.closePath(); };
     const wall = img(TUNNEL.wall), ceiling = img(TUNNEL.ceiling), lens = tintMask(TUNNEL.strip, tint, 1024, 1024);
-    ctx.save();
-    ctx.filter = `brightness(${light.toFixed(2)})`;
+    const pattern = (im: CanvasImageSource) => { let p = patterns.get(im); if (!p) { p = ctx.createPattern(im, "repeat")!; patterns.set(im, p); } return p; };
+    const shade = SHADE(light);
     for (const [xa, xb] of [[X(n, l1), X(n + 1, l2)], [X(n, r1), X(n + 1, r2)]]) {
-      // the textured band over the lower metres of the wall, plain dark above it
+      // the textured band over the lower metres of the wall, plain dark above it, then the darkness laid over both
       const ya = sy[n], yb = sy[n + 1], ta = ya - TUN_TEX * sc[n], tb = yb - TUN_TEX * sc[n + 1];
       const m = new DOMMatrix([(xb - xa) / 640, 0, 0, TUN_TEX * sc[n] / 1024, xa - u0 * (xb - xa) / 640, ta]);
       poly([[xa, ya], [xa, ta], [xb, tb], [xb, yb]]);
-      if (wall) { const pat = ctx.createPattern(wall, "repeat")!; pat.setTransform(m); ctx.fillStyle = pat; } else ctx.fillStyle = "#2a2a3e";
+      if (wall) { const pat = pattern(wall); pat.setTransform(m); ctx.fillStyle = pat; } else ctx.fillStyle = "#2a2a3e";
       ctx.fill();
-      ctx.fillStyle = "#141028"; poly([[xa, ta], [xa, xa === X(n, l1) ? top1 : top1], [xb, top2], [xb, tb]]); ctx.fill();
+      ctx.fillStyle = "#141028"; poly([[xa, ta], [xa, top1], [xb, top2], [xb, tb]]); ctx.fill();
+      if (light < 1) { ctx.fillStyle = shade; poly([[xa, ya], [xa, top1], [xb, top2], [xb, yb]]); ctx.fill(); }
       if (lens) { // the strip lens glows in the destination's colour, with the music
-        ctx.save(); ctx.filter = "none"; ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 0.55 + 0.45 * beat;
-        const pat = ctx.createPattern(lens, "repeat")!; pat.setTransform(m); ctx.fillStyle = pat;
+        ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 0.55 + 0.45 * beat;
+        const pat = pattern(lens); pat.setTransform(m); ctx.fillStyle = pat;
         poly([[xa, ya], [xa, ta], [xb, tb], [xb, yb]]); ctx.fill(); ctx.restore();
       }
     }
@@ -123,10 +128,10 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     poly([[xl, top1], [xr, top1], [X(n + 1, r2), top2], [X(n + 1, l2), top2]]);
     if (ceiling) {
       const su = (top2 - top1) / 640, sv = (xr - xl) / ((r1 - l1) / 8 * 1024);
-      const pat = ctx.createPattern(ceiling, "repeat")!; pat.setTransform(new DOMMatrix([0, su, sv, 0, xl, top1 - u0 * su])); ctx.fillStyle = pat;
+      const pat = pattern(ceiling); pat.setTransform(new DOMMatrix([0, su, sv, 0, xl, top1 - u0 * su])); ctx.fillStyle = pat;
     } else ctx.fillStyle = "#1c1838";
     ctx.fill();
-    ctx.restore();
+    if (light < 1) { ctx.fillStyle = shade; ctx.fill(); }
   };
   // a road slice centred at c (relative to the main road), with its sidewalks, curbs and lane dashes
   const road = (n: number, c1: number, c2: number, hw1: number, hw2: number, re1: number, re2: number, alt: boolean) => {
@@ -156,13 +161,23 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   const cell = (ctx2: CanvasRenderingContext2D, sh: Sheet, i: number, px: number, py: number, k: number, ppm = sh.ppm, flip = false, alpha = 1, light = 1) => {
     const im = img(sh.file);
     if (!im) return;
-    const f = k / ppm, sx = (i % sh.cols) * sh.cw, sy0 = Math.floor(i / sh.cols) * sh.ch;
+    const f = k / ppm, sx = (i % sh.cols) * sh.cw, sy0 = Math.floor(i / sh.cols) * sh.ch, dw = sh.cw * f, dh = sh.ch * f;
+    if (dw < 1 || dh < 1) return;
     ctx2.save();
     ctx2.globalAlpha = alpha;
-    if (light < 1) ctx2.filter = `brightness(${light.toFixed(2)})`;
     ctx2.translate(px, py);
     if (flip) ctx2.scale(-1, 1);
-    ctx2.drawImage(im, sx, sy0, sh.cw, sh.ch, -sh.ax * f, -sh.ay * f, sh.cw * f, sh.ch * f);
+    if (light < 0.98) {
+      // darkened through a scratch canvas: a canvas filter would cost more than the sprite itself
+      scratch ??= document.createElement("canvas");
+      const w2 = Math.ceil(dw), h2 = Math.ceil(dh);
+      if (scratch.width < w2 || scratch.height < h2) { scratch.width = Math.max(scratch.width, w2); scratch.height = Math.max(scratch.height, h2); }
+      const g = scratch.getContext("2d")!;
+      g.clearRect(0, 0, w2, h2);
+      g.drawImage(im, sx, sy0, sh.cw, sh.ch, 0, 0, dw, dh);
+      g.globalCompositeOperation = "source-atop"; g.fillStyle = SHADE(light); g.fillRect(0, 0, w2, h2); g.globalCompositeOperation = "source-over";
+      ctx2.drawImage(scratch, 0, 0, w2, h2, -sh.ax * f, -sh.ay * f, w2, h2);
+    } else ctx2.drawImage(im, sx, sy0, sh.cw, sh.ch, -sh.ax * f, -sh.ay * f, dw, dh);
     ctx2.restore();
   };
   const spr = (z: number, x: number, sh: Sheet, i: number, ppm = sh.ppm, flip = false, alpha = 1, lift = 0, light = 1) => at(z, () => {

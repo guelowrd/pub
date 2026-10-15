@@ -81,6 +81,7 @@ export default function App() {
   useEffect(() => {
     const cv = canvas.current!, ctx = cv.getContext("2d")!;
     let raf = 0, last = performance.now(), acc = 0, seen: Sim | null = null, logged = 0, lastCallout: Sim["callout"] = null;
+    const nodes = new Map<string, HTMLElement>();
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
       const s = sim.current;
@@ -102,11 +103,12 @@ export default function App() {
       setBeat(audio.levels()[0]);
       draw(ctx, s, w, h);
       const el = hud.current!;
-      const set = (id: string, text: string) => { const n = el.querySelector<HTMLElement>(`#${id}`)!; if (n.textContent !== text) n.textContent = text; };
-      const html = (id: string, markup: string) => { const n = el.querySelector<HTMLElement>(`#${id}`)!; if (n.dataset.k !== markup) { n.dataset.k = markup; n.innerHTML = markup; } };
+      const node = (id: string) => nodes.get(id) ?? (nodes.set(id, el.querySelector<HTMLElement>(`#${id}`)!), nodes.get(id)!);
+      const set = (id: string, text: string) => { const n = node(id); if (n.textContent !== text) n.textContent = text; };
+      const html = (id: string, markup: string) => { const n = node(id); if (n.dataset.k !== markup) { n.dataset.k = markup; n.innerHTML = markup; } };
       const left = Math.ceil(RUN - s.t);
       set("time", `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`);
-      el.querySelector<HTMLElement>("#time")!.classList.toggle("late", left <= 20);
+      node("time").classList.toggle("late", left <= 20);
       set("score", String(s.score).padStart(5, "0"));
       set("speed", String(Math.round(s.v * KMH)).padStart(3, "0"));
       const full = !s.seats.includes(null);
@@ -120,12 +122,12 @@ export default function App() {
       html("radar", just ? `${face(just)}<div><b>AGE ${just.age}</b><br>${fmt(agePoints(just.age))} TO BANK</div>${icon(just.dest)}`
         : f ? "" : c?.rider ? `${face(c.rider)}<div>${full ? "<b>CAR FULL</b>" : `<b>${c.rider.lo}-${c.rider.hi}</b><br>${c.rider.cls}`}<br><small>TARGET 70-80</small></div>${icon(c.rider.dest)}`
         : c?.drop ? `<div><b>DROP OFF</b><br>${PLACE[c.drop]}</div>${icon(c.drop)}` : `<div>SEARCHING<br><small>TARGET 70-80</small></div>`);
-      el.querySelector<HTMLElement>("#radar")!.parentElement!.style.display = f ? "none" : "";
+      node("radar").parentElement!.style.display = f ? "none" : "";
       const badge = (d: District) => { const n = s.seats.filter((r) => r && r.dest === d).length; return n ? ` x${n}` : ""; };
       html("fork", f ? `<span style="color:${COLOR[f.left]}">&lt; ${NAME[f.left]}${badge(f.left)}</span><span style="color:${COLOR[f.right]}">${NAME[f.right]}${badge(f.right)} &gt;</span>` : "");
       const text = s.callout?.text ?? "";
       html("callout", text.replace(/\+(\d+)|X(\d[\d.]*)|AGE (\d+)/g, (_, award, mult, age) => award ? `<span class="num">+${fmt(Number(award))}</span>` : mult ? `<span class="num">x${mult}</span>` : `AGE <span class="num">${age}</span>`));
-      el.querySelector<HTMLElement>("#callout")!.style.color = /WRECK|SPIN|BAILED/.test(text) ? "#ff40bd" : /CRAZY/.test(text) ? "#78ffcb" : /^\+|GROUP/.test(text) ? "#ffe564" : "#fff3f4";
+      node("callout").style.color = /WRECK|SPIN|BAILED/.test(text) ? "#ff40bd" : /CRAZY/.test(text) ? "#78ffcb" : /^\+|GROUP/.test(text) ? "#ffe564" : "#fff3f4";
     };
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);

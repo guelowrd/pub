@@ -62,19 +62,18 @@ export const LIGHT_RED = SH("light-red.webp", 512, 1024, 1, 256, 980, 600), LIGH
 export const ROAD_TINT: Record<District, [string, number]> = { waterfront: ["#175e79", 0.12], downtown: ["#655071", 0.12], casino: ["#7d285f", 0.14], golf: ["#2c6255", 0.12] };
 export const DROP: Record<District, Sheet> = { downtown: SHEETS.dropDowntown, waterfront: SHEETS.dropWaterfront, casino: SHEETS.dropCasino, golf: SHEETS.dropGolf };
 export const ICON: Record<District, string> = { downtown: "destination-restaurant.png", waterfront: "destination-cruise.png", casino: "destination-casino.png", golf: "destination-golf.png" };
-export const SKYLINE = "skyline.webp";
-export const TITLE = "title-scene.webp", SPLASH_CAR = "car-straight.webp"; // the splash car sits on the title scene (board 01)
+export const TITLE = "title-scene.webp";
 
 const images = new Map<string, HTMLImageElement>();
 export const img = (file: string) => images.get(file);
 export let ready = false;
 
 export function loadArt(): Promise<void> {
-  const files = new Set<string>([...Object.values(SHEETS).map((s) => s.file), ...Object.values(ICON), ...Object.values(PANO), ...Object.values(FILLERS).flat().map((s) => s.file), ...Object.values(FORK_STRUCT).flatMap((st) => [`fork-${st}.webp`, `fork-${st}-left.png`, `fork-${st}-right.png`]), ...Object.values(TUNNEL), LIGHT_RED.file, LIGHT_GREEN.file, SKYLINE, TITLE, SPLASH_CAR]);
+  const files = new Set<string>([...Object.values(SHEETS).map((s) => s.file), ...Object.values(ICON), ...Object.values(PANO), ...Object.values(FILLERS).flat().map((s) => s.file), ...Object.values(FORK_STRUCT).flatMap((st) => [`fork-${st}.webp`, `fork-${st}-left.png`, `fork-${st}-right.png`]), ...Object.values(TUNNEL), LIGHT_RED.file, LIGHT_GREEN.file, TITLE]);
   return Promise.all([...files].map((file) => new Promise<void>((ok, bad) => {
     const im = new Image();
-    im.onload = () => { images.set(file, im); ok(); };
-    im.onerror = () => bad(new Error(`art: ${file}`));
     im.src = `${import.meta.env.BASE_URL}art/${file}`;
+    // decode now: a 2048 px sheet decoded on its first draw costs a frame of half a second
+    im.decode().then(() => { images.set(file, im); ok(); }, () => bad(new Error(`art: ${file}`)));
   }))).then(() => { ready = true; });
 }

@@ -1,4 +1,3 @@
-@font-face { font-family: "PUB Pixel"; src: url("/art/pub-pixel.woff") format("woff"); }
 /* the game's own faces (handoff 05): Boomer GT for words, Boomer LCD for every number */
 @font-face { font-family: "Boomer GT"; src: url("/art/BoomerGT.woff") format("woff"); font-display: swap; }
 @font-face { font-family: "Boomer LCD"; src: url("/art/BoomerLCD.woff") format("woff"); font-display: swap; }
