@@ -3,3 +3,6 @@ node_modules
 dist
 temp/
 bot-run.txt
+target/
+store.sqlite3*
+keystore/

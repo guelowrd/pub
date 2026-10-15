@@ -1,0 +1,33 @@
+#! RECORD note: the champion's prize and target score.
+#!
+#! Paths:
+#! - claim:   anyone but the champion, before expiry, with a winning ANSWER as the note argument,
+#!            consuming their own shot note for this record in the same transaction.
+#! - reclaim: the champion, from expiry + CLAIM_FUZZ on.
+#!
+#! Inputs:  [ANSWER]
+#! Outputs: []
+
+use {NoteArgs} from miden::protocol::types
+use challenge::core
+
+const ERR_RECORD_NOT_BEATEN = "record: the answer does not beat the target score"
+
+@note_script
+pub proc main(args: NoteArgs)
+    exec.core::load_storage
+    exec.core::is_consumer_champion
+    # => [is_champion, ANSWER]
+    if.true
+        dropw
+        exec.core::assert_after_expiry
+        exec.core::receive_all
+    else
+        exec.core::assert_before_expiry
+        exec.core::answer_beats_target
+        # => [beats_target]
+        assert.err=ERR_RECORD_NOT_BEATEN
+        exec.core::assert_challenge_present
+        exec.core::receive_all
+    end
+end

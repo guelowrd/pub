@@ -1,0 +1,352 @@
+#! Pick Up Boomers scoring, rules version 1: the chain replays the run's decision log on the course the
+#! record names. The host mirrors are `integration/src/game.rs` (packing) and `web/src/game/rules.ts`
+#! (replay); `rules/vectors.json` pins all three to the same runs.
+#!
+#! Game data (12 felts at `data_ptr`): SEED(4) | song, rules version, 0, 0 | COURSE_COMMIT(4).
+#! The course itself travels in the advice map under COURSE_COMMIT: 28 streets (a pyramid 7 legs deep,
+#! street (leg, k) at index leg * (leg + 1) / 2 + k), 8 felts each:
+#!   header  district * 16 + stop_count
+#!   slot i  dest * 2^24 + points * 2^12 + z / 5      (0 when unused)
+#! The decision log travels under the note argument: [n, distance_m, e0 .. e(n-1)] with an event
+#!   kind * 2^24 + arg * 2^16 + t_10ms      kind 0 fork (arg: 0 left, 1 right), 1 pick (arg: stop),
+#!                                          2 drop, 3 wreck
+#!
+#! The replay walks the pyramid, boards riders (3 seats, each stop once), banks drops at a street's
+#! own bay (x1, x1.5, x2 for 1, 2, 3 riders of that place together), empties the car on a wreck, and
+#! refuses logs the car could not have driven: time never runs backwards or past 3:00, every move
+#! between two placed events fits top speed (0.83 m per tick) after the stop's dwell, and no event
+#! sits more than 60 m behind the previous one (reversing into a bay). Score = banked + distance / 2.
+
+use miden::protocol::note
+
+const LEGS = 7
+const NODE_FELTS = 8
+const COURSE_FELTS = 224
+const LEG_LEN = 1520                 # street 1200 + fork 120 + 200
+const DECIDE_Z = 1320                # the fork's decision line, from the street start
+const DROP_Z = 130                   # the drop bay, from the street start
+const STOP_MID = 15                  # a bay is 30 m; events are placed at its middle
+const TICKS_MAX = 18000
+const PICK_TICKS = 120
+const DROP_TICKS = 100
+const CM_PER_TICK = 83               # 299 km/h
+const REVERSE_M = 60
+const MAX_DIST = 15000
+
+# scratch memory, above the challenge core's
+const COURSE_PTR = 2048              # 224 felts
+const LOG_PTR = 2304                 # n, distance, then the events
+const LOG_DIST_PTR = 2305
+const LOG_EV_PTR = 2306
+const LEG_PTR = 2600
+const K_PTR = 2601
+const BANK_PTR = 2602
+const LAST_T_PTR = 2603
+const LAST_Z_PTR = 2604
+const HAVE_Z_PTR = 2605
+const SEAT0 = 2608                   # a seat holds 0 (empty) or dest * 4096 + points + 1
+const SEAT1 = 2609
+const SEAT2 = 2610
+
+const ERR_COURSE = "pub: the advice map does not hold the course the record commits to"
+const ERR_LOG = "pub: the advice map does not hold the log the note argument commits to"
+const ERR_CLOCK = "pub: an event after 3:00"
+const ERR_BACKWARDS = "pub: time runs backwards"
+const ERR_ROUTE = "pub: a fork past the last leg"
+const ERR_SIDE = "pub: a fork side other than left or right"
+const ERR_STOP = "pub: no such stop on this street"
+const ERR_TAKEN = "pub: that stop was already taken"
+const ERR_FULL = "pub: a fourth rider"
+const ERR_NO_BAY = "pub: no drop bay on the first street"
+const ERR_NOBODY = "pub: nobody aboard for this bay"
+const ERR_TOO_FAST = "pub: that move is faster than the car"
+const ERR_REVERSE = "pub: that move goes too far backwards"
+const ERR_DIST = "pub: the distance does not fit the run"
+
+# LOADING
+# =================================================================================================
+
+#! Reads the course the game data commits to from the advice map into COURSE_PTR.
+#!
+#! Inputs:  [data_ptr]
+#! Outputs: [data_ptr]
+proc load_course
+    dup add.8
+    # => [commit_ptr, data_ptr]
+    padw movup.4 mem_loadw_le
+    # => [COMMIT, data_ptr]
+    adv.push_mapval
+    push.0 push.1
+    while.true
+        # => [i, COMMIT, data_ptr]
+        adv_push dup.1 add.COURSE_PTR mem_store
+        add.1 dup u32lt.COURSE_FELTS
+    end
+    drop
+    push.COURSE_FELTS push.COURSE_PTR exec.note::compute_storage_commitment
+    # => [COMPUTED, COMMIT, data_ptr]
+    assert_eqw.err=ERR_COURSE
+    # => [data_ptr]
+end
+
+#! Reads the log the note argument commits to from the advice map into LOG_PTR.
+#!
+#! Inputs:  [ANSWER]
+#! Outputs: [n]
+proc load_log
+    adv.push_mapval
+    adv_push
+    # => [n, ANSWER]
+    dup mem_store.LOG_PTR
+    adv_push mem_store.LOG_DIST_PTR
+    dup push.0 push.1
+    while.true
+        # => [i, n, n, ANSWER]
+        adv_push dup.1 add.LOG_EV_PTR mem_store
+        add.1 dup dup.2 u32lt
+    end
+    drop drop
+    # => [n, ANSWER]
+    dup add.2 push.LOG_PTR exec.note::compute_storage_commitment
+    # => [COMPUTED, n, ANSWER]
+    movup.4 movdn.8
+    # => [COMPUTED, ANSWER, n]
+    assert_eqw.err=ERR_LOG
+    # => [n]
+end
+
+# THE CAR'S POSITION
+# =================================================================================================
+
+#! Inputs:  []
+#! Outputs: [node_ptr]   the current street's felts
+proc node_ptr
+    mem_load.LEG_PTR dup add.1 mul u32div.2 mem_load.K_PTR add mul.NODE_FELTS add.COURSE_PTR
+end
+
+#! The car reaches `z` at `t`: the move from the previous placed event must be drivable, then it
+#! becomes the previous one.
+#!
+#! Inputs:  [z, t]
+#! Outputs: []
+proc arrive
+    mem_load.HAVE_Z_PTR
+    if.true
+        # no more than REVERSE_M behind the previous event
+        dup add.REVERSE_M mem_load.LAST_Z_PTR swap u32gte assert.err=ERR_REVERSE
+        # => [z, t]
+        mem_load.LAST_Z_PTR dup.1 swap u32gt
+        # => [z > last_z, z, t]
+        if.true
+            dup mem_load.LAST_Z_PTR sub mul.100 u32div.CM_PER_TICK
+            # => [ticks_needed, z, t]
+            dup.2 mem_load.LAST_T_PTR sub
+            # => [elapsed, ticks_needed, z, t]
+            swap u32gte assert.err=ERR_TOO_FAST
+        end
+    end
+    # => [z, t]
+    mem_store.LAST_Z_PTR mem_store.LAST_T_PTR push.1 mem_store.HAVE_Z_PTR
+end
+
+# EVENTS
+# =================================================================================================
+
+#! Inputs:  [side, kind, t]
+#! Outputs: []
+proc fork_event
+    dup u32lte.1 assert.err=ERR_SIDE
+    mem_load.LEG_PTR add.1 dup u32lt.LEGS assert.err=ERR_ROUTE
+    # => [leg + 1, side, kind, t]
+    mem_load.LEG_PTR mul.LEG_LEN add.DECIDE_Z
+    # => [z, leg + 1, side, kind, t]
+    dup.4 swap exec.arrive
+    # => [leg + 1, side, kind, t]
+    mem_store.LEG_PTR
+    mem_load.K_PTR add mem_store.K_PTR
+    # => [kind, t]
+    drop drop
+end
+
+#! Puts a rider in the first empty seat.
+#!
+#! Inputs:  [seat]
+#! Outputs: []
+proc board
+    mem_load.SEAT0 eq.0
+    if.true
+        mem_store.SEAT0
+    else
+        mem_load.SEAT1 eq.0
+        if.true
+            mem_store.SEAT1
+        else
+            mem_load.SEAT2 eq.0 assert.err=ERR_FULL
+            mem_store.SEAT2
+        end
+    end
+end
+
+#! Inputs:  [stop, kind, t]
+#! Outputs: []
+proc pick_event
+    exec.node_ptr
+    # => [np, stop, kind, t]
+    dup mem_load u32mod.16
+    # => [count, np, stop, kind, t]
+    dup.2 swap u32lt assert.err=ERR_STOP
+    # => [np, stop, kind, t]
+    add.1 dup.1 add
+    # => [slot, stop, kind, t]
+    dup mem_load
+    # => [s, slot, stop, kind, t]
+    dup neq.0 assert.err=ERR_TAKEN
+    swap push.0 swap mem_store
+    # => [s, stop, kind, t]
+    u32divmod.4096
+    # => [z_seg, hi, stop, kind, t]
+    mul.5 add.STOP_MID mem_load.LEG_PTR mul.LEG_LEN add
+    # => [z, hi, stop, kind, t]
+    dup.4 swap exec.arrive
+    # => [hi, stop, kind, t]
+    mem_load.LAST_T_PTR add.PICK_TICKS mem_store.LAST_T_PTR
+    add.1 exec.board
+    # => [stop, kind, t]
+    drop drop drop
+end
+
+#! Unloads one seat if its rider wants district `d`.
+#!
+#! Inputs:  [addr, count, sum, d]
+#! Outputs: [count', sum', d]
+proc unload
+    dup mem_load
+    # => [seat, addr, count, sum, d]
+    dup eq.0
+    if.true
+        drop drop
+    else
+        sub.1 u32divmod.4096
+        # => [points, dest, addr, count, sum, d]
+        dup.5 dup.2 eq
+        if.true
+            swap drop
+            # => [points, addr, count, sum, d]
+            swap push.0 swap mem_store
+            # => [points, count, sum, d]
+            movup.2 add swap add.1
+            # => [count + 1, sum + points, d]
+        else
+            drop drop drop
+        end
+    end
+end
+
+#! Inputs:  [arg, kind, t]
+#! Outputs: []
+proc drop_event
+    mem_load.LEG_PTR dup neq.0 assert.err=ERR_NO_BAY
+    mul.LEG_LEN add.DROP_Z add.STOP_MID
+    # => [z, arg, kind, t]
+    dup.3 swap exec.arrive
+    # => [arg, kind, t]
+    mem_load.LAST_T_PTR add.DROP_TICKS mem_store.LAST_T_PTR
+    exec.node_ptr mem_load u32div.16
+    # => [d, arg, kind, t]
+    push.0 push.0
+    # => [count, sum, d, arg, kind, t]
+    push.SEAT0 exec.unload push.SEAT1 exec.unload push.SEAT2 exec.unload
+    dup neq.0 assert.err=ERR_NOBODY
+    dup eq.1
+    if.true
+        drop push.10
+    else
+        eq.2
+        if.true
+            push.15
+        else
+            push.20
+        end
+    end
+    # => [mult_x10, sum, d, arg, kind, t]
+    mul u32div.10 mem_load.BANK_PTR add mem_store.BANK_PTR
+    # => [d, arg, kind, t]
+    drop drop drop drop
+end
+
+#! Inputs:  [arg, kind, t]
+#! Outputs: []
+proc wreck_event
+    push.0 mem_store.SEAT0 push.0 mem_store.SEAT1 push.0 mem_store.SEAT2
+    drop drop drop
+end
+
+# THE RUN
+# =================================================================================================
+
+#! Replays the n events at LOG_EV_PTR on the course at COURSE_PTR.
+#!
+#! Inputs:  [n]
+#! Outputs: [banked]
+proc replay
+    push.0 mem_store.LEG_PTR push.0 mem_store.K_PTR push.0 mem_store.BANK_PTR
+    push.0 mem_store.LAST_T_PTR push.0 mem_store.LAST_Z_PTR push.0 mem_store.HAVE_Z_PTR
+    push.0 mem_store.SEAT0 push.0 mem_store.SEAT1 push.0 mem_store.SEAT2
+    dup eq.0
+    if.true
+        drop
+    else
+        push.0 push.1
+        while.true
+            # => [i, n]
+            dup add.LOG_EV_PTR mem_load
+            u32divmod.65536
+            # => [t, hi, i, n]
+            swap u32divmod.256
+            # => [arg, kind, t, i, n]
+            dup.2 u32lte.TICKS_MAX assert.err=ERR_CLOCK
+            dup.2 mem_load.LAST_T_PTR u32gte assert.err=ERR_BACKWARDS
+            dup.1 eq.0
+            if.true
+                exec.fork_event
+            else
+                dup.1 eq.1
+                if.true
+                    exec.pick_event
+                else
+                    dup.1 eq.2
+                    if.true
+                        exec.drop_event
+                    else
+                        exec.wreck_event
+                    end
+                end
+            end
+            # => [i, n]
+            add.1 dup dup.2 u32lt
+        end
+        drop drop
+    end
+    mem_load.BANK_PTR
+end
+
+#! The verdict the challenge core asks the game for: does this run beat the target?
+#! A strictly higher score wins.
+#!
+#! Inputs:  [ANSWER, data_ptr, target]
+#! Outputs: [beats_target]
+pub proc beats_target
+    movup.4 exec.load_course movdn.4
+    exec.load_log
+    # => [n, data_ptr, target]
+    exec.replay
+    # => [banked, data_ptr, target]
+    swap drop
+    mem_load.LOG_DIST_PTR dup u32lte.MAX_DIST assert.err=ERR_DIST
+    # the last placed event cannot lie beyond the distance driven
+    mem_load.LAST_Z_PTR dup.1 add.REVERSE_M u32lte assert.err=ERR_DIST
+    # => [distance, banked, target]
+    u32div.2 add
+    # => [score, target]
+    swap gt
+end

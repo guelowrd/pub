@@ -1,0 +1,35 @@
+#! SHOT note: a rival's stake, bound to one record note.
+#!
+#! Paths:
+#! - settle:  the rival, before the shot deadline (and the record expiry), with a WINNING
+#!            ANSWER as the note argument: the stake comes back. A losing answer cannot settle;
+#!            the stake then simply waits for the champion.
+#! - collect: the champion, from the shot deadline + CLAIM_FUZZ on.
+#!
+#! Inputs:  [ANSWER]
+#! Outputs: []
+
+use {NoteArgs} from miden::protocol::types
+use challenge::core
+
+const ERR_SHOT_NOT_A_PARTY = "shot: only the rival or the champion may consume this note"
+const ERR_SHOT_NOT_WON = "shot: the answer does not beat the target, the stake waits for the champion"
+
+@note_script
+pub proc main(args: NoteArgs)
+    exec.core::load_storage
+    exec.core::is_consumer_rival
+    # => [is_rival, ANSWER]
+    if.true
+        exec.core::assert_before_shot_deadline
+        exec.core::answer_beats_target
+        # => [beats_target]
+        assert.err=ERR_SHOT_NOT_WON
+        exec.core::receive_all
+    else
+        dropw
+        exec.core::is_consumer_champion assert.err=ERR_SHOT_NOT_A_PARTY
+        exec.core::assert_after_shot_deadline
+        exec.core::receive_all
+    end
+end
