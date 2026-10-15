@@ -44,10 +44,15 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .overlay button { font: inherit; font-size: calc(26 * var(--u)); padding: calc(16 * var(--u)) 0; width: calc(460 * var(--u)); color: #fff3f4; background: rgba(11,16,45,.9); border: calc(2 * var(--u)) solid; }
 .overlay button.cyan { border-color: #63e7ff; } .overlay button.pink { border-color: #ff40bd; }
 .actions { display: flex; gap: calc(50 * var(--u)); }
-.splash { background: #080c24 url("/art/title-scene.webp") center / cover no-repeat; justify-content: flex-start; padding-top: 41%; }
-.start { font-size: calc(44 * var(--u)); color: #fff3f4; text-shadow: 0 0 calc(10 * var(--u)) #ff40bd; animation: blink 1.6s steps(1) infinite; }
-@keyframes blink { 0%, 72% { opacity: 1; } 73%, 100% { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .start { animation: none; } }
+.splash { background: #080c24 url("/art/title-scene.webp") center / cover no-repeat; }
+/* the designer's start prompt (components/start-prompt.css): chrome lettering, 1.6 s blink, a glint every 3.2 s */
+.start-prompt { position: absolute; left: 50%; top: 43.5417%; transform: translate(-50%, -50%) skewX(-12deg); font: 400 calc(48 * var(--u)) / 1 "PUB Pixel", monospace; white-space: nowrap; letter-spacing: .03em; animation: pub-start-blink 1.6s step-end infinite; isolation: isolate; }
+.start-prompt::before { content: attr(data-text); position: absolute; inset: 0; transform: translate(calc(4 * var(--u)), calc(5 * var(--u))); color: #67155e; -webkit-text-stroke: calc(2 * var(--u)) #ff40bd; z-index: -1; }
+.start-prompt .face { display: block; color: transparent; -webkit-text-stroke: .4px #fff2ff; background-image: repeating-linear-gradient(0deg, #080c2440 0 1px, transparent 1px 5px), linear-gradient(#fff 0%, #b9f5ff 28%, #5385e8 48%, #201a5b 49%, #f9abff 58%, #ff37bd 80%, #fff4ff 100%); background-clip: text; -webkit-background-clip: text; filter: drop-shadow(calc(-2 * var(--u)) 0 #63e7ff); }
+.start-prompt .face::after { content: attr(data-text); position: absolute; inset: 0; color: transparent; background: linear-gradient(115deg, transparent 43%, #fff 50%, transparent 57%); background-size: 300% 100%; background-clip: text; -webkit-background-clip: text; animation: pub-start-sheen 3.2s linear infinite; }
+@keyframes pub-start-blink { 0%, 72.5%, 100% { opacity: 1; } 72.6%, 99.99% { opacity: 0; } }
+@keyframes pub-start-sheen { from { background-position: 150% 0; } to { background-position: -150% 0; } }
+@media (prefers-reduced-motion: reduce) { .start-prompt, .start-prompt .face::after { animation: none; } .start-prompt .face::after { display: none; } }
 .results { justify-content: flex-start; padding-top: calc(36 * var(--u)); gap: calc(14 * var(--u)); }
 .box { width: calc(980 * var(--u)); border: calc(2 * var(--u)) solid; padding: calc(16 * var(--u)) calc(30 * var(--u)); text-align: left; font-size: calc(22 * var(--u)); }
 .box.cyan { border-color: #63e7ff; } .box.pink { border-color: #ff40bd; }

@@ -145,7 +145,7 @@ export default function App() {
         <div className="callout" id="callout" />
       </div>
       {mode === "ready" && (
-        <div className="overlay splash" onClick={() => { if (loaded) { audio.unlock(); setMode("radio"); } }}><p className="start">{loaded ? "CLICK TO START" : "LOADING"}</p></div>
+        <div className="overlay splash" onClick={() => { if (loaded) { audio.unlock(); setMode("radio"); } }}><div className="start-prompt" data-text={loaded ? "CLICK TO START" : "LOADING"}><span className="face" data-text={loaded ? "CLICK TO START" : "LOADING"}>{loaded ? "CLICK TO START" : "LOADING"}</span></div></div>
       )}
       {mode === "radio" && (
         <div className="overlay radio">

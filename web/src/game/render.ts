@@ -54,6 +54,26 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     ctx.lineTo(X(n + 1, r2), sy[n + 1]); ctx.lineTo(X(n + 1, l2), sy[n + 1]);
     ctx.fill();
   };
+  // tunnels join the areas: from where the branches run straight to the first metres of the next street
+  const TUN_H = 6, TUN_IN = FORK_OUT / 2, TUN_OUT = 30;
+  const tunnelAt = (z: number) => s.forks.find((o) => z >= o.zDecide + TUN_IN && z < o.zEnd + TUN_OUT);
+  const wallH = tunnelAt(s.z) ? 40 : TUN_H; // inside, the walls climb out of view; outside, only the portal face shows above the road
+  const tunnel = (n: number, c1: number, c2: number, hw: number, tint: string, mouth: boolean) => {
+    const l1 = c1 - hw - WALK, r1 = c1 + hw + WALK, l2 = c2 - hw - WALK, r2 = c2 + hw + WALK;
+    const top1 = sy[n] - TUN_H * sc[n], top2 = sy[n + 1] - TUN_H * sc[n + 1], high1 = sy[n] - wallH * sc[n], high2 = sy[n + 1] - wallH * sc[n + 1];
+    const poly = (pts: number[][], color: string) => { ctx.fillStyle = color; ctx.beginPath(); pts.forEach(([x, y], j) => (j ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.fill(); };
+    poly([[X(n, l1), sy[n]], [X(n, l1), high1], [X(n + 1, l2), high2], [X(n + 1, l2), sy[n + 1]]], "#141028");
+    poly([[X(n, r1), sy[n]], [X(n, r1), high1], [X(n + 1, r2), high2], [X(n + 1, r2), sy[n + 1]]], "#141028");
+    poly([[X(n, l1), top1], [X(n, r1), top1], [X(n + 1, r2), top2], [X(n + 1, l2), top2]], (i0 + n) % 2 ? "#1c1838" : "#201c3e");
+    if ((i0 + n) % 4 === 0) poly([[X(n, c1 - 1), top1 + 0.1 * sc[n]], [X(n, c1 + 1), top1 + 0.1 * sc[n]], [X(n + 1, c2 + 1), top2 + 0.1 * sc[n + 1]], [X(n + 1, c2 - 1), top2 + 0.1 * sc[n + 1]]], tint);
+    if (mouth) { // the portal face, with the opening cut out
+      ctx.fillStyle = "#2a2448"; ctx.beginPath();
+      ctx.rect(X(n, l1 - 4), sy[n] - (TUN_H + 4) * sc[n], X(n, r1 + 4) - X(n, l1 - 4), (TUN_H + 4) * sc[n]);
+      ctx.rect(X(n, l1), top1, X(n, r1) - X(n, l1), TUN_H * sc[n]);
+      ctx.fill("evenodd");
+      ctx.strokeStyle = tint; ctx.lineWidth = Math.max(1, 0.25 * sc[n]); ctx.strokeRect(X(n, l1), top1, X(n, r1) - X(n, l1), TUN_H * sc[n]);
+    }
+  };
   // a road slice centred at c (relative to the main road), with its sidewalks, curbs and lane dashes
   const road = (n: number, c1: number, c2: number, hw1: number, hw2: number, re1: number, re2: number, alt: boolean) => {
     quad(n, c1 - hw1 - WALK, c1 + re1 + WALK, c2 - hw2 - WALK, c2 + re2 + WALK, alt ? "#5e5280" : "#665a8a");
@@ -189,15 +209,19 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     // past a decision line the road is two branches at trunk ± off. The main road is the chosen branch (or the
     // trunk before choosing), so branch σ sits at xo + (σ - side) * off.
     const f = s.forks.find((o) => z1 >= o.zDecide && z1 < o.zEnd + FORK_OUT);
+    const tun = tunnelAt(z1), mouth = !!tun && z1 < tun.zDecide + TUN_IN + SEG;
     if (f) {
       const d = i - seg(f.zDecide);
       for (const side of [-1, 1] as const) {
         if (side === f.side) continue;
-        road(n, (side - f.side) * f.off[d], (side - f.side) * f.off[d + 1], W, W, W, W, alt);
+        const c1 = (side - f.side) * f.off[d], c2 = (side - f.side) * f.off[d + 1];
+        road(n, c1, c2, W, W, W, W, alt);
+        if (tun) tunnel(n, c1, c2, W, COLOR[side < 0 ? f.left : f.right], mouth);
       }
       if (f.side === 0) continue;
     }
     road(n, 0, 0, halfWidth(s, z1), halfWidth(s, z2), rightEdge(s, z1), rightEdge(s, z2), alt);
+    if (tun) tunnel(n, 0, 0, W, COLOR[tun.side < 0 ? tun.left : tun.right], mouth);
     const st = stopAt(s, z1);
     if (st && !st.taken) quad(n, W + 0.3, W + BAY - 0.2, W + 0.3, W + BAY - 0.2, st.drop ? COLOR[st.drop] + "66" : alt ? "#8a7a20" : "#a08a20");
     sprites.get(n)?.forEach((fn) => fn());

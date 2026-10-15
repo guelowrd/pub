@@ -120,7 +120,7 @@ export function extend(s: Sim) {
   const ahead = s.traffic.filter((c) => c.z > s.z).length;
   const want = 4 + Math.min(4, Math.floor(s.t / 30));
   if (ahead < want && s.rng() < 0.5) {
-    const z = s.z + 300 + s.rng() * 500;
+    const z = s.z + 760 + s.rng() * 400; // beyond the draw distance, so cars come into view instead of popping in
     const x = (Math.floor(s.rng() * 3) - 1) * LANE;
     const kind = Math.floor(s.rng() * 6), cruise = (kind === 2 || kind === 5 ? 70 + s.rng() * 30 : 90 + s.rng() * 50) / KMH;
     if (!s.traffic.some((c) => Math.abs(c.z - z) < 30 && c.tx === x))

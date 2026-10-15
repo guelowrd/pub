@@ -190,3 +190,8 @@ come from three sheets (a: 256x384 cells, b/c: 512x512). Audio: `audio.ts`, one 
 engine/skid/events; songs are `web/public/music/<slug>.mp3` (66 MB, pushed; `git config http.postBuffer` raised for it).
 Hot reload gotcha: the frame loop closes over `draw`, so render.ts changes need a page reload to show.
 Left for M3: landscape phone check, Gaylord's playtest on desktop + phone, the designer's .partial cleanup is done upstream.
+Playtest 3 (same night): tunnels between areas (from where the branches run straight to 30 m into the next street, one
+mouth per branch with the district's trim colour, lit ceiling inside, walls climb out of view only when the camera is in);
+traffic spawns beyond the draw distance (760-1160 m) so cars come into view instead of popping in; the designer's chrome
+CLICK TO START lettering (components/start-prompt.css) replaces the plain blink. Steering poses kept as drawn: nose left
+shows the right flank, OutRun's convention; Gaylord read it as turning right, flip is one line in render.ts if he wants.

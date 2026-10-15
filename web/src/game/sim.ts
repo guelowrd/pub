@@ -213,7 +213,7 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
       s.bumpCd = 0.6;
     }
   }
-  s.traffic = s.traffic.filter((c) => c.z > s.z - 60 && c.z < s.z + 900);
+  s.traffic = s.traffic.filter((c) => c.z > s.z - 60 && c.z < s.z + 1300);
 
   // hazards
   for (const h of s.hazards) {
