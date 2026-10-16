@@ -83,7 +83,6 @@ export default function App() {
   const [station, setStation] = useState(0);
   const stationRef = useRef(0);
   stationRef.current = station;
-  const [preview, setPreview] = useState(false);
   const [soundOn, setSoundOn] = useState(soundNow);
   const [volume, setVolumeState] = useState(volumeNow);
   const setVolume = (v: number) => { audio.volume(v); setVolumeState(v); };
@@ -97,14 +96,14 @@ export default function App() {
   // music follows the screen: menus loop Omotesando, the run plays the station from its first second, results loop Wireline Cosmos
   useEffect(() => {
     if (mode === "ready") audio.menu(MENU_TRACK); // silent until the browser allows sound: a click, or a site it trusts
-    else if (mode === "menu") { if (preview) audio.run(STATIONS[station].id); else audio.menu(MENU_TRACK); }
+    else if (mode === "menu") audio.menu(MENU_TRACK); // the song starts with the run, the menu keeps its own track
     else if (mode === "play") { if (sim.current.t === 0) { setSong(STATIONS[station].id); audio.run(STATIONS[station].id); } else audio.resume(); }
     else if (mode === "paused") audio.pause();
     else if (mode === "over") audio.results(RESULTS_TRACK);
     if (mode !== "play") { audio.engine(0, false); audio.skid(false); }
-  }, [mode, preview, station]);
+  }, [mode, station]);
 
-  const start = (sd: number, song: number) => { setPreview(false); setSettled(null); setPosted(null); botRun.current = false; sim.current = newSim(sd, song); setSeed(sd); setMode("play"); };
+  const start = (sd: number, song: number) => { setSettled(null); setPosted(null); botRun.current = false; sim.current = newSim(sd, song); setSeed(sd); setMode("play"); };
   /** A free drive on the station's song. */
   const drive = (sd: number) => { shot.current = null; start(sd, station); };
   /** A shot: the record's course and song, the stake on the table. */
@@ -114,7 +113,7 @@ export default function App() {
     setStation(song);
     start(Number(record.storage.game[0]), song);
   };
-  const toMenu = () => { setPreview(false); setMode("menu"); };
+  const toMenu = () => setMode("menu");
   // the run just driven: a shot settles itself
   useEffect(() => {
     if (mode !== "over") return;
@@ -234,7 +233,7 @@ export default function App() {
       )}
       {mode === "menu" && (
         <div className="overlay menu">
-          <HeadUnit chain={chain} station={station} setStation={(i) => { setStation(i); setPreview(true); }} volume={volume} setVolume={setVolume} muted={!soundOn} toggleMute={() => setSoundOn(audio.toggle())}
+          <HeadUnit chain={chain} station={station} setStation={setStation} volume={volume} setVolume={setVolume} muted={!soundOn} toggleMute={() => setSoundOn(audio.toggle())}
             onDrive={() => drive(seed)} onShot={driveShot} onOff={() => setMode("ready")} openRecord={openRecord} onOpened={onOpened} />
         </div>
       )}

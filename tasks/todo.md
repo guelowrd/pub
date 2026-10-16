@@ -399,3 +399,13 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
   (it went the other way), the rest snap to the nearest branch lane and drift there at 3 m/s. Test in sim.test.ts.
   Live check with the autopilot (v pinned, x free): max per-frame relative jump 0.67 m through a fork at 299 km/h.
   Note: pinning x in the autopilot undoes the frame shift and fakes a 5.25 m jump; measure c.x - s.x with x free.
+
+### Designer add-ons in (2026-10-16, 19:40): night previews, TV lists, checked set
+- PUB-Stage-Previews-Checked 2: all 13 CRT previews in the dial order, incl. the three clear nights and a repainted
+  ABANDONED FACTORY (industrial downtown, distinct from MIDNIGHT CHASE). Copied over art/stage; the rainy fallback is gone.
+- PUB-Stage-TV-Night-and-Lists: list geometry (`tv.list` in menu.json from their contracts: title, page count, six
+  rows, columns number / name / score (x = right edge) / state / icon, selection rects) + display.png and selection.png
+  per layout. Rows are now column cells (num, name, score, state, value, icon). RECORDS: n, champion, score, stage,
+  crown; review gains TIME LEFT. HISTORY: title, score, state, kind icon. SCORES: n, name, score. Settings: label / value.
+- Gaylord: DON'T DRINK & DRIVE leads the ribbon; the menu no longer previews the song (Omotesando stays until DRIVE).
+- Screens 02 and 03 refreshed. Verified desktop RADIO / RECORDS / SYSTEM and portrait + landscape iframes.
