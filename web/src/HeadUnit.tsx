@@ -235,7 +235,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
         {STATIONS.map((_, i) => <i key={i} className="hu-tick" style={{ left: px(G.needle.range[0] + i * (G.needle.range[1] - G.needle.range[0]) / 12), top: px(G.needle.tipY + 6), height: px(layout === "landscape" ? 5 : 8), background: i === station ? DISPLAY : DIM }} />)}
         <i className="hu-needle" style={{ left: px(needleX - 4), top: px(G.needle.tipY - 2), borderTopColor: DISPLAY }} />
         {text(`VOL ${Math.round(volume * 100)}%${muted ? "  MUTE" : ""}`, lx + 16, ly + lh - 10, small, DIM, true, false, "vol")}
-        {text(STATIONS[station].title, lx + lw - 16, ly + lh - 10, small, DIM, true, true, "song")}
+        {layout !== "portrait" && text(STATIONS[station].title, lx + lw - 16, ly + lh - 10, small, DIM, true, true, "song")} {/* portrait LCD is 152 wide: VOL and the title collide, the list names it */}
         {/* controls */}
         {controls.map((c) => {
           const r = c.id === "action" ? actionRect : c.rect;

@@ -348,3 +348,15 @@ Two root causes, both fixed in render.ts:
 Looked clean at top speed after: flat, hill top (+2.7 m), dip (-1.3 m), tunnel exit, fork arch, stop bay. Unchanged and
 worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat faster than the frame rate at speed
 (1.4 m per frame at 299), so they strobe; a speed fade on the material alpha would calm it.
+
+### Designer packs PUB-Tall-Action-Keys + PUB-Stage-TV (2026-10-16, 17:00)
+- Tall action keys: eight faces (desktop 184 x 122, portrait 92 x 116, rest/hover/pressed/disabled) copied over
+  art/menu/{desktop,portrait}/action-blank-*.png. Same rects as the merged key, label maths unchanged (their baseline
+  73.285 at size 35.1 = centre + 0.35 em, what the code already does). Verified on screen: desktop + 390 x 844 iframe.
+- Portrait bug found on the way: the LCD (152 wide) drew VOL 70% and the song title on one line and they overlapped
+  (VOL ends at 175, title starts at 152 in a 390 window). Portrait now drops the title line; the list names it.
+- PUB-Stage-TV is a proposal, not applied: a CRT above a recomposed radio showing the stage (song = stage) with
+  district / time / weather; 12 preview paintings (waterfront, downtown, casino strip, golf hills x midday, sunset,
+  rainy night); only BITTERSWEET SUNSET assigned (waterfront, sunset, clear); the other 12 songs open. Gaylord to
+  decide: adopt the TV menu, the song assignments, whether the world renderer gets time-of-day / rain (big: the
+  current world art is night-only). Decisions pending.
