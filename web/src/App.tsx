@@ -5,10 +5,12 @@ import { COLOR, draw, setBeat, setSong } from "./game/render";
 import { ICON, loadArt } from "./game/art";
 import { MENU_TRACK, RESULTS_TRACK, STATIONS } from "./game/stations";
 import { audio, sound as soundNow, volume as volumeNow } from "./audio";
-import HeadUnit, { type LastRun } from "./HeadUnit";
+import HeadUnit from "./HeadUnit";
+import { PRIZES } from "./chain/config";
+import { fmtGc, recordLinks } from "./chain/flow";
 import { startAttract } from "./attract";
 import Loading from "./Loading";
-import type { ChainApi, ChallengeNote } from "./chain/ChainHost";
+import type { ChainApi, ChallengeNote, Posted } from "./chain/ChainHost";
 
 // the chain (Miden SDK, Bread) loads beside the game: its wasm must never hold the splash
 const ChainHost = lazy(() => import("./chain/ChainHost"));
@@ -68,7 +70,10 @@ export default function App() {
   const [seed, setSeed] = useState(randomSeed);
   const [loaded, setLoaded] = useState(false);
   const [chain, setChain] = useState<ChainApi | null>(null);
-  const [lastRun, setLastRun] = useState<LastRun | null>(null);
+  // posting the run just driven, on the results screen: the prize on the dial, then the record's share links
+  const [prize, setPrize] = useState(0);
+  const [posted, setPosted] = useState<Posted | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   const shot = useRef<Shot | null>(null); // the run on the road is a shot at a record
   const [settled, setSettled] = useState<{ text: string; again: boolean; claimed: boolean } | null>(null);
   const [openRecord, setOpenRecord] = useState<ChallengeNote | null>(null);
@@ -100,7 +105,7 @@ export default function App() {
     if (mode !== "play") { audio.engine(0, false); audio.skid(false); }
   }, [mode, preview, station]);
 
-  const start = (sd: number) => { setPreview(false); setSettled(null); sim.current = newSim(sd); setSeed(sd); setMode("play"); };
+  const start = (sd: number) => { setPreview(false); setSettled(null); setPosted(null); setNote(null); sim.current = newSim(sd); setSeed(sd); setMode("play"); };
   /** A free drive on the station's song. */
   const drive = (sd: number) => { shot.current = null; start(sd); };
   /** A shot: the record's course and song, the stake on the table. */
@@ -109,14 +114,12 @@ export default function App() {
     setStation(Number(record.storage.game[4]));
     start(Number(record.storage.game[0]));
   };
-  const [menuMode, setMenuMode] = useState<"RADIO" | "POST">("RADIO");
-  const toMenu = (m: "RADIO" | "POST" = "RADIO") => { setMenuMode(m); setPreview(false); setMode("menu"); };
-  // the run just driven: a free one goes to POST, a shot settles itself
+  const toMenu = () => { setPreview(false); setMode("menu"); };
+  // the run just driven: a shot settles itself
   useEffect(() => {
     if (mode !== "over") return;
     const s = sim.current, at = shot.current;
-    if (!at) { setLastRun({ seed: s.seed, song: station, score: s.score, log: s.log, dist: s.dist }); return; }
-    if (settled || !chain) return;
+    if (!at || settled || !chain) return;
     void chain.settle(at.shots, at.record, s.seed, s.log, s.dist, s.score).then((r) => r && setSettled(r));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, chain]);
@@ -229,7 +232,7 @@ export default function App() {
       {mode === "menu" && (
         <div className="overlay menu">
           <HeadUnit chain={chain} station={station} setStation={(i) => { setStation(i); setPreview(true); }} volume={volume} setVolume={setVolume} muted={!soundOn} toggleMute={() => setSoundOn(audio.toggle())}
-            lastRun={lastRun} initialMode={menuMode} onDrive={() => drive(seed)} onShot={driveShot} openRecord={openRecord} onOpened={onOpened} />
+            onDrive={() => drive(seed)} onShot={driveShot} openRecord={openRecord} onOpened={onOpened} />
         </div>
       )}
       {mode === "paused" && <div className="overlay" onClick={() => setMode("play")}><h1>PAUSED</h1><p>CLOCK STOPPED</p></div>}
@@ -259,7 +262,24 @@ export default function App() {
               </p>
             </>
           ) : (
-            <p className="actions"><button className="cyan" onClick={() => start(seed)}>SAME RUN</button><button className="pink" onClick={() => { setSeed(randomSeed()); toMenu(); }}>NEW RUN</button><button className="yellow" onClick={() => toMenu("POST")}>POST IT</button></p>
+            <>
+              <div className="box yellow post">
+                {posted ? (
+                  <>
+                    <div><span>RECORD POSTED</span><b>{String(posted.score).padStart(5, "0")}</b></div>
+                    <p className="actions"><button className="cyan" onClick={() => window.open(recordLinks(posted.recordId, posted.score, posted.expiresAt, STATIONS[posted.song].title).x, "_blank", "noopener")}>SHARE ON X</button><button className="cyan" onClick={() => void navigator.clipboard?.writeText(recordLinks(posted.recordId, posted.score, posted.expiresAt, STATIONS[posted.song].title).url).then(() => setNote("LINK COPIED"), () => setNote("COPY FAILED"))}>COPY LINK</button></p>
+                    {note && <p className="verdict">{note}</p>}
+                  </>
+                ) : (
+                  <>
+                    <div><span>POST AS A RECORD, PRIZE</span><span className="prizes">{PRIZES.map((p, i) => <button key={i} className={i === prize ? "on" : ""} onClick={() => setPrize(i)} disabled={!!chain?.busy}>{fmtGc(p)}</button>)}</span></div>
+                    <p className="verdict">{chain?.busy ? `${chain.busy.text}${chain.busy.stage === "wallet" ? ". APPROVE IN YOUR WALLET" : chain.busy.stage === "network" ? ". SENDING TO THE NETWORK" : ""}` : chain?.trouble ? chain.trouble.t.title.toUpperCase() : "RIVALS PAY 1 GC FOR A SHOT. BEAT YOU AND THEY TAKE THE PRIZE, LOSE AND THEIR GC IS YOURS."}</p>
+                    <p className="actions"><button className="yellow" disabled={!chain || !!chain.busy} onClick={() => { chain?.dismiss(); void chain?.post(s.seed, station, s.score, PRIZES[prize]).then((p) => p && setPosted(p)); }}>{chain?.trouble?.retry ? "TRY AGAIN" : "POST IT"}</button></p>
+                  </>
+                )}
+              </div>
+              <p className="actions"><button className="cyan" onClick={() => start(seed)}>SAME RUN</button><button className="pink" onClick={() => { setSeed(randomSeed()); toMenu(); }}>NEW RUN</button></p>
+            </>
           )}
         </div>
       )}
