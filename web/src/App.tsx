@@ -2,7 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { KMH, NAME, PLACE, RUN, TOP, agePoints, candidate, newSim, step, tick, type District, type Input, type Rider, type Sim } from "./game/sim";
 import { CHARACTERS, extend } from "./game/course";
 import { COLOR, draw, setBeat, setSong } from "./game/render";
-import { loadArt } from "./game/art";
+import { ICON, loadArt } from "./game/art";
 import { MENU_TRACK, RESULTS_TRACK, STATIONS } from "./game/stations";
 import { audio, sound as soundNow, volume as volumeNow } from "./audio";
 import HeadUnit from "./HeadUnit";
@@ -28,8 +28,7 @@ const face = (r: Rider) => {
   const ch = CHARACTERS[r.id];
   return `<i class="face" style="background-image:url(${ART}${PORTRAITS[ch.atlasSet ?? "a"]});background-position:${(ch.atlasIndex % 4) * 100 / 3}% ${Math.floor(ch.atlasIndex / 4) * 100 / 3}%"></i>`;
 };
-// the kit's line icons for the destinations (seats strip, radar drop-off)
-const icon = (d: District) => `<img class="icon" src="${ART}icons/${PLACE[d].toLowerCase()}-64.png" alt="${PLACE[d]}">`;
+const icon = (d: District) => `<img class="icon" src="${ART}${ICON[d]}" alt="${PLACE[d]}">`;
 // the radar's portrait (visual update): the face downsampled to 48 samples, mapped to phosphor green and black with a
 // 4 x 4 ordered dither, so a rider is a silhouette with a hint of hair and beard, never a recognisable face. Once per rider.
 const DITHERED = new Map<string, string>();
@@ -176,23 +175,22 @@ export default function App() {
       set("score", String(s.score).padStart(5, "0"));
       set("speed", String(Math.round(s.v * KMH)).padStart(3, "0"));
       const full = !s.seats.includes(null);
-      html("bank", `<small>TO BANK</small><b class="num">${fmt(s.seats.reduce((a, r) => a + (r ? agePoints(r.age) : 0), 0))}</b>${full ? "<em>FULL</em>" : ""}`);
-      s.seats.forEach((r, i) => html(`seat${i}`, r ? `${face(r)}<b>${r.age}</b>${icon(r.dest)}` : `<span>EMPTY</span>`));
+      html("bank", `TO BANK <span class="num">${fmt(s.seats.reduce((a, r) => a + (r ? agePoints(r.age) : 0), 0))}</span>${full ? "  FULL" : ""}`);
+      s.seats.forEach((r, i) => html(`seat${i}`, r ? `${face(r)}${icon(r.dest)}<small>AGE</small><b>${r.age}</b><em>${fmt(agePoints(r.age))}<small>PTS</small></em>` : `<span>EMPTY</span>`));
       // radar: the next stop's face and honest range; the reveal for 2 s after boarding; nothing at a fork
       const c = candidate(s), e = s.log[s.log.length - 1];
       const f = s.forks.find((o) => o.side === 0 && o.z - 400 < s.z && s.z < o.zDecide);
       const cur = s.streets[s.streets.length - 1];
       const just = e?.k === "pick" && tick(s) - e.t < 200 ? s.stops.find((o) => o.taken && o.i === e.stop && o.z >= cur.z0 && o.z < cur.z1)?.rider : undefined;
       // the radar's POSITION map: the blip sits on the curb's side and climbs with the distance (centre = here, top = 250 m out)
-      const blip = (st: { z: number; side: number }) => `<img class="blip" src="${ART}radar/blip.png" alt="" style="left:${73 + st.side * 6.9}%;top:${42 - 25 * Math.min(1, Math.max(0, (st.z - s.z) / 250))}%">`;
+      const blip = (st: { z: number; side: number }) => `<i class="blip" style="left:${73.5 + st.side * 6.75}%;top:${44.4 - 21.8 * Math.min(1, Math.max(0, (st.z - s.z) / 250))}%"></i>`;
       // in a tunnel the radar scans: the next street's stop is not a target yet
       const tunnel = s.forks.some((o) => s.z >= o.zDecide + 100 && s.z < o.zEnd + 100);
       const radar = node("radar").parentElement!;
       radar.className = `radar-box ${just ? "" : f || tunnel ? "search" : c?.rider && full ? "full" : c?.rider || c?.drop ? "" : "search"}`;
-      const reticle = `<img class="reticle" src="${ART}radar/reticle.png" alt="">`;
-      html("radar", just ? `${face(just)}<small class="age">AGE</small><b class="exact">${just.age}</b><small class="bank">TO BANK</small><b class="pts">${fmt(agePoints(just.age))}</b>`
-        : f || tunnel ? `<i class="ring"></i><i class="ring big"></i><b class="scan">SCAN</b>` : c?.rider ? (full ? `<b class="scan carfull">CAR FULL</b>` : `<img class="dither" src="${dithered(c.rider)}" alt="">${reticle}${blip(c)}<small class="lab">AGE RANGE</small><b class="range">${c.rider.lo} TO ${c.rider.hi}</b>`)
-        : c?.drop ? `${icon(c.drop)}${reticle}${blip(c)}<b class="drop">DROP OFF</b>` : `<i class="ring"></i><i class="ring big"></i><b class="scan">SCAN</b>`);
+      html("radar", just ? `${face(just)}<div class="reveal"><b>AGE ${just.age}</b><br>${fmt(agePoints(just.age))} TO BANK</div>${icon(just.dest)}`
+        : f || tunnel ? "" : c?.rider ? (full ? "" : `<img class="dither" src="${dithered(c.rider)}" alt=""><small class="pos">POSITION</small><img class="reticle" src="${ART}radar/reticle-B.png" alt="">${blip(c)}<small class="lab">AGE RANGE</small><b class="range">${c.rider.lo} TO ${c.rider.hi}</b>`)
+        : c?.drop ? `<small class="pos">POSITION</small><img class="reticle" src="${ART}radar/reticle-B.png" alt="">${blip(c)}<b class="range drop">DROP OFF</b>${icon(c.drop)}` : "");
       radar.style.display = f ? "none" : "";
       const badge = (d: District) => { const n = s.seats.filter((r) => r && r.dest === d).length; return n ? ` x${n}` : ""; };
       html("fork", f ? `<span style="color:${COLOR[f.left]}">&lt; ${NAME[f.left]}${badge(f.left)}</span><span style="color:${COLOR[f.right]}">${NAME[f.right]}${badge(f.right)} &gt;</span>` : "");
@@ -218,9 +216,9 @@ export default function App() {
       <div className="hud" ref={hud}>
         <div className="panel tl"><small>TIME</small><b id="time" /></div>
         <div className="panel tr"><small>SCORE</small><b id="score" /></div>
-        <div className="panel bl"><small>SPEED</small><b id="speed" /></div>
+        <div className="panel bl"><small>SPEED</small><b id="speed" /><small>KM/H</small></div>
         <div className="rail">
-          <div className="seats"><div id="bank" /><div id="seat0" /><div id="seat1" /><div id="seat2" /></div>
+          <div className="panel seats"><div id="bank" /><div className="slots"><div id="seat0" /><div id="seat1" /><div id="seat2" /></div></div>
           <div className="radar-box"><div id="radar" /></div>
         </div>
         <div className="fork" id="fork" />

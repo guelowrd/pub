@@ -3,58 +3,50 @@
 @font-face { font-family: "Share Tech Mono"; src: url("/fonts/ShareTechMono-Regular.woff") format("woff"); font-weight: 400; font-display: swap; }
 * { box-sizing: border-box; margin: 0; }
 html, body, #root { height: 100%; background: #080c24; color: #fff3f4; font-family: "Chakra Petch", ui-sans-serif, sans-serif; font-weight: 600; overflow: hidden; }
-.num, .panel > b, .seats b, #radar b { font-family: "Share Tech Mono", monospace; font-weight: 400; font-variant-numeric: tabular-nums; }
+.num, .panel > b, .slots > div > b, .slots > div > em, #radar b { font-family: "Share Tech Mono", monospace; font-weight: 400; font-variant-numeric: tabular-nums; }
 #root { display: flex; flex-direction: column; align-items: center; justify-content: center; }
 /* the view is 4:3 like the boards (1280 x 960 reference); --u is one board pixel. The pad takes the room under it on phones */
 .app { position: relative; width: min(100vw, calc(100vh * 4 / 3)); height: min(100vh, calc(100vw * 3 / 4)); --u: calc(min(100vw, 100vh * 4 / 3) / 1280); font-size: calc(18 * var(--u)); }
 canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .hud { position: absolute; inset: 0; pointer-events: none; text-transform: uppercase; }
 .app.over .hud { display: none; }
-/* HUD (results kit): the kit's plates at its desktop rects (1280 x 960 = the board), text on its baselines. Chakra sits
-   .84 em under a line-height-1 top, Share Tech Mono .82 em */
-.panel { position: absolute; background: center / 100% 100% no-repeat; }
-.panel small { position: absolute; left: calc(8 * var(--u)); top: calc(7.1 * var(--u)); color: #94e6dc; font-size: calc(13 * var(--u)); line-height: 1; }
-.panel > b { position: absolute; left: calc(8 * var(--u)); top: calc(44.8 * var(--u)); font-size: calc(38 * var(--u)); color: #ffe16f; line-height: 1; }
-.tl { left: calc(20 * var(--u)); top: calc(16 * var(--u)); width: calc(130 * var(--u)); height: calc(88 * var(--u)); background-image: url("/art/hud/time-blank.png"); }
-.tr { right: calc(20 * var(--u)); top: calc(16 * var(--u)); width: calc(170 * var(--u)); height: calc(88 * var(--u)); background-image: url("/art/hud/score-blank.png"); }
-.bl { left: calc(20 * var(--u)); bottom: calc(20 * var(--u)); width: calc(110 * var(--u)); height: calc(84 * var(--u)); background-image: url("/art/hud/speed-blank.png"); }
-.bl > b { top: calc(40.8 * var(--u)); }
-#time.late { color: #fa79a6; }
-.rail { position: absolute; inset: 0; }
-/* the seats strip, top centre: TO BANK and its total, FULL when the car is, three slots with the portrait, the age and the
-   destination. Children in % and cqw of the 500 x 88 strip so the phone layout can resize it */
-.seats { position: absolute; left: calc(390 * var(--u)); top: calc(16 * var(--u)); width: calc(500 * var(--u)); aspect-ratio: 500 / 88; container-type: inline-size; background: url("/art/hud/seats-blank.png") center / 100% 100% no-repeat; color: #ffe16f; }
-#bank > * { position: absolute; top: 7.1%; font-size: 2.8cqw; line-height: 1; }
-#bank small { left: 1.6%; } #bank b { right: 1.6%; } #bank em { left: 58%; transform: translateX(-50%); font-style: normal; }
-#seat0, #seat1, #seat2 { position: absolute; top: 30.68%; width: 31.47%; height: 63.64%; }
-#seat0 { left: 1.6%; } #seat1 { left: 33.87%; } #seat2 { left: 66.13%; }
-.face { position: absolute; left: 1.9%; top: 5.4%; width: 24.15%; height: 67.9%; background-size: 400% 400%; }
-#seat0 > b, #seat1 > b, #seat2 > b { position: absolute; left: 29.9%; top: 7.1%; font-size: 4.4cqw; line-height: 1; color: #e4ece5; }
-.icon { position: absolute; left: 81.6%; top: 41%; width: 15.25%; aspect-ratio: 1; }
-#seat0 > span, #seat1 > span, #seat2 > span { position: absolute; left: 0; right: 0; top: 49.5%; text-align: center; font-size: 2.4cqw; line-height: 1; color: #91a8aa; }
-/* the radar (results kit, 210 x 128), on the right under the score where the rail was: the degraded portrait in its window,
-   the reticle as a POSITION map (blip left or right by curb, up when far), the age range; the drop-off bay; the two-second
-   reveal; SCAN in tunnels and at forks; CAR FULL */
-.radar-box { position: absolute; right: calc(20 * var(--u)); top: calc(120 * var(--u)); width: calc(210 * var(--u)); aspect-ratio: 210 / 128; container-type: inline-size; background: url("/art/radar/blank-shell.png") center / 100% 100% no-repeat; font-family: "Share Tech Mono", monospace; }
+.panel { position: absolute; background: rgba(11,16,45,.88); border: calc(2 * var(--u)) solid #63e7ff; padding: calc(10 * var(--u)) calc(16 * var(--u)); }
+.panel::before { content: ""; position: absolute; top: calc(-2 * var(--u)); left: calc(-2 * var(--u)); width: calc(28 * var(--u)); height: calc(4 * var(--u)); background: #ff40bd; }
+.panel small { display: block; color: #63e7ff; font-size: calc(18 * var(--u)); }
+.panel > b { display: block; font-size: calc(44 * var(--u)); color: #ffe564; line-height: 1.1; }
+.tl { top: calc(24 * var(--u)); left: calc(26 * var(--u)); } .tr { top: calc(24 * var(--u)); right: calc(26 * var(--u)); text-align: right; }
+.bl { bottom: calc(24 * var(--u)); left: calc(26 * var(--u)); border-color: #ff40bd; } .bl small:last-child { color: #aca5d1; font-size: calc(14 * var(--u)); }
+#time.late { color: #ff40bd; }
+/* right rail: 228 px at x 1026, seats 158-372, radar 390-569 */
+.rail { position: absolute; top: calc(158 * var(--u)); right: calc(26 * var(--u)); width: calc(228 * var(--u)); }
+.rail .panel { position: relative; width: 100%; padding: calc(8 * var(--u)); margin-bottom: calc(18 * var(--u)); }
+#bank { color: #ffe564; font-size: calc(16 * var(--u)); white-space: pre; margin-bottom: calc(6 * var(--u)); }
+.slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(4 * var(--u)); }
+.slots > div { position: relative; min-height: calc(150 * var(--u)); border: calc(1.5 * var(--u)) solid #63e7ff; padding: calc(4 * var(--u)); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: calc(12 * var(--u)); text-align: center; }
+.slots > div > span { color: #aca5d1; }
+.slots > div > small { color: #63e7ff; font-size: calc(10 * var(--u)); margin-top: calc(2 * var(--u)); }
+.slots > div > b { color: #fff3f4; font-size: calc(22 * var(--u)); }
+.slots > div > em { font-style: normal; color: #ffe564; font-size: calc(14 * var(--u)); }
+.slots > div > em small { display: block; font-size: calc(9 * var(--u)); color: #aca5d1; }
+.face { display: block; width: calc(54 * var(--u)); height: calc(54 * var(--u)); background-size: 400% 400%; border: calc(1 * var(--u)) solid #aca5d1; }
+.icon { position: absolute; top: calc(4 * var(--u)); right: calc(4 * var(--u)); width: calc(18 * var(--u)); height: calc(18 * var(--u)); image-rendering: pixelated; }
+/* the radar (visual update, option B): the designer's shell at 400 x 248, the degraded portrait in its window, the reticle as
+   a POSITION map (blip left or right by curb, up when far), the age range under it. Children are placed in % of the shell */
+.radar-box { position: relative; width: 100%; aspect-ratio: 400 / 248; container-type: inline-size; background: url("/art/radar/radar-B-blank.png") center / 100% 100% no-repeat; font-family: "Share Tech Mono", monospace; }
+.radar-box.search { background-image: url("/art/radar/radar-B-search.png"); } .radar-box.full { background-image: url("/art/radar/radar-B-full.png"); }
 #radar { position: absolute; inset: 0; }
-#radar > * { position: absolute; line-height: 1; }
-#radar .dither, #radar .face { left: 5.71%; top: 26.56%; width: 37%; height: 60.7%; }
-#radar .dither { image-rendering: pixelated; }
-#radar .reticle { left: 0; top: 0; width: 100%; height: 100%; }
-#radar .blip { width: 3.81cqw; height: 3.81cqw; margin: -1.9cqw 0 0 -1.9cqw; }
-#radar .lab { left: 73%; top: 69.1%; transform: translateX(-50%); font-family: "Chakra Petch", sans-serif; font-size: 4.29cqw; color: #699d53; }
-#radar .range { left: 73%; top: 83%; transform: translateX(-50%); font-size: 6.67cqw; color: #a9ef7f; white-space: nowrap; }
-#radar .drop { left: 73%; top: 77.5%; transform: translateX(-50%); font-family: "Chakra Petch", sans-serif; font-size: 6.19cqw; color: #a9ef7f; white-space: nowrap; }
-#radar .icon { left: 10.15%; top: 33.8%; width: 28.1%; filter: hue-rotate(-75deg); }
-#radar .age, #radar .bank { left: 55%; font-family: "Chakra Petch", sans-serif; color: #94e6dc; }
-#radar .age { top: 31.1%; font-size: 5.71cqw; } #radar .bank { top: 68.8%; font-size: 5.24cqw; }
-#radar .exact { left: 55%; top: 41.1%; font-size: 13.33cqw; color: #ffe16f; }
-#radar .pts { right: 5.7%; top: 76.9%; font-size: 10.48cqw; color: #91efbc; }
-#radar .scan { left: 73%; top: 53%; transform: translateX(-50%); font-size: 6.67cqw; color: #9de675; }
-#radar .carfull { left: 50%; top: 52.1%; font-size: 8.1cqw; }
-#radar .ring { left: 24.4%; top: 45.5%; width: 15.24cqw; height: 15.24cqw; border: 1px solid #355d36; border-radius: 50%; }
-#radar .ring.big { left: 16.76%; top: 33%; width: 30.48cqw; height: 30.48cqw; }
-.fork { position: absolute; top: calc(120 * var(--u)); left: 50%; transform: translateX(-50%); display: none; gap: calc(24 * var(--u)); font-size: calc(16 * var(--u)); white-space: pre; }
+#radar .dither { position: absolute; left: 5.5%; top: 21.8%; width: 42%; height: 67.7%; image-rendering: pixelated; }
+#radar .reticle { position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: .9; }
+#radar .blip { position: absolute; width: 3cqw; height: 3cqw; margin: -1.5cqw 0 0 -1.5cqw; border-radius: 50%; background: #85e64b; box-shadow: 0 0 2cqw #85e64b; }
+#radar .pos { position: absolute; left: 73.5%; top: 17%; transform: translateX(-50%); font-family: "Chakra Petch", sans-serif; font-size: 2.8cqw; color: #61928f; }
+#radar .lab { position: absolute; left: 73.5%; top: 71%; transform: translateX(-50%); font-family: "Chakra Petch", sans-serif; font-size: 2.6cqw; color: #61928f; }
+#radar .range { position: absolute; left: 73.5%; top: 79%; transform: translateX(-50%); font-size: 5.6cqw; color: #85e64b; white-space: nowrap; }
+#radar .range.drop { top: 76%; font-family: "Chakra Petch", sans-serif; font-size: 4.6cqw; }
+#radar .face { position: absolute; left: 5.5%; top: 21.8%; width: 42%; height: 67.7%; border-color: #85e64b; }
+#radar .reveal { position: absolute; left: 52%; top: 30%; width: 44%; font-size: 3.2cqw; color: #85e64b; line-height: 1.5; }
+#radar .reveal b { font-size: 5.6cqw; color: #fff3f4; }
+#radar .icon { top: 8%; right: 5%; width: 6cqw; height: 6cqw; }
+.fork { position: absolute; top: calc(24 * var(--u)); left: 50%; transform: translateX(-50%); display: none; gap: calc(24 * var(--u)); font-size: calc(16 * var(--u)); white-space: pre; }
 .callout { position: absolute; top: 44%; left: 50%; transform: translateX(-50%); font-size: calc(36 * var(--u)); text-shadow: 0 0 calc(12 * var(--u)) #000, 0 0 calc(4 * var(--u)) #000; white-space: nowrap; }
 .pad { display: none; width: 100%; padding: 12px; gap: 10px; }
 .pad button { flex: 1; height: 72px; font: inherit; font-size: 16px; color: #63e7ff; background: rgba(11,16,45,.8); border: 2px solid #63e7ff; touch-action: none; user-select: none; -webkit-user-select: none; }
@@ -100,15 +92,19 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .hit:focus-visible { outline: 2px solid #ffe564; }
 .rk > img { position: absolute; inset: 0; width: 100%; height: 100%; }
 .rs-status { white-space: normal; line-height: 1.25; text-align: left; }
-/* portrait phones: the scene on top with its readouts doubled, then the seats strip and the radar under it, then the pad */
+/* portrait phones: the scene on top, then the seat strip and the radar side by side, then the pad */
 @media (max-aspect-ratio: 1/1) {
   #root { justify-content: flex-start; }
   .overlay { position: fixed; }
   .app { width: 100vw; height: calc(100vw * 3 / 4); --u: calc(100vw / 1280); font-size: calc(36 * var(--u)); }
-  .tl { transform: scale(2); transform-origin: top left; } .tr { transform: scale(2); transform-origin: top right; } .bl { transform: scale(2); transform-origin: bottom left; }
-  .rail { inset: 100% 0 auto 0; display: flex; flex-wrap: wrap; justify-content: center; gap: calc(40 * var(--u)); padding: calc(40 * var(--u)); pointer-events: none; }
-  .seats { position: static; width: 100%; } .radar-box { position: static; width: 60%; }
+  .panel small { font-size: calc(30 * var(--u)); } .panel > b { font-size: calc(64 * var(--u)); }
+  .rail { top: 100%; left: 0; right: 0; width: auto; display: flex; gap: calc(16 * var(--u)); padding: calc(16 * var(--u)); pointer-events: none; }
+  .rail .panel { flex: 1; margin: 0; }
+  .rail .radar-box { flex: 1; width: auto; }
+  #bank { font-size: calc(30 * var(--u)); } .slots > div { min-height: calc(220 * var(--u)); font-size: calc(22 * var(--u)); }
+  .slots > div > b { font-size: calc(40 * var(--u)); } .slots > div > em { font-size: calc(26 * var(--u)); } .slots > div > small, .slots > div > em small { font-size: calc(18 * var(--u)); }
+  .face { width: calc(90 * var(--u)); height: calc(90 * var(--u)); } .icon { width: calc(32 * var(--u)); height: calc(32 * var(--u)); }
   .fork { font-size: calc(30 * var(--u)); } .callout { font-size: calc(56 * var(--u)); }
-  .pad { margin-top: calc(760 * var(--u)); }
+  .pad { margin-top: calc(300 * var(--u)); }
   .pause { width: 76%; }
-}
+  }

@@ -312,3 +312,9 @@ lines at a hard edge); the fork structure stays solid until driven through (the 
 arches); verge tiles 2.5 m at 0.3. Kept from before, against the kit: the radar's place, the terms line in the post
 well, the nine-rule scrolling ribbon. Phone layouts (portrait plates doubled, strip + radar under the scene) are still
 unverified on a device.
+
+Corrections (2026-10-16, afternoon): Gaylord liked the earlier CLICK TO START better, and the first one better still: the
+CSS chrome lettering with the glint from commit 49d9427 is back (Chakra Petch now, the pixel font is gone), the kit's layer
+and the PNG are out. He did not like the HUD changes either: the pre-kit HUD is back whole (cyan panels with KM/H, the
+seats panel with portraits, age and points in the right rail, the 400 x 248 radar under it); the kit's plates, seats strip
+and 210 x 128 radar are out. Results screen, pause card, HISTORY icons and the share card stay.
