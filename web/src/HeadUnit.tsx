@@ -344,6 +344,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
               {status[1] && <p className="gp-para gp-cp" style={{ left: px(TV.safe[0]), top: px(mid + 34 * u), width: px(TV.safe[2]), fontSize: px(20 * u), color: CYAN }}>{status[1]}</p>}
             </>
           )}
+          <div className="gp-lines" />{/* the Stage TV's scanlines, kept over the new tube (Gaylord: "put back the tv effect") */}
         </div>
         <img src={`${GP}${layout}/tv-bezel.png`} alt="" style={box([0, 0, ...TV.size])} />
         <img src={`${GP}${layout}/tv-glass.png`} alt="" style={box([0, 0, ...TV.size])} />

@@ -598,3 +598,4 @@ Where I departed from the pack, for Gaylord to overturn:
   was pressed. CHECKING (unknown broadcast outcome) is not a phase the chain layer surfaces.
 Not verified: a real SHOT / COLLECT round through the new screens (needs a wallet approval; the flows under them are
 unchanged), the pack's faces on a real phone.
+- Gaylord (00:40): "put back the tv effect". The Stage TV glass's scanlines (a 64 px tile cut from the old glass.png, art/gp/scanlines.png) lie over the new tube's content, inside the clip, under the bezel and the pack's glass.
