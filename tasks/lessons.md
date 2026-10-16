@@ -37,3 +37,5 @@
   whole approach, with frames captured at the moment of passing, not at one freeze.
 - Vite HMR does not always reach the render loop's closure; a "toggle has no effect" result after an edit means
   reload the page before concluding anything.
+- Test runs in Chrome play the game's sound on Gaylord's machine (2026-10-16, "can you turn the sound off"). The mute
+  is not persisted, so every test run presses `m` (or clicks SOUND OFF) right after the splash click, before DRIVE.
