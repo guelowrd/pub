@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { GC_FAUCET } from "../config";
 import type { ChallengeNote } from "../chain";
 import type { AccountFelts, ChallengeStorage } from "../notes";
-import { boards, history, keyOf, lettersBackward, nicknames, owed, playersInOrder, recordOutcome, shotOutcome, triesLost, whenLabel } from "../hub";
+import { boards, history, keyOf, lettersBackward, nicknames, owed, playersInOrder, recordOutcome, shotOutcome, triesLost } from "../hub";
 
 const ME = { suffix: 1n, prefix: 1n };
 const KQX = { suffix: 2n, prefix: 2n };
@@ -156,15 +156,5 @@ describe("boards", () => {
     expect(records.top[0].value).toBe(10_000);
     expect(records.mine).toBeNull();
     expect(boards(many.slice(0, 101), 400, ME).records.mine).toBeNull(); // in the top already
-  });
-});
-
-describe("arcade clock", () => {
-  it("says TODAY, YESTERDAY, TOMORROW or the date", () => {
-    const now = new Date(2026, 9, 8, 20, 30).getTime();
-    expect(whenLabel(new Date(2026, 9, 8, 18, 42).getTime(), now)).toBe("TODAY 18:42");
-    expect(whenLabel(new Date(2026, 9, 7, 21, 10).getTime(), now)).toBe("YESTERDAY 21:10");
-    expect(whenLabel(new Date(2026, 9, 9, 9, 5).getTime(), now)).toBe("TOMORROW 09:05");
-    expect(whenLabel(new Date(2026, 9, 1, 20, 14).getTime(), now)).toBe("01 OCT 20:14");
   });
 });

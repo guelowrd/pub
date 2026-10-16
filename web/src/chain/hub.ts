@@ -3,7 +3,7 @@
 // from GeoQuizz without its maps and languages.
 
 import type { ChallengeNote } from "./chain";
-import { fmtGc, pad, sameAccount as same, toGc } from "./flow";
+import { fmtGc, sameAccount as same, toGc } from "./flow";
 import { isShotAt, noteDeadline, shotDeadline, type AccountFelts } from "./notes";
 import { CLAIM_FUZZ } from "./config";
 
@@ -198,16 +198,4 @@ export function boards(notes: ChallengeNote[], height: number, me: AccountFelts 
   }
   const records = notes.filter((n) => n.kind === "record").map((n) => ({ key: n.id, who: n.storage.champion, value: n.storage.target, at: n.createdAt ?? Infinity }));
   return { coins: rank(tally(coins), me), records: rank(records, me, 100), defended: rank(tally(defended), me), smashed: rank(tally(smashed), me) };
-}
-
-/** A time, arcade style and local: TODAY 18:42, YESTERDAY 21:10, TOMORROW 09:05, 08 OCT 20:14. */
-export function whenLabel(ms: number, now = Date.now()): string {
-  const d = new Date(ms);
-  const time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  const midnight = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-  const days = Math.round((midnight(new Date(now)) - midnight(d)) / 86_400_000);
-  if (days === 0) return `TODAY ${time}`;
-  if (days === 1) return `YESTERDAY ${time}`;
-  if (days === -1) return `TOMORROW ${time}`;
-  return `${pad(d.getDate())} ${d.toLocaleString("en", { month: "short" }).toUpperCase()} ${time}`;
 }

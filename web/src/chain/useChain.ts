@@ -13,7 +13,7 @@ import { accountFelts, bech32Of, fetchChallengeNote, knownNote, listChallengeNot
 import { keyOf, lettersBackward, nicknames, playersInOrder } from "./hub";
 import { collect as collectNotes, gcBalance, postRecord, postShot, setSubmitAttemptListener, setSubmitStageListener, settle as settleNotes, waitFor, type Submitted } from "./bread";
 import { shotDeadline, shotStorage, ZERO_WORD, type AccountFelts, type ChallengeStorage } from "./notes";
-import { blockToMs, claimVerdict, explain, fmtGamecoin, myOpenShotsOn, NOT_FINISHED, outcomeText, SHOT_LOST, shotRefusal, withTimeout, type Trouble } from "./flow";
+import { blockToMs, claimVerdict, explain, fmtGamecoin, myOpenShotsOn, NOT_FINISHED, outcomeText, settlePlan, SHOT_LOST, shotRefusal, withTimeout, type Trouble } from "./flow";
 import { decodeGame, encodeGame, genuine, newGame, pubAnswer } from "./game";
 import type { Event } from "../game/sim";
 
@@ -227,11 +227,7 @@ export function useChain(): ChainApi {
   };
 
   const settle: ChainApi["settle"] = async (shots, record, seed, log, dist, score) => {
-    const target = shots[0].storage.target;
-    const won = score > target;
-    const claimPrize = won && !!record && !record.consumed && record.storage.expiryBlock > heightRef.current;
-    const again = !won && heightRef.current < shotDeadline(shots[0].storage);
-    const text = claimPrize ? `${score} POINTS. YOU WIN!` : won ? `${score} POINTS. YOU BEAT IT, BUT THE PRIZE IS GONE. YOUR GAMECOIN COMES BACK.` : again ? `${score} POINTS. NOT ENOUGH.` : `${score} POINTS. NOT ENOUGH. YOUR GAMECOIN GOES TO THE CHAMPION.`;
+    const plan = settlePlan(shots, record, score, heightRef.current), { won, claimPrize, again } = plan, text = plan.text.toUpperCase();
     // nothing to sign on a loss: the Gamecoin waits for the champion at the deadline; until then the shot can be driven again
     if (!won) return { won, claimed: false, again, text };
     const submitted = await run(claimPrize ? "CLAIMING YOUR PRIZE" : "GETTING YOUR GAMECOIN BACK", false, async () => {

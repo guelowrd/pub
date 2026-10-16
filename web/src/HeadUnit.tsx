@@ -107,7 +107,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   } else if (mode === "RECORDS") {
     if (review) {
       const g = game(review), mine = same(me, review.storage.champion), over = review.consumed || height >= review.storage.expiryBlock - 140;
-      rows = [lv("CHAMPION", champion(review), CREAM), lv("SCORE", String(review.storage.target)), lv("PRIZE", gc(review.amount)), lv("STAKE", gc(review.storage.minStake)), lv("COURSE", courseLabel(g.seed), CREAM), lv("STATION", songOf(g.song), CREAM)].slice(0, rowsN === 4 ? 6 : 6);
+      rows = [lv("CHAMPION", champion(review), CREAM), lv("SCORE", String(review.storage.target)), lv("PRIZE", gc(review.amount)), lv("STAKE", gc(review.storage.minStake)), lv("COURSE", courseLabel(g.seed), CREAM), lv("STATION", songOf(g.song), CREAM)];
       detail = String(review.storage.target); secondary = `${courseLabel(g.seed)} / ${songOf(g.song)}`;
       if (over) status = "THIS ONE IS OVER.";
       else if (mine) status = "THIS ONE IS YOURS.";
@@ -180,8 +180,9 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   if (trouble?.retry) { action = "TRY AGAIN"; onAuto = () => { const r = trouble.retry!; chain?.dismiss(); r(); }; }
   const total = rows.length, at = Math.min(cur, Math.max(0, total - 1));
   const start = Math.min(Math.max(0, at - rowsN + 1), Math.max(0, total - rowsN));
-  const move = (d: number) => { if (onArrow && (mode === "RADIO" || mode === "AUDIO" || mode === "POST")) return onArrow(d); if (total) setCursor({ ...cursor, [mode]: (at + d + total) % total }); };
-  const arrowKeys = (d: number) => { if (onArrow && mode !== "RADIO") return onArrow(d); if (mode === "RADIO") return onArrow?.(d); };
+  // up/down walk the list; left/right go to the mode's own arrow rule (tuning, the prize, the volume) or walk the list too
+  const move = (d: number) => { if (total) setCursor({ ...cursor, [mode]: (at + d + total) % total }); };
+  const sideways = (d: number) => (onArrow ? onArrow(d) : move(d));
 
   const goMode = (m: Mode) => { if (PRIMARY.includes(m)) setBack(m); setMode(m); setReview(null); setBand(false); setNote(null); chain?.dismiss(); };
   const goBack = () => { if (trouble) return chain?.dismiss(); if (review) return setReview(null); if (mode === "AUDIO" || mode === "SYSTEM") return setMode(back); if (band) return setBand(false); setNote(null); };
@@ -192,8 +193,8 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     switch (c.action) {
       case "mode": return goMode(PRIMARY[(PRIMARY.indexOf(back) + 1) % PRIMARY.length]);
       case "frequency-view": return mode === "RADIO" && setBand(!band);
-      case "previous": return mode === "RADIO" ? onArrow?.(-1) : move(-1);
-      case "next": return mode === "RADIO" ? onArrow?.(1) : move(1);
+      case "previous": return sideways(-1);
+      case "next": return sideways(1);
       case "back": return goBack();
       case "select": return select();
       case "primary": return !busy && onAuto?.();
@@ -209,8 +210,8 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       if (e.key >= "1" && e.key <= "6") goMode(PRIMARY[Number(e.key) - 1]);
       else if (e.key === "ArrowUp") move(-1);
       else if (e.key === "ArrowDown") move(1);
-      else if (e.key === "ArrowLeft") (mode === "RADIO" || onArrow ? arrowKeys(-1) : move(-1));
-      else if (e.key === "ArrowRight") (mode === "RADIO" || onArrow ? arrowKeys(1) : move(1));
+      else if (e.key === "ArrowLeft") sideways(-1);
+      else if (e.key === "ArrowRight") sideways(1);
       else if (e.key === "Enter") (mode === "RADIO" && !trouble ? onAuto?.() : select());
       else if (e.key === "Escape" || e.key === "Backspace") goBack();
       else if (e.key === "m") toggleMute();
