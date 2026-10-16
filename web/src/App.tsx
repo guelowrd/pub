@@ -219,8 +219,8 @@ export default function App() {
         <div className="panel bl"><small>SPEED</small><b id="speed" /><small>KM/H</small></div>
         <div className="rail">
           <div className="panel seats"><div id="bank" /><div className="slots"><div id="seat0" /><div id="seat1" /><div id="seat2" /></div></div>
+          <div className="radar-box"><div id="radar" /></div>
         </div>
-        <div className="radar-box"><div id="radar" /></div>
         <div className="fork" id="fork" />
         <div className="callout" id="callout" />
       </div>

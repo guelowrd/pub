@@ -26,12 +26,11 @@ The radio is a jukebox: pick the song, pick a record to shoot at, read the score
 - SYSTEM gets a RESET BEST row (clears the best score kept on the device).
 - The radar scans while in a tunnel, instead of showing the next street's target.
 - The HUD is hidden behind the results screen.
-- The radar moves to the bottom right corner and the seats stay top right, so the right curb and the gantry's right plate stay visible mid-screen. This is my provisional layout until you redo the rail (item 2 below).
 
 ## What I need from you next, in order
 
 1. The results screen. It is code-drawn today (TIME IS UP, three stat rows, the still-on-board box, the post box, SAME RUN and NEW RUN). It needs a design in the same family as the head unit: the score, the stats, the post box (one line, 1 GC) and the two share actions, the two run buttons, and the same screen after a shot (the verdict line and DRIVE AGAIN, TRY AGAIN, MENU). The HUD will be hidden under it.
-2. The HUD's right rail. At close range the seats and the radar covered the right sidewalk, the bay and the gantry's right plate (11-drive-gantry.jpg). I need a composition that keeps the right curb visible: the seats as a thinner strip, the radar in a corner, or both smaller. The radar should not grow. My provisional layout (radar bottom right) is a stopgap.
+2. The HUD's right rail. At close range the seats and the radar covered the right sidewalk, the bay and the gantry's right plate (11-drive-gantry.jpg). I need a composition that keeps the right curb visible with the radar staying under the seats: the seats as a thinner strip, or both panels smaller. The radar should not grow.
 3. HISTORY rows: a record icon and a shot icon in place of my R and S letters, and the state words in your colours (OPEN, IN PLAY, COLLECT, BEATEN, DEFENDED, TAKEN BACK, WON, LOST).
 4. The pause overlay (15-pause.jpg): unstyled, just PAUSED and CLOCK STOPPED over the dimmed scene.
 5. The radar's DROP OFF state: when the next stop is a drop-off bay, the reticle shows the bay's position and the text says DROP OFF with the destination icon. The copy and the layout are mine; give it a proper treatment, and one for the two-second reveal after a pickup (full-colour portrait, exact age, points to bank).

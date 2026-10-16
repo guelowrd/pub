@@ -284,7 +284,7 @@ verge 3 m (8 m was a blur at the bottom of the screen).
 ### Fix list from the screen tour (2026-10-16, morning)
 Done in code: the lower LCD is the radio in every mode (index, band, VOL, song); POWER = off to the splash; FREQ/BAND seeks
 a random station; SCORES one row per player; SYSTEM RESET BEST row; the radar scans inside tunnels; the HUD hides under
-the results; the radar sits in the bottom right corner (stopgap until the designer redoes the rail); MILLENNIALS; bot
+the results; the radar tried the bottom right corner and went back under the seats on Gaylord's word; MILLENNIALS; bot
 runs from the dev hook never set the best. For the designer (docs/designer-brief-3.md): the results screen, the rail,
 HISTORY icons, the pause overlay, the radar DROP OFF and reveal states, the share card, the splash ribbon, phone shots.
 
