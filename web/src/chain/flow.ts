@@ -168,7 +168,7 @@ export function fmtGamecoin(v: bigint): string {
   return `${n.toLocaleString("en-US", { maximumFractionDigits: GC_DECIMALS })} ${n === 1 ? "Gamecoin" : "Gamecoins"}`;
 }
 
-/** "1 GC", "2.5 GC": what fits a head-unit row. */
+/** "1 GC", "2.5 GC": for keys and the HISTORY state column, where "Gamecoin" has no room (Gaylord: spell it out elsewhere). */
 export const fmtGc = (v: bigint) => `${toGc(v).toLocaleString("en-US", { maximumFractionDigits: GC_DECIMALS })} GC`;
 
 /** A moment in UTC, for readers anywhere: 13 Oct 14:05 UTC. */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FAST, GREEN, KMH, LANE, RED, REV, RUN, TOP, W, WRECK, agePoints, branchX, edges, newSim, step, type District, type Input, type Rider, type Sim } from "./sim";
+import { BAY, FAST, GREEN, KMH, LANE, RED, REV, RUN, TOP, W, WRECK, agePoints, branchX, candidate, edges, isRed, leftEdge, newSim, rightEdge, step, type District, type Input, type Rider, type Sim } from "./sim";
 import { MOUTHS, extend } from "./course";
 
 const idle: Input = { gas: false, brake: false, left: false, right: false };
@@ -210,6 +210,84 @@ describe("fork", () => {
     expect(f.shifted).toBe(true);
     expect(s.traffic.length).toBe(1);
     expect(s.traffic[0].x).toBeCloseTo(0, 1);
+  });
+});
+
+describe("hazards", () => {
+  const hz = (kind: "cone" | "oil" | "pothole" | "barrier", s: Sim) => ({ z: s.z, x: 0, kind, hit: false });
+  it("cones and potholes scrub speed once; oil stays slick and is hit again", () => {
+    const s = newSim(1);
+    extend(s);
+    s.hazards = [hz("cone", s)]; s.v = 20; step(s, idle, 1 / 120, extend);
+    expect(s.v).toBeCloseTo(14, 0); expect(s.hazards[0].hit).toBe(true);
+    s.hazards = [hz("pothole", s)]; s.v = 20; step(s, idle, 1 / 120, extend);
+    expect(s.v).toBeCloseTo(15, 0);
+    s.hazards = [hz("oil", s)]; s.v = 20; step(s, idle, 1 / 120, extend);
+    expect(s.oil).toBeGreaterThan(1); expect(s.hazards[0].hit).toBe(false);
+  });
+  it("oil cuts the wheel's bite", () => {
+    const dry = newSim(1), wet = newSim(1);
+    for (const s of [dry, wet]) { extend(s); s.dx.fill(0); s.hazards = []; s.v = 30; s.steer = 1; }
+    wet.oil = 5;
+    const x0 = dry.x, x1 = wet.x;
+    run(dry, { right: true }, 0.5); run(wet, { right: true }, 0.5);
+    expect(wet.x - x1).toBeLessThan((dry.x - x0) * 0.6);
+  });
+  it("a barrier spins you out when slow and wrecks you when fast; the top speed never drops below FAST", () => {
+    const s = newSim(1);
+    extend(s);
+    s.hazards = [hz("barrier", s)]; s.v = WRECK - 1; step(s, idle, 1 / 120, extend);
+    expect(s.spin).toBe(0); expect(s.v).toBeCloseTo((WRECK - 1) * 0.2, 1); expect(s.callout?.text).toBe("SPIN OUT!");
+    s.seats[0] = R("RAY", 70, "golf"); s.cap = FAST + 5 / KMH;
+    s.hazards = [hz("barrier", s)]; s.v = WRECK + 5; step(s, idle, 1 / 120, extend);
+    expect(s.spin).toBeGreaterThan(0); expect(s.cap).toBe(FAST); // 15 km/h off, floored at FAST
+    expect(s.seats).toEqual([null, null, null]); expect(s.bailed.map((r) => r.name)).toEqual(["RAY"]);
+  });
+});
+
+describe("reversing", () => {
+  it("backing into a car behind stops you against it", () => {
+    const s = newSim(1);
+    extend(s);
+    s.hazards = []; s.v = -3;
+    s.traffic = [{ z: s.z - 2, x: 0, tx: 0, v: 0, cruise: 0, kind: 0, braking: false }];
+    step(s, idle, 1 / 120, extend);
+    expect(s.v).toBe(0);
+    expect(s.z).toBeCloseTo(s.traffic[0].z + 4.5, 1); // a car length behind its tail
+  });
+});
+
+describe("edges", () => {
+  it("widen from one road to two across the fork's approach, and a bay adds to its side", () => {
+    const s = newSim(1);
+    extend(s);
+    const f = s.forks[0];
+    expect(edges(s, f.z)).toEqual([-W, W]);
+    expect(edges(s, f.zDecide - 1)[1]).toBeCloseTo(2 * W, 0);
+    const bay = s.stops.find((o) => o.side > 0 && !o.drop)!;
+    expect(rightEdge(s, bay.z + 1)).toBeCloseTo(W + BAY);
+    expect(leftEdge(s, bay.z + 1)).toBeCloseTo(W);
+  });
+});
+
+describe("radar", () => {
+  it("candidate() is the next stop still open, kept until ten metres past it", () => {
+    const s = newSim(1);
+    extend(s);
+    const [a, b] = s.stops;
+    s.z = a.z - 100; expect(candidate(s)).toBe(a);
+    s.z = a.z + a.len + 5; expect(candidate(s)).toBe(a);
+    s.z = a.z + a.len + 11; expect(candidate(s)).not.toBe(a);
+    s.z = b.z - 100; expect(candidate(s)).toBe(b); // a is behind by then
+    a.taken = true; s.z = a.z - 100; expect(candidate(s)).not.toBe(a); // and never a taken one
+    expect(candidate(s)).toBe(b.z < s.z + 250 ? b : undefined); // only within the radar's reach
+  });
+  it("isRed() cycles RED then GREEN seconds, shifted by the light's offset", () => {
+    expect(isRed({ z: 0, offset: 0 }, 0)).toBe(true);
+    expect(isRed({ z: 0, offset: 0 }, RED - 0.01)).toBe(true);
+    expect(isRed({ z: 0, offset: 0 }, RED)).toBe(false);
+    expect(isRed({ z: 0, offset: 0 }, RED + GREEN)).toBe(true);
+    expect(isRed({ z: 0, offset: RED }, 0)).toBe(false);
   });
 });
 

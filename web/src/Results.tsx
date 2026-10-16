@@ -81,7 +81,7 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
     else if (busy) { status = busy.stage === "connect" ? "CONNECTING" : busy.stage === "wallet" ? "CHECK WALLET" : busy.stage === "prepare" ? "GETTING READY" : "POSTING"; keys = [postKey(busy.stage === "network" ? "POSTING" : "POST IT", true)]; if (status === "POSTING") status = null; } // the key says it
     else if (!chain?.ready) { status = "LOADING THE CHAIN"; keys = [postKey("POST IT", true)]; }
     else if (!chain.me) { status = null; keys = [postKey("CONNECT", false, () => void chain.connect())]; } // the key says it
-    else if (chain.balance != null && chain.balance < STAKE) { status = "NEED GC"; keys = [postKey("GET GC", false, () => void chain.gamecoins().then((m) => m && setNote(m)))]; }
+    else if (chain.balance != null && chain.balance < STAKE) { status = "NEED GAMECOINS"; keys = [postKey("GET GC", false, () => void chain.gamecoins().then((m) => m && setNote(m)))]; }
     else { status = note ?? TERMS; keys = [postKey("POST IT")]; }
   }
 

@@ -109,6 +109,8 @@ export const districtAt = (s: Sim, z: number) => s.streets.find((st) => z >= st.
 export const isRed = (l: Light, t: number) => (t + l.offset) % (RED + GREEN) < RED;
 export const tick = (s: Sim) => Math.round(s.t * 100);
 
+/** The fork whose zone holds z, for the road edges. It ends at zEnd while the renderer draws branches to zEnd + FORK_OUT:
+ * the frame has shifted onto the bore long before zEnd, so the edges past it are the bore's own, ± W. */
 export function activeFork(s: Sim, z: number): Fork | undefined {
   return s.forks.find((f) => z >= f.z && z < f.zEnd);
 }

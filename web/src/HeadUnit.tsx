@@ -11,7 +11,7 @@ import { ART } from "./game/art";
 import { STATIONS, type Station } from "./game/stations";
 import { NAME } from "./game/sim";
 import type { ChainApi, ChallengeNote } from "./chain/ChainHost";
-import { blocksToClock as clock, fmtGc as gc, sameAccount as same, sameWord } from "./chain/flow";
+import { blocksToClock as clock, fmtGamecoin as gamecoins, fmtGc as gc, sameAccount as same, sameWord } from "./chain/flow";
 import { boards, history, owed as owedNotes } from "./chain/hub";
 import { noteDeadline } from "./chain/notes";
 
@@ -100,12 +100,12 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   } else if (mode === "RECORDS") {
     if (review) {
       const g = game(review), mine = same(me, review.storage.champion), over = review.consumed || height >= review.storage.expiryBlock - 140;
-      rows = [lv("CHAMPION", champion(review), CREAM), lv("SCORE", fmt(review.storage.target)), lv("PRIZE", gc(review.amount)), lv("STAKE", gc(review.storage.minStake)), lv("COURSE", courseLabel(g.seed), CREAM), lv("STAGE", songOf(g.song), CREAM), lv("TIME LEFT", clock(review.storage.expiryBlock - height), DISPLAY)];
+      rows = [lv("CHAMPION", champion(review), CREAM), lv("SCORE", fmt(review.storage.target)), lv("PRIZE", gamecoins(review.amount)), lv("STAKE", gamecoins(review.storage.minStake)), lv("COURSE", courseLabel(g.seed), CREAM), lv("STAGE", songOf(g.song), CREAM), lv("TIME LEFT", clock(review.storage.expiryBlock - height), DISPLAY)];
       if (over) status = "THIS ONE IS OVER.";
       else if (mine) status = "THIS ONE IS YOURS.";
       else { action = "SHOT"; onAction = () => void chain?.shoot(review).then((r) => r && onShot(r.shots, r.record)); }
     } else {
-      status = notReady ?? (open.length ? null : "NO OPEN RECORDS. DRIVE, THEN POST YOURS.");
+      status = notReady ?? (open.length ? null : "NO OPEN RECORDS. DRIVE, THEN POST YOUR RECORD.");
       rows = open.map((n, i) => ({ key: n.id, cells: [{ t: String(i + 1), col: "num", c: DIM }, { t: champion(n), col: "name" }, { t: fmt(n.storage.target), col: "score", c: YELLOW }, { t: songOf(game(n).song), col: "state", c: DISPLAY }, { t: "", col: "state", icon: "record" }] }));
       const sel = open[cur];
       if (sel) { action = "SHOT"; onAction = () => setReview(sel); onSelect = (i) => setReview(open[i]); }
@@ -123,7 +123,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
         ...atMine.map((n) => ({ key: n.id, kind: n.kind, title: `${rival(n)} SHOOTING`, score: n.storage.target, state: "IN PLAY" })),
         ...past,
       ];
-      status = items.length ? null : "NO GAMES YET. DRIVE, THEN POST YOUR SCORE.";
+      status = items.length ? null : "NO GAMES YET. DRIVE, THEN POST YOUR RECORD.";
       rows = items.map((it) => ({ key: it.key, cells: [{ t: it.title, col: "name" }, { t: fmt(it.score), col: "score", c: YELLOW }, { t: it.state, col: "state", c: stateColor(it.state) }, { t: "", col: "state", icon: it.kind }] }));
       const sel = items[cur];
       if (owed.length) { action = "COLLECT"; onAction = () => void chain?.collect(owed); }
@@ -137,7 +137,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     rows = list.map((r, i) => { const mine = same(me, r.who); return { key: r.key, cells: [{ t: String(i + 1), col: "num", c: DIM }, { t: chain?.nameOf(r.who) ?? "???", col: "name", c: mine ? YELLOW : CREAM }, { t: fmt(r.value), col: "score", c: YELLOW }] }; });
   } else if (mode === "WALLET") {
     const name = me ? chain!.nameOf(me) : chain?.connecting ? chain.walletStatus || "CONNECTING" : "NOT CONNECTED";
-    rows = [lv("WALLET", name, me ? MINT : chain?.connecting ? DISPLAY : PINK), lv("BALANCE", chain?.balance != null ? gc(chain.balance) : me ? "SELECT TO READ" : "--", chain?.balance != null ? YELLOW : DISPLAY), lv("NETWORK", "TESTNET", CREAM), lv("STATUS", busy ? busy.text : trouble ? "ERROR" : "IDLE", busy ? DISPLAY : trouble ? PINK : CREAM)];
+    rows = [lv("WALLET", name, me ? MINT : chain?.connecting ? DISPLAY : PINK), lv("BALANCE", chain?.balance != null ? gamecoins(chain.balance) : me ? "SELECT TO READ" : "--", chain?.balance != null ? YELLOW : DISPLAY), lv("NETWORK", "TESTNET", CREAM), lv("STATUS", busy ? busy.text : trouble ? "ERROR" : "IDLE", busy ? DISPLAY : trouble ? PINK : CREAM)];
     if (me) rows.push(lv("GAMECOINS", "GET 10", DISPLAY), lv("DISCONNECT", "SELECT", DISPLAY));
     if (!chain?.installed) status = "NO BREAD WALLET FOUND. INSTALL IT, THEN COME BACK.";
     if (!me) { action = "CONNECT"; onAction = () => void chain?.connect(); }

@@ -1,514 +1,322 @@
 [
-  {
-    "id": "leo",
-    "name": "LEO",
-    "age": 18,
-    "coat": "#e9b839",
-    "clues": "Dark curls, round face, yellow hoodie",
-    "atlasIndex": 0
-  },
-  {
-    "id": "nina",
-    "name": "NINA",
-    "age": 24,
-    "coat": "#3b69ac",
-    "clues": "Ponytail, denim, bright eyes",
-    "atlasIndex": 1
-  },
-  {
-    "id": "gus",
-    "name": "GUS",
-    "age": 29,
-    "coat": "#327863",
-    "clues": "Red hair and a moustache",
-    "atlasIndex": 2
-  },
-  {
-    "id": "milo",
-    "name": "MILO",
-    "age": 34,
-    "coat": "#62613d",
-    "clues": "Tired eyes and a patched work jacket",
-    "atlasIndex": 3
-  },
-  {
-    "id": "june",
-    "name": "JUNE",
-    "age": 41,
-    "coat": "#c54383",
-    "clues": "Pink windbreaker, short curls",
-    "atlasIndex": 4
-  },
-  {
-    "id": "rex",
-    "name": "REX",
-    "age": 48,
-    "coat": "#292b49",
-    "clues": "Early silver hair, leather jacket",
-    "atlasIndex": 5
-  },
-  {
-    "id": "ken",
-    "name": "KEN",
-    "age": 55,
-    "coat": "#425c9e",
-    "clues": "Square jaw, dark gray hair",
-    "atlasIndex": 6
-  },
-  {
-    "id": "sol",
-    "name": "SOL",
-    "age": 59,
-    "coat": "#c37536",
-    "clues": "Silver streak, warm grin, orange scarf",
-    "atlasIndex": 7
-  },
-  {
-    "id": "bev",
-    "name": "BEV",
-    "age": 63,
-    "coat": "#388f91",
-    "clues": "Curly gray hair and a teal coat",
-    "atlasIndex": 8
-  },
-  {
-    "id": "dolly",
-    "name": "DOLLY",
-    "age": 65,
-    "coat": "#cf3e93",
-    "clues": "Blonde hair, glossy lips, pink faux fur",
-    "atlasIndex": 9
-  },
-  {
-    "id": "otis",
-    "name": "OTIS",
-    "age": 67,
-    "coat": "#303d68",
-    "clues": "Gray hair, red hat, navy coat",
-    "atlasIndex": 10
-  },
-  {
-    "id": "ray",
-    "name": "RAY",
-    "age": 70,
-    "coat": "#d9a52c",
-    "clues": "Lively eyes, gray moustache, yellow jacket",
-    "atlasIndex": 11
-  },
-  {
-    "id": "mei",
-    "name": "MEI",
-    "age": 72,
-    "coat": "#85528e",
-    "clues": "Tied silver hair, purple jacket",
-    "atlasIndex": 12
-  },
-  {
-    "id": "al",
-    "name": "AL",
-    "age": 77,
-    "coat": "#8b6249",
-    "clues": "White side hair, brown cardigan",
-    "atlasIndex": 13
-  },
-  {
-    "id": "ida",
-    "name": "IDA",
-    "age": 85,
-    "coat": "#478459",
-    "clues": "White curls and green coat",
-    "atlasIndex": 14
-  },
-  {
-    "id": "abe",
-    "name": "ABE",
-    "age": 99,
-    "coat": "#784e89",
-    "clues": "Sparse white hair, glasses, violet scarf",
-    "atlasIndex": 15
-  },
-  {
-    "id": "ivy",
-    "name": "IVY",
-    "age": 23,
-    "clues": "Light-skinned woman, premature silver bob, brown oversized cardigan, tiny gold pendant, fresh round cheeks, tired eyes.",
-    "ageRead": "young_older",
-    "atlasSet": "b",
-    "atlasIndex": 0,
-    "portraitAtlas": "assets/portraits-b.png",
-    "bodyAtlas": "assets/passengers-b.png",
-    "basePoints": 60
-  },
-  {
-    "id": "max",
-    "name": "MAX",
-    "age": 32,
-    "clues": "Light-skinned stocky man, receding black hair and full black beard, tired eyes, orange work overalls over black tee, work boots.",
-    "ageRead": "young_older",
-    "atlasSet": "b",
-    "atlasIndex": 1,
-    "portraitAtlas": "assets/portraits-b.png",
-    "bodyAtlas": "assets/passengers-b.png",
-    "basePoints": 240
-  },
-  {
-    "id": "faye",
-    "name": "FAYE",
-    "age": 45,
-    "clues": "East Asian woman, early salt-and-pepper bun, square amber glasses, olive tweed blazer and dark slacks, smooth cheeks with mild eye lines.",
-    "ageRead": "young_older",
-    "atlasSet": "b",
-    "atlasIndex": 2,
-    "portraitAtlas": "assets/portraits-b.png",
-    "bodyAtlas": "assets/passengers-b.png",
-    "basePoints": 500
-  },
-  {
-    "id": "omar",
-    "name": "OMAR",
-    "age": 49,
-    "clues": "Brown-skinned man, neat salt-and-pepper beard, burgundy polo, beige trousers, large gold wristwatch, mild smile lines.",
-    "ageRead": "middle",
-    "atlasSet": "b",
-    "atlasIndex": 3,
-    "portraitAtlas": "assets/portraits-b.png",
-    "bodyAtlas": "assets/passengers-b.png",
-    "basePoints": 580
-  },
-  {
-    "id": "liz",
-    "name": "LIZ",
-    "age": 55,
-    "clues": "Light-skinned woman, short frosted brown-blonde hair, white blazer and cobalt blouse, navy trousers, designer shopping bag, visible crow feet.",
-    "ageRead": "middle",
-    "atlasSet": "b",
-    "atlasIndex": 4,
-    "portraitAtlas": "assets/portraits-b.png",
-    "bodyAtlas": "assets/passengers-b.png",
-    "basePoints": 700
-  },
-  {
-    "id": "des",
-    "name": "DES",
-    "age": 61,
-    "clues": "Dark-skinned man, shaved bald head, silver goatee, black leather waistcoat over maroon shirt, dark jeans, worn boots, lined face.",
-    "ageRead": "middle",
-    "atlasSet": "b",
-    "atlasIndex": 5,
-    "portraitAtlas": "assets/portraits-b.png",
-    "bodyAtlas": "assets/passengers-b.png",
-    "basePoints": 820
-  },
-  {
-    "id": "cora",
-    "name": "CORA",
-    "age": 64,
-    "clues": "Light-skinned plump woman, short silver curls, aqua-and-white striped sports polo, white cropped trousers, aqua gym tote, visible neck lines.",
-    "ageRead": "core",
-    "atlasSet": "b",
-    "atlasIndex": 6,
-    "portraitAtlas": "assets/portraits-b.png",
-    "bodyAtlas": "assets/passengers-b.png",
-    "basePoints": 880
-  },
-  {
-    "id": "hank",
-    "name": "HANK",
-    "age": 68,
-    "clues": "Light-skinned broad man, gray moustache and balding gray crown, sea-green fishing waistcoat over beige shirt, tan trousers, deep tan and creased eyes.",
-    "ageRead": "core",
-    "atlasSet": "b",
-    "atlasIndex": 7,
-    "portraitAtlas": "assets/portraits-b.png",
-    "bodyAtlas": "assets/passengers-b.png",
-    "basePoints": 960
-  },
-  {
-    "id": "pearl",
-    "name": "PEARL",
-    "age": 70,
-    "clues": "Black woman, close white curls, lilac embroidered blazer and matching skirt, gold brooch, elegant posture, realistic face and neck wrinkles.",
-    "ageRead": "core",
-    "atlasSet": "b",
-    "atlasIndex": 8,
-    "portraitAtlas": "assets/portraits-b.png",
-    "bodyAtlas": "assets/passengers-b.png",
-    "basePoints": 1000
-  },
-  {
-    "id": "basil",
-    "name": "BASIL",
-    "age": 73,
-    "clues": "Light-skinned lanky man, thinning wavy gray hair, yellow golf visor, mint polo and cream trousers, golf glove tucked at belt, weathered lined face.",
-    "ageRead": "core",
-    "atlasSet": "b",
-    "atlasIndex": 9,
-    "portraitAtlas": "assets/portraits-b.png",
-    "bodyAtlas": "assets/passengers-b.png",
-    "basePoints": 1000
-  },
-  {
-    "id": "ana",
-    "name": "ANA",
-    "age": 76,
-    "clues": "East Asian woman, neat silver bob, navy cruise blazer with striped scarf and white trousers, gold cruise lanyard without writing, fine deep wrinkles.",
-    "ageRead": "core",
-    "atlasSet": "b",
-    "atlasIndex": 10,
-    "portraitAtlas": "assets/portraits-b.png",
-    "bodyAtlas": "assets/passengers-b.png",
-    "basePoints": 1000
-  },
-  {
-    "id": "vito",
-    "name": "VITO",
-    "age": 81,
-    "clues": "Olive-skinned man, bushy white moustache, panama hat, tan linen suit over pink shirt, unlit cigar held low, deep sun lines.",
-    "ageRead": "core",
-    "atlasSet": "b",
-    "atlasIndex": 11,
-    "portraitAtlas": "assets/portraits-b.png",
-    "bodyAtlas": "assets/passengers-b.png",
-    "basePoints": 950
-  },
-  {
-    "id": "nell",
-    "name": "NELL",
-    "age": 90,
-    "clues": "Light-skinned small woman, cropped wispy white hair, soft blue long coat, dark skirt and comfortable shoes, slim cane in lowered hand, gently stooped, deep wrinkles.",
-    "ageRead": "oldest",
-    "atlasSet": "b",
-    "atlasIndex": 12,
-    "portraitAtlas": "assets/portraits-b.png",
-    "bodyAtlas": "assets/passengers-b.png",
-    "basePoints": 500
-  },
-  {
-    "id": "ed",
-    "name": "ED",
-    "age": 98,
-    "clues": "Light-skinned very old thin man, sparse wispy white hair, round spectacles, beige knitted vest and checked shirt, loose brown trousers, cane in lowered hand, deep creases.",
-    "ageRead": "oldest",
-    "atlasSet": "b",
-    "atlasIndex": 13,
-    "portraitAtlas": "assets/portraits-b.png",
-    "bodyAtlas": "assets/passengers-b.png",
-    "basePoints": 100
-  },
-  {
-    "id": "suki",
-    "name": "SUKI",
-    "age": 67,
-    "clues": "East Asian woman, sleek dyed black bob, bright pink tailored trouser suit, glossy lipstick and gold earrings, cosmetic smooth cheeks but believable late-sixties eyelids and neck lines.",
-    "ageRead": "younger_older",
-    "atlasSet": "b",
-    "atlasIndex": 14,
-    "portraitAtlas": "assets/portraits-b.png",
-    "bodyAtlas": "assets/passengers-b.png",
-    "basePoints": 940
-  },
-  {
-    "id": "vince",
-    "name": "VINCE",
-    "age": 75,
-    "clues": "Light-skinned gym-fit man, silver quiff, cobalt-and-cyan tracksuit over white tee, gold chain, running shoes, athletic posture but clearly seventy-five face and neck creases.",
-    "ageRead": "younger_older",
-    "atlasSet": "b",
-    "atlasIndex": 15,
-    "portraitAtlas": "assets/portraits-b.png",
-    "bodyAtlas": "assets/passengers-b.png",
-    "basePoints": 1000
-  },
-  {
-    "id": "ruy",
-    "name": "RUY",
-    "age": 28,
-    "clues": "Olive-skinned man, prematurely silver quiff, dark stubble, exhausted eyes, forest-green patched work jacket over cream tee and gray jeans, smooth young cheeks.",
-    "ageRead": "young_older",
-    "atlasSet": "c",
-    "atlasIndex": 0,
-    "portraitAtlas": "assets/portraits-c.png",
-    "bodyAtlas": "assets/passengers-c.png",
-    "basePoints": 160
-  },
-  {
-    "id": "jo",
-    "name": "JO",
-    "age": 36,
-    "clues": "Light-skinned woman, early gray long braid, oversized brown knitted cardigan, large round glasses, navy skirt, young cheeks and tired eyes.",
-    "ageRead": "young_older",
-    "atlasSet": "c",
-    "atlasIndex": 1,
-    "portraitAtlas": "assets/portraits-c.png",
-    "bodyAtlas": "assets/passengers-c.png",
-    "basePoints": 320
-  },
-  {
-    "id": "tess",
-    "name": "TESS",
-    "age": 41,
-    "clues": "Black woman, prematurely gray pixie hair, loose ochre checked shirt and olive trousers, worn canvas tote, under-eye bags but plausible early forties face.",
-    "ageRead": "young_older",
-    "atlasSet": "c",
-    "atlasIndex": 2,
-    "portraitAtlas": "assets/portraits-c.png",
-    "bodyAtlas": "assets/passengers-c.png",
-    "basePoints": 420
-  },
-  {
-    "id": "paco",
-    "name": "PACO",
-    "age": 46,
-    "clues": "Olive-skinned man, dark short hair with gray temples, pronounced eye bags and sun-worn cheeks, red mechanic shirt and blue work trousers, black boots.",
-    "ageRead": "middle",
-    "atlasSet": "c",
-    "atlasIndex": 3,
-    "portraitAtlas": "assets/portraits-c.png",
-    "bodyAtlas": "assets/passengers-c.png",
-    "basePoints": 520
-  },
-  {
-    "id": "luz",
-    "name": "LUZ",
-    "age": 52,
-    "clues": "Brown-skinned woman, dark curly hair with visible gray roots, gold hoops, peach silk blouse and cream slacks, large leather shopping bag, smile lines.",
-    "ageRead": "middle",
-    "atlasSet": "c",
-    "atlasIndex": 4,
-    "portraitAtlas": "assets/portraits-c.png",
-    "bodyAtlas": "assets/passengers-c.png",
-    "basePoints": 640
-  },
-  {
-    "id": "bo",
-    "name": "BO",
-    "age": 58,
-    "clues": "Light-skinned man, prematurely white beard, teal fedora, flamboyant orange-print short-sleeve shirt, white shorts, deck shoes, lined but clearly middle-aged face.",
-    "ageRead": "middle",
-    "atlasSet": "c",
-    "atlasIndex": 5,
-    "portraitAtlas": "assets/portraits-c.png",
-    "bodyAtlas": "assets/passengers-c.png",
-    "basePoints": 760
-  },
-  {
-    "id": "sue",
-    "name": "SUE",
-    "age": 62,
-    "clues": "Light-skinned woman, honey-blonde short hair with gray roots, emerald golf polo and white trousers, pink visor, golf glove on lowered hand, crow feet and neck lines.",
-    "ageRead": "core",
-    "atlasSet": "c",
-    "atlasIndex": 6,
-    "portraitAtlas": "assets/portraits-c.png",
-    "bodyAtlas": "assets/passengers-c.png",
-    "basePoints": 840
-  },
-  {
-    "id": "walt",
-    "name": "WALT",
-    "age": 66,
-    "clues": "Black man, gray hair and a beard and broad smile, navy yacht-club blazer with blank crest, cream chinos, captain-style cap held low, deep laugh lines.",
-    "ageRead": "core",
-    "atlasSet": "c",
-    "atlasIndex": 7,
-    "portraitAtlas": "assets/portraits-c.png",
-    "bodyAtlas": "assets/passengers-c.png",
-    "basePoints": 920
-  },
-  {
-    "id": "hanna",
-    "name": "HANNA",
-    "age": 71,
-    "clues": "Light-skinned woman, steel-gray bob, red cat-eye glasses, leopard-print blouse and black trousers, chunky gold necklace, fine forehead and neck wrinkles.",
-    "ageRead": "core",
-    "atlasSet": "c",
-    "atlasIndex": 8,
-    "portraitAtlas": "assets/portraits-c.png",
-    "bodyAtlas": "assets/passengers-c.png",
-    "basePoints": 1000
-  },
-  {
-    "id": "marc",
-    "name": "MARC",
-    "age": 74,
-    "clues": "Olive-skinned stocky man, gray side part and thick eyebrows, plum polo, cream trousers, gold watch, deeply tanned wrinkles, rounded belly.",
-    "ageRead": "core",
-    "atlasSet": "c",
-    "atlasIndex": 9,
-    "portraitAtlas": "assets/portraits-c.png",
-    "bodyAtlas": "assets/passengers-c.png",
-    "basePoints": 1000
-  },
-  {
-    "id": "joy",
-    "name": "JOY",
-    "age": 78,
-    "clues": "Black woman, white twists pinned up, sunny yellow flowing dress over flat shoes, pearl earrings, magenta clutch, lively smile and realistic late-seventies lines.",
-    "ageRead": "core",
-    "atlasSet": "c",
-    "atlasIndex": 10,
-    "portraitAtlas": "assets/portraits-c.png",
-    "bodyAtlas": "assets/passengers-c.png",
-    "basePoints": 1000
-  },
-  {
-    "id": "grace",
-    "name": "GRACE",
-    "age": 85,
-    "clues": "Light-skinned woman, silver curly bob, teal cardigan over cream floral dress, old gold pendant, comfortable white shoes, wrinkled hands and face.",
-    "ageRead": "core",
-    "atlasSet": "c",
-    "atlasIndex": 11,
-    "portraitAtlas": "assets/portraits-c.png",
-    "bodyAtlas": "assets/passengers-c.png",
-    "basePoints": 750
-  },
-  {
-    "id": "rosa",
-    "name": "ROSA",
-    "age": 86,
-    "clues": "Olive-skinned small woman, white bun, burgundy dress and black shawl, soft shoes, lowered hand on slim cane, deeply lined kind face.",
-    "ageRead": "oldest",
-    "atlasSet": "c",
-    "atlasIndex": 12,
-    "portraitAtlas": "assets/portraits-c.png",
-    "bodyAtlas": "assets/passengers-c.png",
-    "basePoints": 700
-  },
-  {
-    "id": "tom",
-    "name": "TOM",
-    "age": 94,
-    "clues": "Black man, sparse white hair and moustache, camel jacket over pastel green shirt, brown trousers, cane in lowered hand, slightly stooped, deep facial creases.",
-    "ageRead": "oldest",
-    "atlasSet": "c",
-    "atlasIndex": 13,
-    "portraitAtlas": "assets/portraits-c.png",
-    "bodyAtlas": "assets/passengers-c.png",
-    "basePoints": 300
-  },
-  {
-    "id": "betty",
-    "name": "BETTY",
-    "age": 72,
-    "clues": "Light-skinned woman, dyed red bouffant, sculpted glossy lips, short white faux-fur jacket over violet blouse and black trousers, cosmetic smooth cheeks but visible seventy-year-old eyelids and neck wrinkles.",
-    "ageRead": "younger_older",
-    "atlasSet": "c",
-    "atlasIndex": 14,
-    "portraitAtlas": "assets/portraits-c.png",
-    "bodyAtlas": "assets/passengers-c.png",
-    "basePoints": 1000
-  },
-  {
-    "id": "glen",
-    "name": "GLEN",
-    "age": 79,
-    "clues": "Light-skinned lean fit man, dyed dark pompadour with silver temples, magenta sequined jacket over black tee and dark trousers, gold chain, deep crow feet and age-spotted hands, plausible seventy-nine.",
-    "ageRead": "younger_older",
-    "atlasSet": "c",
-    "atlasIndex": 15,
-    "portraitAtlas": "assets/portraits-c.png",
-    "bodyAtlas": "assets/passengers-c.png",
-    "basePoints": 1000
-  }
+ {
+  "id": "leo",
+  "name": "LEO",
+  "age": 18,
+  "atlasIndex": 0
+ },
+ {
+  "id": "nina",
+  "name": "NINA",
+  "age": 24,
+  "atlasIndex": 1
+ },
+ {
+  "id": "gus",
+  "name": "GUS",
+  "age": 29,
+  "atlasIndex": 2
+ },
+ {
+  "id": "milo",
+  "name": "MILO",
+  "age": 34,
+  "atlasIndex": 3
+ },
+ {
+  "id": "june",
+  "name": "JUNE",
+  "age": 41,
+  "atlasIndex": 4
+ },
+ {
+  "id": "rex",
+  "name": "REX",
+  "age": 48,
+  "atlasIndex": 5
+ },
+ {
+  "id": "ken",
+  "name": "KEN",
+  "age": 55,
+  "atlasIndex": 6
+ },
+ {
+  "id": "sol",
+  "name": "SOL",
+  "age": 59,
+  "atlasIndex": 7
+ },
+ {
+  "id": "bev",
+  "name": "BEV",
+  "age": 63,
+  "atlasIndex": 8
+ },
+ {
+  "id": "dolly",
+  "name": "DOLLY",
+  "age": 65,
+  "atlasIndex": 9
+ },
+ {
+  "id": "otis",
+  "name": "OTIS",
+  "age": 67,
+  "atlasIndex": 10
+ },
+ {
+  "id": "ray",
+  "name": "RAY",
+  "age": 70,
+  "atlasIndex": 11
+ },
+ {
+  "id": "mei",
+  "name": "MEI",
+  "age": 72,
+  "atlasIndex": 12
+ },
+ {
+  "id": "al",
+  "name": "AL",
+  "age": 77,
+  "atlasIndex": 13
+ },
+ {
+  "id": "ida",
+  "name": "IDA",
+  "age": 85,
+  "atlasIndex": 14
+ },
+ {
+  "id": "abe",
+  "name": "ABE",
+  "age": 99,
+  "atlasIndex": 15
+ },
+ {
+  "id": "ivy",
+  "name": "IVY",
+  "age": 23,
+  "atlasIndex": 0,
+  "atlasSet": "b"
+ },
+ {
+  "id": "max",
+  "name": "MAX",
+  "age": 32,
+  "atlasIndex": 1,
+  "atlasSet": "b"
+ },
+ {
+  "id": "faye",
+  "name": "FAYE",
+  "age": 45,
+  "atlasIndex": 2,
+  "atlasSet": "b"
+ },
+ {
+  "id": "omar",
+  "name": "OMAR",
+  "age": 49,
+  "atlasIndex": 3,
+  "atlasSet": "b"
+ },
+ {
+  "id": "liz",
+  "name": "LIZ",
+  "age": 55,
+  "atlasIndex": 4,
+  "atlasSet": "b"
+ },
+ {
+  "id": "des",
+  "name": "DES",
+  "age": 61,
+  "atlasIndex": 5,
+  "atlasSet": "b"
+ },
+ {
+  "id": "cora",
+  "name": "CORA",
+  "age": 64,
+  "atlasIndex": 6,
+  "atlasSet": "b"
+ },
+ {
+  "id": "hank",
+  "name": "HANK",
+  "age": 68,
+  "atlasIndex": 7,
+  "atlasSet": "b"
+ },
+ {
+  "id": "pearl",
+  "name": "PEARL",
+  "age": 70,
+  "atlasIndex": 8,
+  "atlasSet": "b"
+ },
+ {
+  "id": "basil",
+  "name": "BASIL",
+  "age": 73,
+  "atlasIndex": 9,
+  "atlasSet": "b"
+ },
+ {
+  "id": "ana",
+  "name": "ANA",
+  "age": 76,
+  "atlasIndex": 10,
+  "atlasSet": "b"
+ },
+ {
+  "id": "vito",
+  "name": "VITO",
+  "age": 81,
+  "atlasIndex": 11,
+  "atlasSet": "b"
+ },
+ {
+  "id": "nell",
+  "name": "NELL",
+  "age": 90,
+  "atlasIndex": 12,
+  "atlasSet": "b"
+ },
+ {
+  "id": "ed",
+  "name": "ED",
+  "age": 98,
+  "atlasIndex": 13,
+  "atlasSet": "b"
+ },
+ {
+  "id": "suki",
+  "name": "SUKI",
+  "age": 67,
+  "atlasIndex": 14,
+  "atlasSet": "b"
+ },
+ {
+  "id": "vince",
+  "name": "VINCE",
+  "age": 75,
+  "atlasIndex": 15,
+  "atlasSet": "b"
+ },
+ {
+  "id": "ruy",
+  "name": "RUY",
+  "age": 28,
+  "atlasIndex": 0,
+  "atlasSet": "c"
+ },
+ {
+  "id": "jo",
+  "name": "JO",
+  "age": 36,
+  "atlasIndex": 1,
+  "atlasSet": "c"
+ },
+ {
+  "id": "tess",
+  "name": "TESS",
+  "age": 41,
+  "atlasIndex": 2,
+  "atlasSet": "c"
+ },
+ {
+  "id": "paco",
+  "name": "PACO",
+  "age": 46,
+  "atlasIndex": 3,
+  "atlasSet": "c"
+ },
+ {
+  "id": "luz",
+  "name": "LUZ",
+  "age": 52,
+  "atlasIndex": 4,
+  "atlasSet": "c"
+ },
+ {
+  "id": "bo",
+  "name": "BO",
+  "age": 58,
+  "atlasIndex": 5,
+  "atlasSet": "c"
+ },
+ {
+  "id": "sue",
+  "name": "SUE",
+  "age": 62,
+  "atlasIndex": 6,
+  "atlasSet": "c"
+ },
+ {
+  "id": "walt",
+  "name": "WALT",
+  "age": 66,
+  "atlasIndex": 7,
+  "atlasSet": "c"
+ },
+ {
+  "id": "hanna",
+  "name": "HANNA",
+  "age": 71,
+  "atlasIndex": 8,
+  "atlasSet": "c"
+ },
+ {
+  "id": "marc",
+  "name": "MARC",
+  "age": 74,
+  "atlasIndex": 9,
+  "atlasSet": "c"
+ },
+ {
+  "id": "joy",
+  "name": "JOY",
+  "age": 78,
+  "atlasIndex": 10,
+  "atlasSet": "c"
+ },
+ {
+  "id": "grace",
+  "name": "GRACE",
+  "age": 85,
+  "atlasIndex": 11,
+  "atlasSet": "c"
+ },
+ {
+  "id": "rosa",
+  "name": "ROSA",
+  "age": 86,
+  "atlasIndex": 12,
+  "atlasSet": "c"
+ },
+ {
+  "id": "tom",
+  "name": "TOM",
+  "age": 94,
+  "atlasIndex": 13,
+  "atlasSet": "c"
+ },
+ {
+  "id": "betty",
+  "name": "BETTY",
+  "age": 72,
+  "atlasIndex": 14,
+  "atlasSet": "c"
+ },
+ {
+  "id": "glen",
+  "name": "GLEN",
+  "age": 79,
+  "atlasIndex": 15,
+  "atlasSet": "c"
+ }
 ]

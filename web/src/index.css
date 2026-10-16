@@ -56,6 +56,8 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .pad button { flex: 1; height: 72px; font: inherit; font-size: 16px; color: #63e7ff; background: rgba(11,16,45,.8); border: 2px solid #63e7ff; touch-action: none; user-select: none; -webkit-user-select: none; }
 .pad button:nth-child(3) { color: #ff40bd; border-color: #ff40bd; } .pad button:nth-child(4) { color: #ffe564; border-color: #ffe564; }
 @media (pointer: coarse) { .pad { display: flex; } .app { height: min(100vh - 96px, calc(100vw * 3 / 4)); width: min(100vw, calc((100vh - 96px) * 4 / 3)); } .fork { display: flex; } }
+/* landscape phones: wider than 4:3, the whole width above the pad, so the HUD scales with the screen and not with a box in its middle */
+@media (pointer: coarse) and (min-aspect-ratio: 1/1) { .app { width: 100vw; height: calc(100vh - 96px); --u: calc(100vw / 1280); } }
 .overlay { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(8,12,36,.85); text-transform: uppercase; }
 .overlay.dim { background: #060b16e6; }
 .pause { width: calc(390 * var(--u)); }

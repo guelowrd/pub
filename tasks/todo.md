@@ -475,3 +475,10 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
   share *.webp duplicates of the .png the code loads, two stage previews for combos not on the dial, arrow-left,
   cone-cluster, sawhorse-on/off). Build clean, 66 tests, smoke run with no failed loads.
   Reported, not changed (Gaylord's calls): see the reply of 21:50.
+- Gaylord's calls on the audit (22:00): Gamecoins spelled out where there is room (NEED GAMECOINS, PRIZE / STAKE /
+  BALANCE rows via fmtGamecoin); GC stays on keys and in the HISTORY state column. "Record" everywhere (POST YOUR
+  RECORD). WALLET rows left (explained). Version left. Landscape phones: the scene fills the window above the pad
+  (`(pointer: coarse) and (min-aspect-ratio: 1/1)`), untested on a device. characters.json / venues.json stripped to
+  the fields the game reads (16 + 20 KB -> 4 + 12 KB; the designer's fields live in ~/Code/pub). activeFork range
+  commented. Tests written: hazards (cone, pothole, oil, oil grip, barrier spin / wreck, cap floor), reversing into
+  traffic, edges across the widening and at a bay, candidate(), isRed(), traffic spawn on a branch. 74 tests.

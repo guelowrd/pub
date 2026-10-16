@@ -1,6 +1,7 @@
 import { STATIONS } from "./stations";
 import { describe, expect, it } from "vitest";
-import { DISTRICTS, agePoints, newSim, type District } from "./sim";
+import { DISTRICTS, LANE, agePoints, branchX, newSim, step, type District, type Input } from "./sim";
+const idle: Input = { gas: false, brake: false, left: false, right: false };
 import { SLOTS } from "./chain";
 import { CHARACTERS, FORK_OUT, LEGS, MOUTHS, POOLS, VENUES, VENUE_OF, extend, pyramid } from "./course";
 
@@ -9,6 +10,18 @@ describe("course", () => {
     expect(JSON.stringify(pyramid(1))).toBe(JSON.stringify(pyramid(1)));
     expect(JSON.stringify(pyramid(1))).not.toBe(JSON.stringify(pyramid(2)));
     STATIONS.forEach((st, song) => expect(pyramid(1, song)[0][0].district).toBe(st.district)); // the song picks the first street
+  });
+  it("spawns traffic past a decided split on the chosen branch, following it until the mouth", () => {
+    const s = newSim(1);
+    extend(s);
+    const f = s.forks[0];
+    s.z = f.zDecide + 1; s.x = 2; step(s, idle, 1 / 120, extend); // choose right
+    expect(f.side).toBe(1);
+    s.z = f.zDecide - 760; s.traffic = []; s.rng = () => 0.1; // the spawn lands 40 m past the line, in the left trunk lane
+    extend(s);
+    const c = s.traffic.find((o) => o.z > f.zDecide)!;
+    expect(c.branch).toBe(1);
+    expect(c.x - branchX(f, c.z, 1)).toBeCloseTo(-LANE, 5);
   });
   it("sweeps the branches to the mouth spacing and runs them parallel after", () => {
     const s = newSim(1);
