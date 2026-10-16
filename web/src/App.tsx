@@ -175,7 +175,7 @@ export default function App() {
       set("score", fmt(s.score));
       set("speed", String(Math.round(s.v * KMH)).padStart(3, "0"));
       const full = !s.seats.includes(null);
-      html("bank", `BOOMER METER <span class="num">${fmt(s.seats.reduce((a, r) => a + (r ? agePoints(r.age) : 0), 0))}</span>${full ? "  FULL" : ""}`);
+      html("bank", `<span>BOOMER METER <span class="num">${fmt(s.seats.reduce((a, r) => a + (r ? agePoints(r.age) : 0), 0))}</span></span>${full ? "<em>FULL</em>" : ""}`);
       s.seats.forEach((r, i) => html(`seat${i}`, r ? `${face(r)}${icon(r.dest)}<small>AGE</small><b>${r.age}</b><em>${fmt(agePoints(r.age))}<small>PTS</small></em>` : `<span>EMPTY</span>`));
       // radar: the next stop's face and honest range; the reveal for 2 s after boarding; nothing at a fork
       const c = candidate(s), e = s.log[s.log.length - 1];

@@ -153,6 +153,16 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     const poly = (pts: number[][]) => { ctx.beginPath(); pts.forEach(([x, y], j) => (j ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.closePath(); };
     const wall = img(TUNNEL.wall), ceiling = img(TUNNEL.ceiling);
     const shade = SHADE(light);
+    const tf = tunnelAt(z1);
+    if (tf && z1 < tf.zDecide + TUN_IN + SEG) {
+      // the mouth: the arch opening is wider than the tunnel section, so the ring between them is filled dark before the
+      // walls go on (the sky and skyline showed through it); the portal's stone covers the ring's outer edge
+      ctx.fillStyle = "#0b0a1a";
+      ctx.beginPath();
+      ctx.rect(X(n, l1 - 12), top1 - 10 * sc[n], X(n, r1 + 12) - X(n, l1 - 12), sy[n] + 2 - (top1 - 10 * sc[n]));
+      poly([[X(n, l1), sy[n]], [X(n, l1), top1], [X(n, r1), top1], [X(n, r1), sy[n]]]);
+      ctx.fill("evenodd");
+    }
     for (const [xa, xb] of [[X(n, l1), X(n + 1, l2)], [X(n, r1), X(n + 1, r2)]]) {
       // the textured band over the lower metres of the wall, plain dark above it, then the darkness laid over both.
       // The pattern is affine, so it is pinned along the road edge and given the segment's mean height: the seam
@@ -192,7 +202,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     ctx.restore();
   };
   // a road slice centred at c (relative to the main road), with its sidewalks, curbs and lane dashes
-  const road = (n: number, c1: number, c2: number, hw1: number, hw2: number, re1: number, re2: number, alt: boolean) => {
+  const road = (n: number, c1: number, c2: number, hw1: number, hw2: number, re1: number, re2: number, alt: boolean, dashes = true) => {
     const z1 = (i0 + n) * SEG, lt = lightAt(z1), shade = (c: string) => (lt < 1 ? mix(c, "#050410", 1 - lt) : c);
     const mat = MATERIALS[s.streets.find((o) => z1 >= o.z0 && z1 < o.z1)?.district ?? district];
     quad(n, c1 - hw1 - WALK, c1 + re1 + WALK, c2 - hw2 - WALK, c2 + re2 + WALK, shade(alt ? "#5e5280" : "#665a8a"));
@@ -202,7 +212,14 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     const curb = shade(alt ? "#e8e8f8" : "#ff6fc8");
     quad(n, c1 - hw1 - 0.4, c1 - hw1, c2 - hw2 - 0.4, c2 - hw2, curb);
     quad(n, c1 + re1, c1 + re1 + 0.4, c2 + re2, c2 + re2 + 0.4, curb);
-    if (alt) for (const lx of [-LANE / 2, LANE / 2]) quad(n, c1 + lx - 0.08, c1 + lx + 0.08, c2 + lx - 0.08, c2 + lx + 0.08, shade("#e0e0f0"));
+    if (alt && dashes) for (const lx of [-LANE / 2, LANE / 2]) quad(n, c1 + lx - 0.08, c1 + lx + 0.08, c2 + lx - 0.08, c2 + lx + 0.08, shade("#e0e0f0"));
+  };
+  // the trunk widening to a fork: one plane, its lanes fanning out into the two branches' lanes (the dashes of both
+  // branches, each set sliding from the trunk's centre to its branch's), no inner curbs until the split itself
+  const widening = (n: number, f: Sim["forks"][number], c: number, alt: boolean) => {
+    const z1 = (i0 + n) * SEG, z2 = z1 + SEG, t = (z: number) => W * Math.min(1, Math.max(0, (z - f.z) / (f.zDecide - f.z)));
+    road(n, c, c, W + t(z1), W + t(z2), W + t(z1), W + t(z2), alt, false);
+    if (alt) for (const side of [-1, 1]) for (const lx of [-LANE / 2, LANE / 2]) { const a = c + side * t(z1) + lx, b = c + side * t(z2) + lx; quad(n, a - 0.08, a + 0.08, b - 0.08, b + 0.08, "#e0e0f0"); }
   };
 
   // sprites bucketed by segment, drawn right after their segment's ground
@@ -400,9 +417,9 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     }
     // past a decision line the road is two branches at trunk ± off. The main road is the chosen branch (or the
     // trunk before choosing), so branch σ sits at xo + (σ - side) * off.
-    const f = s.forks.find((o) => z1 >= o.zDecide && z1 < o.zEnd + FORK_OUT);
+    const f = s.forks.find((o) => z1 >= o.z && z1 < o.zEnd + FORK_OUT), past = !!f && z1 >= f.zDecide;
     const tun = tunnelAt(z1), mouth = !!tun && z1 < tun.zDecide + TUN_IN + SEG;
-    if (f) {
+    if (f && past) {
       const d = i - seg(f.zDecide);
       for (const side of [-1, 1] as const) {
         if (side === f.side) continue;
@@ -411,13 +428,17 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
         if (tun && s.z < tun.zDecide + TUN_IN) tunnel(n, c1, c2, W, side < 0 ? f.left : f.right); // the other mouth only matters until we are in ours
       }
     }
-    if (!f || f.side !== 0) {
+    if (f && !past) {
+      // the trunk widening to the line. Just after we chose, the camera still sees it behind us: in the branch's frame
+      // it sits a road width to the other side (drawn as the main road it cut across both branches for a few frames)
+      widening(n, f, -f.side * W, alt);
+    } else if (!f || f.side !== 0) {
       road(n, 0, 0, leftEdge(s, z1), leftEdge(s, z2), rightEdge(s, z1), rightEdge(s, z2), alt);
       if (tun) tunnel(n, 0, 0, W, tun.side < 0 ? tun.left : tun.right);
       const st = stopAt(s, z1);
       if (st && !st.taken) quad(n, st.side * (W + 0.3), st.side * (W + BAY - 0.2), st.side * (W + 0.3), st.side * (W + BAY - 0.2), st.drop ? COLOR[st.drop] + "66" : alt ? "#8a7a20" : "#a08a20");
     }
-    if (f && mouth) {
+    if (f && past && mouth) {
       // one shared structure holds both mouths: scaled so its two openings sit on the two branches, fading out as we reach it
       const { k, left, top, a } = frame(n, f), name = FORK_STRUCT[here.district], body = img(`fork-${name}.webp`);
       if (body && a > 0) {

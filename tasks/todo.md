@@ -409,3 +409,16 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
   crown; review gains TIME LEFT. HISTORY: title, score, state, kind icon. SCORES: n, name, score. Settings: label / value.
 - Gaylord: DON'T DRINK & DRIVE leads the ribbon; the menu no longer previews the song (Omotesando stays until DRIVE).
 - Screens 02 and 03 refreshed. Verified desktop RADIO / RECORDS / SYSTEM and portrait + landscape iframes.
+
+### Gaylord's screenshots (2026-10-16, 18:07 to 18:19)
+- Seats header: 14 px (was 16), FULL in pink, blinking, on the right or on its own line under the meter when the
+  meter is wide (flex-wrap). "BOOMER METER 2,800" + FULL did not fit 205 px at 16 or 14.
+- Junction road bug: just after the choice the camera still sees slices before the decision line; they were drawn as
+  the main road in the branch's frame (a road width off, curbs cutting across both branches for a few frames). Now a
+  `widening()` draws the trunk at -side * W in that case. Second part ("white lines don't fit"): the widening trunk was
+  one bare plane with the two centre dashes, then six lanes and inner curbs started at the line. Now the two branches'
+  lane dashes fan out from the trunk's across the widening and the inner curbs begin at the gore.
+- Tunnel mouth see-through: the arch opening is wider than the tunnel section, sky showed in the ring between them.
+  tunnel() fills that ring dark (evenodd) at the mouth segment before the walls; the portal's stone covers its outer edge.
+- Passenger order on the results screen: pickup order (s.stops order), ON BOARD / BAILED ones stay where they were
+  picked up. Gaylord asked; answered, not changed.
