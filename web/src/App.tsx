@@ -75,6 +75,7 @@ export default function App() {
   const [posted, setPosted] = useState<Posted | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const shot = useRef<Shot | null>(null); // the run on the road is a shot at a record
+  const botRun = useRef(false); // driven from the dev hook: never a best
   const [settled, setSettled] = useState<{ text: string; again: boolean; claimed: boolean } | null>(null);
   const [openRecord, setOpenRecord] = useState<ChallengeNote | null>(null);
   const sharedId = useRef(new URLSearchParams(location.search).get("record"));
@@ -105,7 +106,7 @@ export default function App() {
     if (mode !== "play") { audio.engine(0, false); audio.skid(false); }
   }, [mode, preview, station]);
 
-  const start = (sd: number) => { setPreview(false); setSettled(null); setPosted(null); setNote(null); sim.current = newSim(sd); setSeed(sd); setMode("play"); };
+  const start = (sd: number) => { setPreview(false); setSettled(null); setPosted(null); setNote(null); botRun.current = false; sim.current = newSim(sd); setSeed(sd); setMode("play"); };
   /** A free drive on the station's song. */
   const drive = (sd: number) => { shot.current = null; start(sd); };
   /** A shot: the record's course and song, the stake on the table. */
@@ -125,7 +126,7 @@ export default function App() {
   }, [mode, chain]);
   const onOpened = useCallback(() => setOpenRecord(null), []);
   // dev hook: drive the sim from the console (window.pub.run({gas:true}, 5))
-  if (import.meta.env.DEV) Object.assign(window, { pub: { sim, run: (inp: Partial<Input>, secs: number) => { for (let t = 0; t < secs; t += STEP) step(sim.current, { gas: false, brake: false, left: false, right: false, ...inp }, STEP, extend); } } });
+  if (import.meta.env.DEV) Object.assign(window, { pub: { sim, run: (inp: Partial<Input>, secs: number) => { botRun.current = true; for (let t = 0; t < secs; t += STEP) step(sim.current, { gas: false, brake: false, left: false, right: false, ...inp }, STEP, extend); } } });
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -154,7 +155,7 @@ export default function App() {
       const playing = modeRef.current === "play";
       if (playing) {
         while (acc >= STEP) { step(s, input.current, STEP, extend); acc -= STEP; }
-        if (s.over) { if (s.score > best()) localStorage.setItem("pub.best", String(s.score)); setMode("over"); }
+        if (s.over) { if (s.score > best() && !botRun.current) localStorage.setItem("pub.best", String(s.score)); setMode("over"); }
         for (; logged < s.log.length; logged++) { const e = s.log[logged]; if (e.k === "pick") audio.sfx("pick"); else if (e.k === "drop") audio.sfx("drop"); else if (e.k === "wreck") audio.sfx("crash"); }
         if (s.callout && s.callout !== lastCallout && /BUMP|SPIN/.test(s.callout.text)) audio.sfx("thud");
         lastCallout = s.callout;
@@ -185,10 +186,12 @@ export default function App() {
       const just = e?.k === "pick" && tick(s) - e.t < 200 ? s.stops.find((o) => o.taken && o.i === e.stop && o.z >= cur.z0 && o.z < cur.z1)?.rider : undefined;
       // the radar's POSITION map: the blip sits on the curb's side and climbs with the distance (centre = here, top = 250 m out)
       const blip = (st: { z: number; side: number }) => `<i class="blip" style="left:${73.5 + st.side * 6.75}%;top:${44.4 - 21.8 * Math.min(1, Math.max(0, (st.z - s.z) / 250))}%"></i>`;
+      // in a tunnel the radar scans: the next street's stop is not a target yet
+      const tunnel = s.forks.some((o) => s.z >= o.zDecide + 100 && s.z < o.zEnd + 100);
       const radar = node("radar").parentElement!;
-      radar.className = `radar-box ${just ? "" : f ? "" : c?.rider && full ? "full" : c?.rider || c?.drop ? "" : "search"}`;
+      radar.className = `radar-box ${just ? "" : f || tunnel ? "search" : c?.rider && full ? "full" : c?.rider || c?.drop ? "" : "search"}`;
       html("radar", just ? `${face(just)}<div class="reveal"><b>AGE ${just.age}</b><br>${fmt(agePoints(just.age))} TO BANK</div>${icon(just.dest)}`
-        : f ? "" : c?.rider ? (full ? "" : `<img class="dither" src="${dithered(c.rider)}" alt=""><small class="pos">POSITION</small><img class="reticle" src="${ART}radar/reticle-B.png" alt="">${blip(c)}<small class="lab">AGE RANGE</small><b class="range">${c.rider.lo} TO ${c.rider.hi}</b>`)
+        : f || tunnel ? "" : c?.rider ? (full ? "" : `<img class="dither" src="${dithered(c.rider)}" alt=""><small class="pos">POSITION</small><img class="reticle" src="${ART}radar/reticle-B.png" alt="">${blip(c)}<small class="lab">AGE RANGE</small><b class="range">${c.rider.lo} TO ${c.rider.hi}</b>`)
         : c?.drop ? `<small class="pos">POSITION</small><img class="reticle" src="${ART}radar/reticle-B.png" alt="">${blip(c)}<b class="range drop">DROP OFF</b>${icon(c.drop)}` : "");
       radar.style.display = f ? "none" : "";
       const badge = (d: District) => { const n = s.seats.filter((r) => r && r.dest === d).length; return n ? ` x${n}` : ""; };
@@ -210,7 +213,7 @@ export default function App() {
 
   return (
     <>
-      <div className="app">
+      <div className={`app${mode === "over" ? " over" : ""}`}>
       <canvas ref={canvas} />
       <div className="hud" ref={hud}>
         <div className="panel tl"><small>TIME</small><b id="time" /></div>
@@ -218,8 +221,8 @@ export default function App() {
         <div className="panel bl"><small>SPEED</small><b id="speed" /><small>KM/H</small></div>
         <div className="rail">
           <div className="panel seats"><div id="bank" /><div className="slots"><div id="seat0" /><div id="seat1" /><div id="seat2" /></div></div>
-          <div className="radar-box"><div id="radar" /></div>
         </div>
+        <div className="radar-box"><div id="radar" /></div>
         <div className="fork" id="fork" />
         <div className="callout" id="callout" />
       </div>
@@ -232,7 +235,7 @@ export default function App() {
       {mode === "menu" && (
         <div className="overlay menu">
           <HeadUnit chain={chain} station={station} setStation={(i) => { setStation(i); setPreview(true); }} volume={volume} setVolume={setVolume} muted={!soundOn} toggleMute={() => setSoundOn(audio.toggle())}
-            onDrive={() => drive(seed)} onShot={driveShot} openRecord={openRecord} onOpened={onOpened} />
+            onDrive={() => drive(seed)} onShot={driveShot} onOff={() => setMode("ready")} openRecord={openRecord} onOpened={onOpened} />
         </div>
       )}
       {mode === "paused" && <div className="overlay" onClick={() => setMode("play")}><h1>PAUSED</h1><p>CLOCK STOPPED</p></div>}

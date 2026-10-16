@@ -18,15 +18,26 @@ Both of your last packs are in the game: the Visual Update and the Menu Fix. Scr
 
 The radio is a jukebox: pick the song, pick a record to shoot at, read the scores, change a setting. It is not the post-game menu. Posting a run now happens on the results screen (18-results-post.jpg): prize on four chips, POST IT, then SHARE ON X and COPY LINK. The head unit's presets are RADIO, RECORDS, SCORES, HISTORY, WALLET, SYSTEM; AUDIO keeps its key.
 
+## Decisions I am applying in code today, so you can design on top of them
+
+- The lower LCD shows the station index, the band and VOL in every mode: the radio keeps playing while I browse. Nothing else goes in it.
+- POWER turns the unit off: back to the splash. FREQ/BAND seeks: it jumps to a random station.
+- SCORES is one row per player, that player's best record.
+- SYSTEM gets a RESET BEST row (clears the best score kept on the device).
+- The radar scans while in a tunnel, instead of showing the next street's target.
+- The HUD is hidden behind the results screen.
+- The radar moves to the bottom right corner and the seats stay top right, so the right curb and the gantry's right plate stay visible mid-screen. This is my provisional layout until you redo the rail (item 2 below).
+
 ## What I need from you next, in order
 
-1. The results screen. It is code-drawn today (TIME IS UP, three stat rows, the still-on-board box, the post box, SAME RUN and NEW RUN). It needs a design in the same family as the head unit: the score, the stats, the post box with its prize chips and the two share actions, the two run buttons, and the same screen after a shot (the verdict line and DRIVE AGAIN, TRY AGAIN, MENU).
-2. The HUD's right rail. At close range the seats and the radar cover the right sidewalk, the bay and the gantry's right plate (11-drive-gantry.jpg). I need a composition that keeps the right curb visible: the seats as a thinner strip, or the rail lower, or the radar smaller. The radar should not grow.
+1. The results screen. It is code-drawn today (TIME IS UP, three stat rows, the still-on-board box, the post box, SAME RUN and NEW RUN). It needs a design in the same family as the head unit: the score, the stats, the post box with its prize chips and the two share actions, the two run buttons, and the same screen after a shot (the verdict line and DRIVE AGAIN, TRY AGAIN, MENU). The HUD will be hidden under it.
+2. The HUD's right rail. At close range the seats and the radar covered the right sidewalk, the bay and the gantry's right plate (11-drive-gantry.jpg). I need a composition that keeps the right curb visible: the seats as a thinner strip, the radar in a corner, or both smaller. The radar should not grow. My provisional layout (radar bottom right) is a stopgap.
 3. HISTORY rows: a record icon and a shot icon in place of my R and S letters, and the state words in your colours (OPEN, IN PLAY, COLLECT, BEATEN, DEFENDED, TAKEN BACK, WON, LOST).
-4. The lower LCD outside RADIO: today it shows the selected score and a line under it, and nothing in SCORES or SYSTEM. Tell me what it should show per mode, or that it stays blank.
-5. Two keys have no job: POWER and FREQ/BAND. Give them one or tell me to leave them as decoration.
-6. The pause overlay (15-pause.jpg) and the radar's DROP OFF state (the reticle with DROP OFF, my own copy): both unstyled.
-7. Phone faces: I cannot check portrait and landscape on a device here, so treat the desktop screens as the only verified ones.
+4. The pause overlay (15-pause.jpg): unstyled, just PAUSED and CLOCK STOPPED over the dimmed scene.
+5. The radar's DROP OFF state: when the next stop is a drop-off bay, the reticle shows the bay's position and the text says DROP OFF with the destination icon. The copy and the layout are mine; give it a proper treatment, and one for the two-second reveal after a pickup (full-colour portrait, exact age, points to bank).
+6. The share card at runtime: a downloadable 1200 x 630 image of a finished run with the score, the station and the three portraits, from your ship kit template. Tell me if anything in the template should change now that the fonts changed.
+7. The splash: the rules ribbon and CLICK TO START now set in Chakra Petch. Check them against the chrome wordmark and say if the ribbon needs its own treatment.
+8. Phone faces: I cannot check portrait and landscape on a device here, so treat the desktop screens as the only verified ones. If you can run the build on a phone, screenshots back would help.
 
 ## Facts you can rely on
 

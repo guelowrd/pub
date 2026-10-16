@@ -46,12 +46,14 @@ const baselineEm = (() => {
   };
 })();
 
-export default function HeadUnit({ chain, station, setStation, volume, setVolume, muted, toggleMute, onDrive, onShot, openRecord, onOpened }: {
+export default function HeadUnit({ chain, station, setStation, volume, setVolume, muted, toggleMute, onDrive, onShot, onOff, openRecord, onOpened }: {
   chain: ChainApi | null;
   station: number; setStation: (i: number) => void;
   volume: number; setVolume: (v: number) => void; muted: boolean; toggleMute: () => void;
   onDrive: () => void;
   onShot: (shots: ChallengeNote[], record: ChallengeNote) => void;
+  /** POWER: the unit off, back to the splash */
+  onOff: () => void;
   /** a record opened by link: the head unit starts on its review */
   openRecord: ChallengeNote | null;
   onOpened: () => void;
@@ -103,7 +105,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const score5 = (n: number) => String(n).padStart(5, "0");
 
   // what the current mode lists, and what the action key does
-  let rows: Row[] = [], status: string | null = null, action: string | null = null, detail = "", secondary = "", onAction: (() => void) | null = null, onSelect: ((i: number) => void) | null = null, onArrow: ((d: number) => void) | null = null;
+  let rows: Row[] = [], status: string | null = null, action: string | null = null, onAction: (() => void) | null = null, onSelect: ((i: number) => void) | null = null, onArrow: ((d: number) => void) | null = null;
   const cur = cursor[mode] ?? 0;
   const notReady = !chain?.ready ? "LOADING THE CHAIN" : !chain.notesRead ? "READING THE CHAIN" : null;
   if (mode === "RADIO") {
@@ -114,7 +116,6 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     if (review) {
       const g = game(review), mine = same(me, review.storage.champion), over = review.consumed || height >= review.storage.expiryBlock - 140;
       rows = [lv("CHAMPION", champion(review), CREAM), lv("SCORE", score5(review.storage.target)), lv("PRIZE", gc(review.amount)), lv("STAKE", gc(review.storage.minStake)), lv("COURSE", courseLabel(g.seed), CREAM), lv("STATION", songOf(g.song), CREAM)];
-      detail = score5(review.storage.target); secondary = `${courseLabel(g.seed)} / ${songOf(g.song)}`;
       if (over) status = "THIS ONE IS OVER.";
       else if (mine) status = "THIS ONE IS YOURS.";
       else { action = "SHOT"; onAction = () => void chain?.shoot(review).then((r) => r && onShot(r.shots, r.record)); }
@@ -122,7 +123,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       status = notReady ?? (open.length ? null : "NO OPEN RECORDS. DRIVE, THEN POST YOURS.");
       rows = open.map((n) => { const g = game(n); return { key: n.id, cells: [{ t: champion(n), at: 0 }, { t: score5(n.storage.target), at: 0.1, c: YELLOW, mono: true }, { t: gc(n.amount), at: 0.22, c: YELLOW, mono: true }, { t: courseLabel(g.seed), at: 0.34, mono: true }, { t: songOf(g.song), at: 0.5, mono: true }, { t: clock(n.storage.expiryBlock - height), at: 1, right: true, c: DISPLAY, mono: true }] }; });
       const sel = open[cur];
-      if (sel) { const g = game(sel); detail = score5(sel.storage.target); secondary = `${courseLabel(g.seed)} / ${songOf(g.song)}`; action = "SHOT"; onAction = () => setReview(sel); onSelect = (i) => setReview(open[i]); }
+      if (sel) { action = "SHOT"; onAction = () => setReview(sel); onSelect = (i) => setReview(open[i]); }
     }
   } else if (mode === "HISTORY") {
     if (!me) status = chain?.connecting ? chain.walletStatus || "CONNECTING" : "CONNECT YOUR WALLET TO SEE YOUR GAMES.";
@@ -139,32 +140,29 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       status = items.length ? null : "NO GAMES YET. DRIVE, THEN POST YOUR SCORE.";
       rows = items.map((it) => ({ key: it.key, cells: [{ t: it.kind === "record" ? "R" : "S", at: 0, c: it.kind === "record" ? DISPLAY : PINK, mono: true }, { t: it.title, at: 0.04 }, { t: score5(it.score), at: 0.42, c: YELLOW, mono: true }, { t: it.state, at: 1, right: true, c: it.color, mono: true }] }));
       const sel = items[cur];
-      if (sel) { detail = score5(sel.score); secondary = sel.title; }
       if (owed.length) { action = "COLLECT"; onAction = () => void chain?.collect(owed); }
       else if (sel?.shots) { action = "SHOT"; onAction = () => onShot(sel.shots!, sel.record!); }
     }
   } else if (mode === "SCORES") {
     status = notReady ?? (best.top.length ? null : "NO RECORDS YET.");
-    const list = best.mine ? [...best.top, best.mine] : best.top;
-    rows = list.map((r) => { const mine = same(me, r.who); return { key: r.key, cells: [{ t: String(r.rank).padStart(2, "0"), at: 0, c: DIM, mono: true }, { t: chain?.nameOf(r.who) ?? "???", at: 0.12, c: mine ? YELLOW : CREAM }, { t: score5(r.value), at: 1, right: true, c: YELLOW, mono: true }] }; });
-    const sel = list[cur], note_ = sel && notes.find((n) => n.id === sel.key);
-    if (sel) { detail = score5(sel.value); secondary = `${chain?.nameOf(sel.who) ?? "???"}${note_ ? ` / ${songOf(game(note_).song)}` : ""}`; }
+    // one row per player: the board lists records, the first one met per champion is their best
+    const seen = new Set<string>(), top = best.top.filter((r) => !seen.has(`${r.who.prefix}:${r.who.suffix}`) && seen.add(`${r.who.prefix}:${r.who.suffix}`));
+    const list = best.mine && !seen.has(`${best.mine.who.prefix}:${best.mine.who.suffix}`) ? [...top, best.mine] : top;
+    rows = list.map((r, i) => { const mine = same(me, r.who); return { key: r.key, cells: [{ t: String(i + 1).padStart(2, "0"), at: 0, c: DIM, mono: true }, { t: chain?.nameOf(r.who) ?? "???", at: 0.12, c: mine ? YELLOW : CREAM }, { t: score5(r.value), at: 1, right: true, c: YELLOW, mono: true }] }; });
   } else if (mode === "WALLET") {
     const name = me ? chain!.nameOf(me) : chain?.connecting ? chain.walletStatus || "CONNECTING" : "NOT CONNECTED";
     rows = [lv("WALLET", name, me ? MINT : chain?.connecting ? DISPLAY : PINK), lv("BALANCE", chain?.balance != null ? gc(chain.balance) : "--"), lv("NETWORK", "TESTNET", CREAM), lv("STATUS", busy ? busy.text : trouble ? "ERROR" : "IDLE", busy ? DISPLAY : trouble ? PINK : CREAM)];
     if (me) rows.push(lv("GAMECOINS", "GET 10", DISPLAY), lv("DISCONNECT", "SELECT", DISPLAY));
     if (!chain?.installed) status = "NO BREAD WALLET FOUND. INSTALL IT, THEN COME BACK.";
-    detail = chain?.balance != null ? gc(chain.balance) : ""; secondary = me ? chain!.local ? "TEST WALLET" : "BREAD" : "";
     if (!me) { action = "CONNECT"; onAction = () => void chain?.connect(); }
     else { action = "GET GC"; onAction = () => void chain?.gamecoins().then((m) => m && setNote(m)); onSelect = (i) => { if (i === 4) onAction!(); if (i === 5) void chain?.disconnect(); }; }
   } else if (mode === "AUDIO") {
     rows = [lv("VOLUME", `${Math.round(volume * 100)} %`), lv("MUTE", muted ? "ON" : "OFF", muted ? PINK : CREAM)];
-    detail = `VOL ${Math.round(volume * 100)}`; secondary = muted ? "SOUND OFF" : "";
     onArrow = (d) => { if (cur === 0) setVolume(Math.max(0, Math.min(1, volume + d * 0.1))); };
     onSelect = (i) => { if (i === 1) toggleMute(); };
   } else {
-    rows = [lv("VERSION", __PUB_VERSION__, CREAM), lv("NETWORK", "MIDEN TESTNET", CREAM), lv("WALLET", chain?.local ? "TEST (?LOCAL=)" : "BREAD", CREAM), lv("LAYOUT", layout.toUpperCase(), CREAM), lv("KEYS", "1-6 ARROWS ENTER ESC", CREAM)];
-    detail = "PUB"; secondary = __PUB_VERSION__;
+    rows = [lv("VERSION", __PUB_VERSION__, CREAM), lv("NETWORK", "MIDEN TESTNET", CREAM), lv("WALLET", chain?.local ? "TEST (?LOCAL=)" : "BREAD", CREAM), lv("LAYOUT", layout.toUpperCase(), CREAM), lv("KEYS", "1-6 ARROWS ENTER ESC", CREAM), lv("RESET BEST", `${Number(localStorage.getItem("pub.best") ?? 0)}  SELECT`, DISPLAY)];
+    onSelect = (i) => { if (i === 5) { localStorage.removeItem("pub.best"); setNote("BEST SCORE CLEARED"); } };
   }
   if (busy) { action = null; onAction = null; onSelect = null; }
   if (trouble?.retry) { action = "TRY AGAIN"; onAction = () => { const r = trouble.retry!; chain?.dismiss(); r(); }; }
@@ -182,7 +180,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     if (c.id.startsWith("preset-")) return goMode(PRIMARY[Number(c.id.slice(7)) - 1]);
     switch (c.id) {
       case "mode": return goMode(PRIMARY[(PRIMARY.indexOf(back) + 1) % PRIMARY.length]);
-      case "band": return goMode("RADIO");
+      case "band": { goMode("RADIO"); return setStation((station + 1 + Math.floor(Math.random() * (STATIONS.length - 1))) % STATIONS.length); } // seek: a random other station
       case "prev": return sideways(-1);
       case "next": return sideways(1);
       case "back": return goBack();
@@ -192,7 +190,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       case "audio": return goMode("AUDIO");
       case "system": return goMode("SYSTEM");
       case "mute": return toggleMute();
-      case "power": return goMode("RADIO");
+      case "power": return onOff();
     }
   };
   useEffect(() => {
@@ -250,20 +248,12 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
             {statusLines.map((l, i) => <p key={i} style={i ? { color: DIM, fontSize: px(G.title[2] * 0.6) } : {}}>{l}</p>)}
           </div>
         )}
-        {/* lower LCD: the station index, the 14-slot band and the volume in RADIO; the selection elsewhere */}
-        {mode === "RADIO" ? (
-          <>
-            {text(String(station + 1).padStart(2, "0"), G.lcdBaseline[0], G.lcdBaseline[1], big, DISPLAY, true, false, "idx")}
-            {STATIONS.map((_, i) => <i key={i} className="hu-tick" style={{ left: px(G.needle.range[0] + i * (G.needle.range[1] - G.needle.range[0]) / 12), top: px(G.needle.tipY + 6), height: px(layout === "landscape" ? 5 : 8), background: i === station ? DISPLAY : DIM }} />)}
-            <i className="hu-needle" style={{ left: px(needleX - 4), top: px(G.needle.tipY - 2), borderTopColor: DISPLAY }} />
-            {text(`VOL ${Math.round(volume * 100)}%${muted ? "  MUTE" : ""}`, lx + 16, ly + lh - 10, small, DIM, true, false, "vol")}
-          </>
-        ) : (
-          <>
-            {text(detail, G.lcdBaseline[0], G.lcdBaseline[1], big, DISPLAY, true, false, "detail", lw - 32)}
-            {text(secondary, lx + 16, ly + lh - 10, small, DIM, true, false, "secondary", lw - 32)}
-          </>
-        )}
+        {/* lower LCD: the radio keeps playing while you browse: the station index, the 13-slot band and the volume */}
+        {text(String(station + 1).padStart(2, "0"), G.lcdBaseline[0], G.lcdBaseline[1], big, DISPLAY, true, false, "idx")}
+        {STATIONS.map((_, i) => <i key={i} className="hu-tick" style={{ left: px(G.needle.range[0] + i * (G.needle.range[1] - G.needle.range[0]) / 12), top: px(G.needle.tipY + 6), height: px(layout === "landscape" ? 5 : 8), background: i === station ? DISPLAY : DIM }} />)}
+        <i className="hu-needle" style={{ left: px(needleX - 4), top: px(G.needle.tipY - 2), borderTopColor: DISPLAY }} />
+        {text(`VOL ${Math.round(volume * 100)}%${muted ? "  MUTE" : ""}`, lx + 16, ly + lh - 10, small, DIM, true, false, "vol")}
+        {text(STATIONS[station].title, lx + lw - 16, ly + lh - 10, small, DIM, true, true, "song")}
         {/* controls */}
         {G.controls.map((c) => (
           <span key={c.id}>
