@@ -124,7 +124,7 @@ Reuse `masm/challenge/*` untouched; write one `beats_target` (`masm/games/pub_sc
 - [x] `pub_score.masm` replaying the log: win, loss, broken route, too-fast gap, stop twice, 4th rider, wrong drop, nobody aboard, over 3:00, time backwards, distance → verify: `cargo test -p integration --test pub_test` green (4 tests, 52 s), MASM pinned to `rules/vectors.json` (4 runs: score - 1 settles, score is refused); `web/public/scripts/{record,shot}.bin` built by `cargo run --bin build_scripts`
 
 ### M5: challenge flows
-- [x] Copy GQ's `bread.ts`, `notes.ts`, `flow.ts`, hub/boards; own note tag; Gamecoin; record = seed + song → verify: record, shot, settle, collect on testnet via `?local=1` / `?local=2` (2026-10-16: record posted by DKQ, shot by LFH, settled; collect path shares the code with GQ)
+- [x] Copy GQ's `bread.ts`, `notes.ts`, `flow.ts`, hub/boards; own note tag; Gamecoin; record = seed + song → verify: record, shot, settle, collect on testnet via `?local=1` / `?local=2` (2026-10-16: record posted by DKQ, shot by LFH, lost on the road, collected by DKQ after the deadline; all four moves seen on chain)
 - [x] The head unit (menu kit) as the whole menu: RADIO, RECORDS, POST, HISTORY, SCORES, WALLET, AUDIO, SYSTEM
 - [ ] Gaylord's Bread round on desktop and phone
 
@@ -246,7 +246,8 @@ once per song), the painted gantry (frame 26 m wide, plates at the mounts, trims
 icons, manifest and the share template as the link preview. Vitest runs in jsdom with the Miden Vite plugin left out
 (the plugin points the SDK at its browser build, whose wasm loads by fetch; node reads it from disk). `web/vercel.json`
 is GQ's (isolation headers). End to end on testnet with the two local wallets: DKQ posted 2028 points (1 GC prize),
-LFH shot it and settled. Skipped: the kit's share card as a downloadable image (the template is the link preview),
+LFH shot it, drove 2005 (a loss: nothing signed, DRIVE AGAIN offered while the shot was open), and DKQ collected the
+lost Gamecoin from HISTORY once the deadline plus CLAIM_FUZZ had passed. Skipped: the kit's share card as a downloadable image (the template is the link preview),
 other boards than best records, a code paste box (links work), SYSTEM settings beyond version and network.
 Not verified: the head unit's portrait and landscape faces on a real phone (Chrome refuses to resize its window here; the
 geometry is the kit's, the desktop face is right), Bread itself (the local wallets sign the same requests). Testnet blocks
