@@ -436,3 +436,8 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
 - Mute (Gaylord, 20:25): the effects bus (engine, skid, thuds, pickups) was created on the first gesture with gain 1,
   so a mute set before that (the m key on the splash) silenced the music only. The bus now starts at the mute state.
   Dev hook `window.pub.level()` reads it; checked 0 while driving muted, 1 after unmute.
+- Fork look (Gaylord, 20:40, "the two paths could be cleaner"; chose 1 + 2 of my three): (1) the trunk's two dashes
+  run straight to the split, a hatched gore (continuous pavement, one diagonal stroke per slice) fills the first 7 m
+  of gap, the branches' inner edges are plain white lines, pink stays on the outer curbs; (2) the branches sweep in an
+  S over the first 100 m (course.ts, MOUTHS = 31.5 keeps the portal scale) and run parallel into the bores instead of
+  kinking at the line and diverging forever. Option 3 (a stone median in the wedge) not built.

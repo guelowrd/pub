@@ -204,24 +204,32 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     ctx.restore();
   };
   // a road slice centred at c (relative to the main road), with its sidewalks, curbs and lane dashes
-  const road = (n: number, c1: number, c2: number, hw1: number, hw2: number, re1: number, re2: number, alt: boolean, dashes = true) => {
+  const road = (n: number, c1: number, c2: number, hw1: number, hw2: number, re1: number, re2: number, alt: boolean, inner: -1 | 0 | 1 = 0) => {
     const z1 = (i0 + n) * SEG, lt = lightAt(z1), shade = (c: string) => (lt < 1 ? mix(c, "#050410", 1 - lt) : c);
     const mat = MATERIALS[s.streets.find((o) => z1 >= o.z0 && z1 < o.z1)?.district ?? district];
     quad(n, c1 - hw1 - WALK, c1 + re1 + WALK, c2 - hw2 - WALK, c2 + re2 + WALK, shade(alt ? "#5e5280" : "#665a8a"));
     if (lt === 1) { material(n, c1 - hw1 - WALK, c1 - hw1, c2 - hw2 - WALK, c2 - hw2, mat.verge, 2.5, 0.3); material(n, c1 + re1, c1 + re1 + WALK, c2 + re2, c2 + re2 + WALK, mat.verge, 2.5, 0.3); }
     quad(n, c1 - hw1, c1 + re1, c2 - hw2, c2 + re2, shade(alt ? asphalt[0] : asphalt[1]));
     if (lt === 1) material(n, c1 - hw1, c1 + re1, c2 - hw2, c2 + re2, mat.asphalt, 4, 0.3);
-    const curb = shade(alt ? "#e8e8f8" : "#ff6fc8");
-    quad(n, c1 - hw1 - 0.4, c1 - hw1, c2 - hw2 - 0.4, c2 - hw2, curb);
-    quad(n, c1 + re1, c1 + re1 + 0.4, c2 + re2, c2 + re2 + 0.4, curb);
-    if (alt && dashes) for (const lx of [-LANE / 2, LANE / 2]) quad(n, c1 + lx - 0.08, c1 + lx + 0.08, c2 + lx - 0.08, c2 + lx + 0.08, shade("#e0e0f0"));
+    // the curbs alternate white and pink; a fork branch's inner edge is a plain white line instead
+    const curb = shade(alt ? "#e8e8f8" : "#ff6fc8"), line = shade("#e8e8f8");
+    quad(n, c1 - hw1 - 0.4, c1 - hw1, c2 - hw2 - 0.4, c2 - hw2, inner < 0 ? line : curb);
+    quad(n, c1 + re1, c1 + re1 + 0.4, c2 + re2, c2 + re2 + 0.4, inner > 0 ? line : curb);
+    if (alt) for (const lx of [-LANE / 2, LANE / 2]) quad(n, c1 + lx - 0.08, c1 + lx + 0.08, c2 + lx - 0.08, c2 + lx + 0.08, shade("#e0e0f0"));
   };
-  // the trunk widening to a fork: one plane, its lanes fanning out into the two branches' lanes (the dashes of both
-  // branches, each set sliding from the trunk's centre to its branch's), no inner curbs until the split itself
+  // the trunk widening to a fork: one plane, its two dashes running straight to the split
   const widening = (n: number, f: Sim["forks"][number], c: number, alt: boolean) => {
     const z1 = (i0 + n) * SEG, z2 = z1 + SEG, t = (z: number) => W * Math.min(1, Math.max(0, (z - f.z) / (f.zDecide - f.z)));
-    road(n, c, c, W + t(z1), W + t(z2), W + t(z1), W + t(z2), alt, false);
-    if (alt) for (const side of [-1, 1]) for (const lx of [-LANE / 2, LANE / 2]) { const a = c + side * t(z1) + lx, b = c + side * t(z2) + lx; quad(n, a - 0.08, a + 0.08, b - 0.08, b + 0.08, "#e0e0f0"); }
+    road(n, c, c, W + t(z1), W + t(z2), W + t(z1), W + t(z2), alt);
+  };
+  // the gore at the split: the pavement stays continuous between the two inner edges and carries hatching until the
+  // branches are GORE apart; past that the ground between them shows
+  const GORE = 7;
+  const gore = (n: number, el1: number, er1: number, el2: number, er2: number, alt: boolean) => {
+    if (er1 - el1 >= GORE) return;
+    const lt = lightAt((i0 + n) * SEG), shade = (c: string) => (lt < 1 ? mix(c, "#050410", 1 - lt) : c);
+    quad(n, el1, er1, el2, er2, shade(alt ? asphalt[0] : asphalt[1]));
+    quad(n, el1, Math.min(er1, el1 + 0.35), Math.max(el2, er2 - 0.35), er2, shade("#e0e0f0")); // one diagonal stroke per slice
   };
 
   // sprites bucketed by segment, drawn right after their segment's ground
@@ -423,20 +431,21 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     const f = s.forks.find((o) => z1 >= o.z && z1 < o.zEnd + FORK_OUT), past = !!f && z1 >= f.zDecide;
     const tun = tunnelAt(z1), mouth = !!tun && z1 < tun.zDecide + TUN_IN + SEG;
     if (f && past) {
-      const d = i - seg(f.zDecide);
+      const d = i - seg(f.zDecide), at = (side: -1 | 1, k: number) => (side - f.side) * f.off[k]; // branch σ's centre in our frame
       for (const side of [-1, 1] as const) {
         if (side === f.side) continue;
-        const c1 = (side - f.side) * f.off[d], c2 = (side - f.side) * f.off[d + 1];
-        road(n, c1, c2, W, W, W, W, alt);
+        const c1 = at(side, d), c2 = at(side, d + 1);
+        road(n, c1, c2, W, W, W, W, alt, (-side) as -1 | 1);
         if (tun && s.z < tun.zDecide + TUN_IN) tunnel(n, c1, c2, W, side < 0 ? f.left : f.right); // the other mouth only matters until we are in ours
       }
+      gore(n, at(-1, d) + W, at(1, d) - W, at(-1, d + 1) + W, at(1, d + 1) - W, alt);
     }
     if (f && !past) {
       // the trunk widening to the line. Just after we chose, the camera still sees it behind us: in the branch's frame
       // it sits a road width to the other side (drawn as the main road it cut across both branches for a few frames)
       widening(n, f, -f.side * W, alt);
     } else if (!f || f.side !== 0) {
-      road(n, 0, 0, leftEdge(s, z1), leftEdge(s, z2), rightEdge(s, z1), rightEdge(s, z2), alt);
+      road(n, 0, 0, leftEdge(s, z1), leftEdge(s, z2), rightEdge(s, z1), rightEdge(s, z2), alt, f && past ? (-f.side) as -1 | 1 : 0);
       if (tun) tunnel(n, 0, 0, W, tun.side < 0 ? tun.left : tun.right);
       const st = stopAt(s, z1);
       if (st && !st.taken) quad(n, st.side * (W + 0.3), st.side * (W + BAY - 0.2), st.side * (W + 0.3), st.side * (W + BAY - 0.2), st.drop ? COLOR[st.drop] + "66" : alt ? "#8a7a20" : "#a08a20");

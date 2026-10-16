@@ -1,13 +1,22 @@
 import { STATIONS } from "./stations";
 import { describe, expect, it } from "vitest";
-import { DISTRICTS, agePoints, type District } from "./sim";
-import { CHARACTERS, LEGS, POOLS, VENUES, VENUE_OF, pyramid } from "./course";
+import { DISTRICTS, agePoints, newSim, type District } from "./sim";
+import { CHARACTERS, FORK_OUT, LEGS, MOUTHS, POOLS, VENUES, VENUE_OF, extend, pyramid } from "./course";
 
 describe("course", () => {
   it("same seed, same course; another seed, another course", () => {
     expect(JSON.stringify(pyramid(1))).toBe(JSON.stringify(pyramid(1)));
     expect(JSON.stringify(pyramid(1))).not.toBe(JSON.stringify(pyramid(2)));
     STATIONS.forEach((st, song) => expect(pyramid(1, song)[0][0].district).toBe(st.district)); // the song picks the first street
+  });
+  it("sweeps the branches to the mouth spacing and runs them parallel after", () => {
+    const s = newSim(1);
+    extend(s);
+    const f = s.forks[0], mouth = (FORK_OUT / 2) / 5;
+    expect(f.off[mouth] * 2).toBeCloseTo(MOUTHS, 3);
+    expect(f.off[mouth + 20] - f.off[mouth + 10]).toBeCloseTo(0, 6); // no heading left after the mouth
+    expect(Math.max(...f.k.slice(0, mouth / 2))).toBeGreaterThan(0);
+    expect(Math.min(...f.k.slice(mouth / 2, mouth))).toBeLessThan(0);
   });
   it("forks offer two other districts, riders are authored characters who want another district", () => {
     for (let seed = 1; seed <= 20; seed++) {

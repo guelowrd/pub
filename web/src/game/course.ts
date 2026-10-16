@@ -9,6 +9,7 @@ import { DISTRICTS, GREEN, KMH, LANE, LIGHTS, RED, SEG, TRAFFIC, W, WALK, rngFro
 export const STREET = 1200;
 export const FORK_IN = 120; // the trunk widens over this before the decision line
 export const FORK_OUT = 200; // the branches bend away over this after it
+export const MOUTHS = 31.5; // the two tunnel mouths, centre to centre (the portal art is scaled to them)
 export const LEGS = 7; // generated depth; a good run ends around leg 5 and the clock ends it
 // pickup venues per district: pairs chosen so the expected rider points per district stay close (see course.test.ts)
 export const VENUES: Record<District, [string, string]> = { downtown: ["market", "garage"], waterfront: ["aquagym", "arcade"], casino: ["bar", "bingo"], golf: ["nursing-home", "school"] };
@@ -106,11 +107,16 @@ function place(s: Sim, leg: number, k: number, z0: number) {
   for (const h of n.hazards) s.hazards.push({ ...h, z: z0 + h.z });
   for (const [z, offset] of n.lights) s.lights.push({ z: z0 + z, offset });
   if (leg + 1 >= LEGS) return; // past the last street the road runs on empty
-  // the branches bend away over the first half of FORK_OUT, then run straight; off[] integrates that twice, the way
-  // the renderer integrates the road's own curvature
-  const segs = FORK_OUT / SEG, kk: number[] = [], off = [W];
+  // the branches sweep apart in an S over the first half of FORK_OUT (out, then back to straight), so each bore is
+  // reached head-on and the two run parallel from the mouths; the sweep is scaled to put the mouths MOUTHS apart.
+  // off[] integrates the curvature twice, the way the renderer integrates the road's own curvature
+  const segs = FORK_OUT / SEG, sweep = segs / 2, kk: number[] = [], off = [W];
+  const shape = (i: number) => (i < sweep ? Math.sin((2 * Math.PI * (i + 0.5)) / sweep) : 0);
+  let reach = 0;
+  for (let i = 0, bdx = 0; i < sweep; i++) { reach += bdx + shape(i) / 2; bdx += shape(i); }
+  const scale = (MOUTHS / 2 - W) / reach;
   for (let i = 0, bdx = 0; i < segs * 2; i++) {
-    kk.push(i < segs / 2 ? 0.05 : 0);
+    kk.push(shape(i) * scale);
     off.push(off[i] + bdx + kk[i] / 2);
     bdx += kk[i];
   }

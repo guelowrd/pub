@@ -175,7 +175,7 @@ describe("fork", () => {
     step(s, idle, 1 / 120, extend);
     expect(f.side).toBe(-1);
     expect(s.x).toBeCloseTo(-3 + W);
-    expect(s.dx[Math.floor(f.zDecide / 5) + 10]).toBeLessThan(0);
+    expect(s.dx[Math.floor(f.zDecide / 5) + 4]).toBeLessThan(0); // the outward half of the S
     expect(s.streets[1].district).toBe(f.left);
   });
   it("takes the traffic ahead into the branch's frame: the far-side car is gone, the others settle into lanes", () => {
