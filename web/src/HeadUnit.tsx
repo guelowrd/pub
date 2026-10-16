@@ -225,7 +225,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
         </div>
         <img src={`${ART}tv/${layout}/bezel.png`} alt="" style={{ left: 0, top: 0, width: px(TV.size[0]), height: px(TV.size[1]) }} />
         <img src={`${ART}tv/${layout}/glass.png`} alt="" style={{ left: 0, top: 0, width: px(TV.size[0]), height: px(TV.size[1]) }} />
-        <span className="hu-text hu-gt tv-tag" style={{ left: px(tagX - tagSize * 0.45), top: px(tagY - tagSize * 1.25), fontSize: px(tagSize), padding: `${px(tagSize * 0.25)} ${px(tagSize * 0.45)}`, color: TAG }}>{mode}</span>
+        {mode !== "RADIO" && <span className="hu-text hu-gt tv-tag" style={{ left: px(tagX - tagSize * 0.45), top: px(tagY - tagSize * 1.25), fontSize: px(tagSize), padding: `${px(tagSize * 0.25)} ${px(tagSize * 0.45)}`, color: TAG }}>{mode}</span>} {/* the lists name themselves; the stage picture needs no tag */}
         {mode === "RADIO" && text(`${String(station + 1).padStart(2, "0")} / ${STATIONS.length}`, countR, countY, countSize, COUNT, true, true, "count", undefined, TV.size[0])}
         {(busy || trouble) && <i className="hu-dot" style={{ left: px(countR - 12), top: px(countY + 8), borderColor: trouble ? ACCENT : DISPLAY }} />}
         {mode === "RADIO" && !tuning && (
