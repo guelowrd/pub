@@ -62,6 +62,8 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .overlay.dim { background: #060b16e6; }
 .pause { width: calc(390 * var(--u)); }
 .splash { background: #080c24 url("/art/title-scene.webp") center / cover no-repeat; }
+/* the scene is 4:3; a wider window shows it whole (the overlay covers the window since the phone pass, so cover cropped it) */
+@media (min-aspect-ratio: 4/3) { .splash { background-size: contain; } }
 .attract { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .splash-mute { position: absolute; top: calc(22 * var(--u)); right: calc(26 * var(--u)); font: inherit; font-size: calc(16 * var(--u)); letter-spacing: .06em; color: #94e6dc; background: rgba(8,12,36,.7); border: calc(1.5 * var(--u)) solid #3a4652; border-radius: calc(6 * var(--u)); padding: calc(6 * var(--u)) calc(14 * var(--u)); cursor: pointer; }
 /* the designer's first start prompt (components/start-prompt.css), back by Gaylord's choice: chrome lettering with a pink

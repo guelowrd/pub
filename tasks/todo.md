@@ -482,3 +482,8 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
   the fields the game reads (16 + 20 KB -> 4 + 12 KB; the designer's fields live in ~/Code/pub). activeFork range
   commented. Tests written: hazards (cone, pothole, oil, oil grip, barrier spin / wreck, cap floor), reversing into
   traffic, edges across the widening and at a bay, candidate(), isRed(), traffic spawn on a branch. 74 tests.
+
+## 2026-10-16, splash cropped (Gaylord: "zoomed in, very weird")
+- The phone pass fixed every overlay to the window, so on a 16:9 desktop the 4:3 title scene was cropped by `cover` and
+  BOOMERS lost its top. Fix: windows wider than 4:3 show the scene with `contain` (the page colour matches the scene's
+  margins). Phones keep cover. Lesson: a layout change for one layout gets a look at the others before it ships.
