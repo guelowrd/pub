@@ -68,6 +68,7 @@ export interface Sim {
   streets: Street[]; stops: Stop[]; hazards: Hazard[]; traffic: Traffic[]; forks: Fork[]; lights: Light[];
   callout: { text: string; t: number } | null;
   lost: Rider[]; // aboard at time-up
+  bailed: Rider[]; // left the car in a wreck
   log: Event[]; // the decision log
 }
 
@@ -96,7 +97,7 @@ export function newSim(seed: number, song = 0): Sim {
     z: 20, x: 0, v: 0, steer: 0, brake: false, skid: false, hot: 99, cap: TOP, spin: 0, oil: 0, boarding: 0, bumpCd: 0,
     seats: [null, null, null], banked: 0, dist: 0, score: 0, delivered: 0,
     dx: [], y: [], course: [], streets: [], stops: [], hazards: [], traffic: [], forks: [], lights: [],
-    callout: null, lost: [], log: [],
+    callout: null, lost: [], bailed: [], log: [],
   };
 }
 
@@ -135,7 +136,8 @@ function wreck(s: Sim) {
   s.spin = 2.5;
   s.skid = false;
   s.cap = Math.max(FAST, s.cap - 15 / KMH);
-  say(s, s.seats.some(Boolean) ? "WRECK! RIDERS BAILED" : "WRECK!", 2);
+  say(s, s.seats.some(Boolean) ? "WRECK! PASSENGERS BAILED" : "WRECK!", 2);
+  s.bailed.push(...s.seats.filter((r): r is Rider => r !== null));
   s.seats = [null, null, null];
   s.log.push({ k: "wreck", t: tick(s) });
 }

@@ -57,6 +57,8 @@ describe("hits", () => {
     step(s, idle, 1 / 120, extend);
     expect(s.spin).toBeGreaterThan(0);
     expect(s.seats).toEqual([null, null, null]);
+    expect(s.bailed.map((r) => r.name)).toEqual(["RAY"]); // the recap crosses them out, like the ones aboard at time-up
+    expect(s.lost).toEqual([]);
   });
 });
 

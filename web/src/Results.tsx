@@ -54,7 +54,7 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
     return <i key={key} className="face" style={{ position: "absolute", left: px(x), top: px(y), width: px(G.riders.face), height: px(G.riders.face), border: 0, backgroundImage: `url(${ART}${PORTRAITS[ch.atlasSet ?? "a"]})`, backgroundPosition: `${(ch.atlasIndex % 4) * 100 / 3}% ${Math.floor(ch.atlasIndex / 4) * 100 / 3}%` }} />;
   };
   const best = Math.max(Number(localStorage.getItem("pub.best") ?? 0), s.score);
-  // every rider picked up, in order; the ones still aboard at time-up are a note (and pink)
+  // every passenger picked up, in order; the ones still aboard at time-up, or gone in a wreck, are a note (and pink)
   const picked = s.stops.filter((o) => o.taken && o.rider).map((o) => o.rider!);
   const R = G.riders, shown = picked.slice(0, R.cols * R.rows);
   const busy = chain?.busy ?? null, trouble = chain?.trouble ?? null;
@@ -93,7 +93,7 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
   const statusSize = Math.max(7, Math.min(size0, sw / (Math.max(1, ...lines.map((l) => l.length)) * 0.54), room / (Math.max(1, lines.length) * 1.25)));
   const statusTop = sb - baselineEm("Share Tech Mono") * statusSize, statusH = lines.length * statusSize * 1.25;
   if (layout === "desktop" && status) for (const k of keys) if (k.kind === "post") { const h = Math.max(k.rect[3], statusH); k.rect = [k.rect[0], statusTop + statusH / 2 - h / 2, k.rect[2], h]; }
-  const stats: [string, string][] = [["RIDERS DELIVERED", String(s.delivered)], ["DELIVERY POINTS", fmt(s.banked)], ["DISTANCE POINTS", fmt(Math.floor(s.dist * RATE))]];
+  const stats: [string, string][] = [["PASSENGERS DELIVERED", String(s.delivered)], ["DELIVERY POINTS", fmt(s.banked)], ["DISTANCE POINTS", fmt(Math.floor(s.dist * RATE))]];
   const { labels, labelSize, labelAlign, split, values, valueSize, valueAlign } = G.stats as Geometry["stats"] & { labelAlign: "left" | "center"; valueAlign: "right" | "center" };
   return (
     <div className="hu-screen" style={{ width: px(G.canvas[0]), height: px(G.canvas[1]), transform: `scale(${scale})` }}>
@@ -110,14 +110,14 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
             text(value, vx, vy, valueSize, YELLOW, true, valueAlign, undefined, `v${i}`),
           ];
         })}
-        {text(picked.length > shown.length ? `RIDERS (${shown.length} OF ${picked.length})` : "RIDERS", R.head[0], R.head[1], R.head[2], CYAN)}
+        {text(picked.length > shown.length ? `PASSENGERS (${shown.length} OF ${picked.length})` : "PASSENGERS", R.head[0], R.head[1], R.head[2], CYAN)}
         {shown.map((r, i) => {
-          const x = R.origin[0] + (i % R.cols) * R.pitch[0], y = R.origin[1] + Math.floor(i / R.cols) * R.pitch[1], lost = s.lost.includes(r);
+          const x = R.origin[0] + (i % R.cols) * R.pitch[0], y = R.origin[1] + Math.floor(i / R.cols) * R.pitch[1], gone = s.lost.includes(r) ? "ON BOARD" : s.bailed.includes(r) ? "BAILED" : null;
           return [
             face(r, [x, y], i),
             text(`AGE ${r.age}`, x + R.age[0], y + R.age[1], R.age[2], LIGHT, false, "left", R.pitch[0] - R.age[0], `a${i}`),
-            // a rider still aboard never scored: the points are crossed out
-            <span key={`p${i}`} className="hu-text hu-mono" style={{ left: px(x + R.pts[0]), top: px(y + R.pts[1] - baselineEm("Share Tech Mono") * R.pts[2]), fontSize: px(R.pts[2]), color: lost ? PINK : YELLOW }}>{lost ? <><s>{fmt(agePoints(r.age))}</s> ON BOARD</> : fmt(agePoints(r.age))}</span>,
+            // a passenger still aboard, or who bailed in a wreck, never scored: the points are crossed out
+            <span key={`p${i}`} className="hu-text hu-mono" style={{ left: px(x + R.pts[0]), top: px(y + R.pts[1] - baselineEm("Share Tech Mono") * R.pts[2]), fontSize: px(R.pts[2]), color: gone ? PINK : YELLOW }}>{gone ? <><s>{fmt(agePoints(r.age))}</s> {gone}</> : fmt(agePoints(r.age))}</span>,
           ];
         })}
         {text(heading, G.post.head[0], G.post.head[1], G.post.head[2], color)}

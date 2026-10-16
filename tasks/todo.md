@@ -385,3 +385,6 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
 - Verified on screen: desktop RADIO (three stages), SYSTEM and RECORDS lists in the TV, portrait and landscape in iframes.
 - Not done, by design: the 120 ms scan transition on tune (plain swap), the vignette layer, daylight / rain in the driving
   scene (engine test first, brief 5 item 3).
+- Results (Gaylord, 18:20): PASSENGERS on the results screen (stats, well title); passengers who bailed in a wreck were
+  gone from the seats with no trace, so the recap scored them like deliveries. Sim keeps `bailed`; the recap crosses
+  them out in pink with BAILED, like ON BOARD at time-up. HUD callout says WRECK! PASSENGERS BAILED. Test extended.
