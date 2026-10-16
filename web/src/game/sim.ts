@@ -264,7 +264,7 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
   for (const h of s.hazards) {
     if (h.hit || Math.abs(h.z - s.z) > 3 || Math.abs(h.x - s.x) > 1.8) continue;
     h.hit = true;
-    if (h.kind === "cone") s.v *= 0.7;
+    if (h.kind === "cone") { s.v *= 0.7; say(s, "CONE!"); }
     else if (h.kind === "pothole") { s.v *= 0.7; s.x += (s.rng() < 0.5 ? -1 : 1) * 1.0; say(s, "POTHOLE!"); } // a jolt: speed off and the car thrown a metre aside
     else if (h.kind === "oil") { s.oil = s.rain ? 2.5 : 2; h.hit = false; say(s, "OIL!"); }
     else if (s.v > WRECK) wreck(s);
