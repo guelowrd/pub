@@ -193,6 +193,14 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
     if (f.side === 0 && s.z >= f.zDecide) {
       f.side = s.x < 0 ? -1 : 1;
       s.x -= f.side * W;
+      // the traffic ahead moves into the branch's frame with us: a car on the far side of the widened trunk went the other
+      // way and is gone, the rest settle into the nearest lane (left in trunk coordinates they jumped half a road sideways
+      // at the tunnel mouth, into the lane you were in)
+      s.traffic = s.traffic.filter((c) => {
+        if (c.z <= s.z) return true;
+        c.x -= f.side * W; c.tx = Math.round((c.tx - f.side * W) / LANE) * LANE;
+        return Math.abs(c.tx) <= LANE + 0.1;
+      });
       const d = seg(f.zDecide);
       f.k.forEach((k, i) => { s.dx[d + i] = f.side * k; });
       s.log.push({ k: "fork", side: f.side, t: tick(s) });

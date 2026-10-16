@@ -393,3 +393,9 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
   PICK UP OR CRUSH UP. Song 0 now starts in golf hills, so rules/vectors.json regenerated and both commitments repinned.
 - Results (Gaylord, 18:50): the desktop post key fills the post well top to bottom, 12 px padding (well [459, 132] in
   results.json, measured on wells.png), label centred; the 224 x 58 plate is stretched, a tall one asked in brief 5.
+- Tunnel crashes "out of nowhere" (Gaylord, 19:10): at the decision line the sim moves the player's x by W into the
+  branch's frame but left the traffic in trunk coordinates, so every car ahead jumped 5.25 m sideways in the player's
+  view, right at the tunnel mouth (zDecide + 100). Now the cars ahead move with the frame: the far-side one is dropped
+  (it went the other way), the rest snap to the nearest branch lane and drift there at 3 m/s. Test in sim.test.ts.
+  Live check with the autopilot (v pinned, x free): max per-frame relative jump 0.67 m through a fork at 299 km/h.
+  Note: pinning x in the autopilot undoes the frame shift and fakes a 5.25 m jump; measure c.x - s.x with x free.

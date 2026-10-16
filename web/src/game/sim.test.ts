@@ -178,6 +178,20 @@ describe("fork", () => {
     expect(s.dx[Math.floor(f.zDecide / 5) + 10]).toBeLessThan(0);
     expect(s.streets[1].district).toBe(f.left);
   });
+  it("takes the traffic ahead into the branch's frame: the far-side car is gone, the others settle into lanes", () => {
+    const s = newSim(1);
+    extend(s);
+    const f = s.forks[0], car = (x: number, z: number) => ({ z, x, tx: x, v: 20, cruise: 20, kind: 0, braking: false });
+    s.z = f.zDecide + 1; s.x = 3; s.hazards = []; s.lights = []; // going right, nothing else to swerve for
+    s.traffic = [car(LANE, f.zDecide + 150), car(0, f.zDecide + 200), car(-LANE, f.zDecide + 250), car(0, f.zDecide - 50)];
+    step(s, idle, 1 / 120, extend);
+    expect(f.side).toBe(1);
+    const want = [[150, LANE - W, 0], [200, -W, -LANE]]; // no sideways jump in our frame; the -LANE car went left
+    const mine = s.traffic.filter((c) => c.z > s.z && c.z < f.zDecide + 300); // extend() may have spawned one far ahead
+    expect(mine.length).toBe(2);
+    mine.forEach((c, i) => { expect(Math.round(c.z - f.zDecide)).toBe(want[i][0]); expect(c.x).toBeCloseTo(want[i][1], 1); expect(c.tx).toBeCloseTo(want[i][2]); });
+    expect(s.traffic.find((c) => c.z < s.z)!.x).toBeCloseTo(0, 1); // the car behind us stays put (it may change lane to pass)
+  });
 });
 
 describe("steering", () => {
