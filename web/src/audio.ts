@@ -7,11 +7,13 @@ let analysers: AnalyserNode[] = [], musicGain: GainNode;
 const samples = new Uint8Array(256); // reused every frame by levels()
 let current = "";
 export let sound = true, volume = 0.7;
+/** The effects bus gain as it stands (dev checks of the mute). */
+export const level = () => (ctx ? master.gain.value : null);
 
 function ac() {
   if (ctx) return ctx;
   ctx = new AudioContext();
-  master = ctx.createGain(); master.connect(ctx.destination);
+  master = ctx.createGain(); master.gain.value = sound ? 1 : 0; master.connect(ctx.destination); // a mute set before the first gesture holds for the effects too
   // the music runs through the context so the radio's VU can read each channel
   const src = ctx.createMediaElementSource(music), split = ctx.createChannelSplitter(2);
   musicGain = ctx.createGain(); musicGain.gain.value = volume;

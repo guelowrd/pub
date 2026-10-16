@@ -4,7 +4,7 @@ import { CHARACTERS, extend } from "./game/course";
 import { COLOR, draw, setBeat, setSong } from "./game/render";
 import { ICON, loadArt } from "./game/art";
 import { MENU_TRACK, RESULTS_TRACK, STATIONS } from "./game/stations";
-import { audio, sound as soundNow, volume as volumeNow } from "./audio";
+import { audio, level, sound as soundNow, volume as volumeNow } from "./audio";
 import HeadUnit from "./HeadUnit";
 import { startAttract } from "./attract";
 import Loading from "./Loading";
@@ -124,7 +124,7 @@ export default function App() {
   }, [mode, chain]);
   const onOpened = useCallback(() => setOpenRecord(null), []);
   // dev hook: drive the sim from the console (window.pub.run({gas:true}, 5))
-  if (import.meta.env.DEV) Object.assign(window, { pub: { sim, run: (inp: Partial<Input>, secs: number) => { botRun.current = true; for (let t = 0; t < secs; t += STEP) step(sim.current, { gas: false, brake: false, left: false, right: false, ...inp }, STEP, extend); } } });
+  if (import.meta.env.DEV) Object.assign(window, { pub: { sim, level, run: (inp: Partial<Input>, secs: number) => { botRun.current = true; for (let t = 0; t < secs; t += STEP) step(sim.current, { gas: false, brake: false, left: false, right: false, ...inp }, STEP, extend); } } });
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {

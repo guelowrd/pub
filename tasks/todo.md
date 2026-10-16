@@ -433,3 +433,6 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
   so the casino's front began 6 m from the road centre (in the bay) and the cruise terminal reached the road edge.
   BUILDING now holds the first painted column of each ground floor (measured: 63 / 40 / 40 / 40) and the renderer
   stands the front 0.8 m inside the sidewalk's far edge. Checked casino and cruise at 40 m and 12 m.
+- Mute (Gaylord, 20:25): the effects bus (engine, skid, thuds, pickups) was created on the first gesture with gain 1,
+  so a mute set before that (the m key on the splash) silenced the music only. The bus now starts at the mute state.
+  Dev hook `window.pub.level()` reads it; checked 0 while driving muted, 1 after unmute.
