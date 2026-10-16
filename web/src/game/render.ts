@@ -57,7 +57,7 @@ function tintHero(color?: string): Map<string, HTMLCanvasElement> {
 
 export const setBeat = (b: number) => { beat = b; };
 // tunnel light: when we went in (the headlights come up over the next half second) and when we came out (the exit bloom)
-let wasIn = false, inT = -1, exitT = -1;
+let wasIn = false, wasNear = false, inT = -1, exitT = -1;
 // masks tinted with a district colour, cached: the fork trims
 const tinted = new Map<string, HTMLCanvasElement>();
 // repeating patterns per image, made once; a scratch canvas darkens sprites without a canvas filter
@@ -82,7 +82,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   const cx = w / 2, hy = h * 0.42, focal = h * 0.9;
   const camZ = s.z - CAM_BACK, i0 = seg(camZ), frac = camZ / SEG - i0;
   const dxAt = (i: number) => s.dx[i] ?? 0;
-  if (s.t < lastT) { puffs.length = 0; bursts.length = 0; lastSpin = 0; wasIn = false; inT = exitT = -1; }
+  if (s.t < lastT) { puffs.length = 0; bursts.length = 0; lastSpin = 0; wasIn = wasNear = false; inT = exitT = -1; }
   lastT = s.t;
   if (s.skid && s.t - lastPuff > 0.07) { lastPuff = s.t; puffs.push({ z: s.z - 1.2, x: s.x + (puffs.length % 2 ? 0.8 : -0.8), t: s.t }); }
   if (s.spin > lastSpin) bursts.push({ z: s.z + 2.5, x: s.x, t: s.t });
@@ -142,11 +142,11 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   // tunnels join the areas: from where the branches run straight to the first metres of the next street. Inside it is
   // dark; the headlights come up a beat after the mouth; the wall strips glow; the exit blooms
   const tunnelAt = (z: number) => s.forks.find((o) => z >= o.zDecide + TUN_IN && z < o.zEnd + TUN_OUT);
-  const inside = tunnelAt(s.z);
-  if (inside && !wasIn) inT = s.t;
+  const inside = tunnelAt(s.z), ahead = inside ?? tunnelAt(s.z + 50); // the headlights come on 50 m before the mouth (Gaylord: lit before the car enters)
+  if (ahead && !wasNear) inT = s.t;
   if (!inside && wasIn) exitT = s.t;
-  wasIn = !!inside;
-  const hl = inside ? Math.min(1, Math.max(0, (s.t - inT - 0.15) / 0.5)) : 0; // the headlights ramp, 0 to 1 (a step here went black then bright)
+  wasIn = !!inside; wasNear = !!ahead;
+  const hl = ahead ? Math.min(1, Math.max(0, (s.t - inT - 0.15) / 0.5)) : 0; // the headlights ramp, 0 to 1 (a step here went black then bright)
   const lightAt = (z: number) => {
     const f = tunnelAt(z);
     if (!f) return 1;
@@ -218,8 +218,11 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   const road = (n: number, c1: number, c2: number, hw1: number, hw2: number, re1: number, re2: number, alt: boolean, inner: -1 | 0 | 1 = 0) => {
     const z1 = (i0 + n) * SEG, lt = lightAt(z1), shade = (c: string) => (lt < 1 ? mix(c, "#050410", 1 - lt) : c);
     const mat = MATERIALS[districtAt(s, z1) ?? district];
-    quad(n, c1 - hw1 - WALK, c1 + re1 + WALK, c2 - hw2 - WALK, c2 + re2 + WALK, shade(WALK_C[hour][alt ? 0 : 1]));
-    if (lt === 1) { material(n, c1 - hw1 - WALK, c1 - hw1, c2 - hw2 - WALK, c2 - hw2, mat.verge, 2.5, 0.3); material(n, c1 + re1, c1 + re1 + WALK, c2 + re2, c2 + re2 + WALK, mat.verge, 2.5, 0.3); }
+    // a fork branch has no sidewalk on its gore side: drawn there, it lay over the other bore's lane while the two were
+    // closer than its width, a lilac wedge on one side of the split (the "asymmetric fork", Gaylord's circle)
+    const wl = inner < 0 ? 0 : WALK, wr = inner > 0 ? 0 : WALK;
+    quad(n, c1 - hw1 - wl, c1 + re1 + wr, c2 - hw2 - wl, c2 + re2 + wr, shade(WALK_C[hour][alt ? 0 : 1]));
+    if (lt === 1) { if (wl) material(n, c1 - hw1 - WALK, c1 - hw1, c2 - hw2 - WALK, c2 - hw2, mat.verge, 2.5, 0.3); if (wr) material(n, c1 + re1, c1 + re1 + WALK, c2 + re2, c2 + re2 + WALK, mat.verge, 2.5, 0.3); }
     quad(n, c1 - hw1, c1 + re1, c2 - hw2, c2 + re2, shade(alt ? asphalt[0] : asphalt[1]));
     if (lt === 1) material(n, c1 - hw1, c1 + re1, c2 - hw2, c2 + re2, mat.asphalt, 4, 0.3);
     // the curbs alternate white and pink; a fork branch's inner edge is a plain white line instead
@@ -233,21 +236,15 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     const z1 = (i0 + n) * SEG, z2 = z1 + SEG, t = (z: number) => W * Math.min(1, Math.max(0, (z - f.z) / (f.zDecide - f.z)));
     road(n, c, c, W + t(z1), W + t(z2), W + t(z1), W + t(z2), alt);
   };
-  // the gore at the split: the pavement stays continuous between the two inner edges until the branches are GORE apart;
-  // past that the ground between them shows. Its markings mirror about the axis: a white line along each edge (its
-  // pavement covers the lines the bores drew) and a chevron every other slice, point away. One diagonal stroke per slice
-  // leaned one way and its ends piled into a line on the right edge only (Gaylord: "gore on the left, white line only on
-  // its right")
+  // the gore at the split: plain road between the two inner edges until the branches are GORE apart, the same shade and
+  // material as the lanes beside it, nothing drawn on it (a lighter wedge with hatching read as a lopsided fork; Gaylord
+  // circled it: "replaced with macadam colour"). Past GORE the ground between the bores shows
   const gore = (n: number, el1: number, er1: number, el2: number, er2: number, alt: boolean) => {
     if (er1 - el1 >= GORE) return;
-    const lt = lightAt((i0 + n) * SEG), shade = (c: string) => (lt < 1 ? mix(c, "#050410", 1 - lt) : c), line = shade("#e0e0f0");
-    quad(n, el1, er1, el2, er2, shade(alt ? asphalt[0] : asphalt[1]));
-    quad(n, el1, Math.min(el1 + 0.35, er1), el2, Math.min(el2 + 0.35, er2), line);
-    quad(n, Math.max(er1 - 0.35, el1), er1, Math.max(er2 - 0.35, el2), er2, line);
-    if (alt && er1 - el1 > 2) {
-      const cm = (el2 + er2) / 2;
-      quad(n, el1 + 0.6, el1 + 0.95, cm - 0.18, cm + 0.18, line); quad(n, er1 - 0.95, er1 - 0.6, cm - 0.18, cm + 0.18, line);
-    }
+    const z1 = (i0 + n) * SEG, lt = lightAt(z1), mat = MATERIALS[districtAt(s, z1) ?? district];
+    const c = alt ? asphalt[0] : asphalt[1];
+    quad(n, el1, er1, el2, er2, lt < 1 ? mix(c, "#050410", 1 - lt) : c);
+    if (lt === 1) material(n, el1, er1, el2, er2, mat.asphalt, 4, 0.3);
   };
 
   // sprites bucketed by segment, drawn right after their segment's ground
@@ -477,13 +474,15 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     const f = s.forks.find((o) => z1 >= o.z && z1 < o.zEnd + FORK_OUT && !(o.shifted && z1 >= o.mouth)), past = !!f && z1 >= f.zDecide;
     const tun = tunnelAt(z1), mouth = !!tun && z1 < tun.zDecide + TUN_IN + SEG;
     if (f && past) {
-      const at = (side: -1 | 1, z: number) => branchX(f, z, side);
+      // the branch's centre at the slice's real ends: the sweep's offsets interpolated between segment starts. The nearest
+      // slice is pinned to the near plane, a few metres past its segment start; the stepwise lookup put a kink in its lines
+      const at = (side: -1 | 1, z: number) => { const j = (z - f.zDecide) / SEG, i = Math.max(0, Math.min(f.off.length - 1, Math.floor(j))), t = Math.max(0, Math.min(1, j - i)); return branchX(f, f.zDecide + i * SEG, side) * (1 - t) + branchX(f, f.zDecide + (i + 1) * SEG, side) * t; };
       for (const side of [-1, 1] as const) {
-        const c1 = at(side, z1), c2 = at(side, z2);
+        const c1 = at(side, zAt[n]), c2 = at(side, zAt[n + 1]);
         road(n, c1, c2, W, W, W, W, alt, (-side) as -1 | 1);
         if (tun) tunnel(n, c1, c2, W, side < 0 ? f.left : f.right);
       }
-      gore(n, at(-1, z1) + W, at(1, z1) - W, at(-1, z2) + W, at(1, z2) - W, alt);
+      gore(n, at(-1, zAt[n]) + W, at(1, zAt[n]) - W, at(-1, zAt[n + 1]) + W, at(1, zAt[n + 1]) - W, alt);
     } else if (f) {
       widening(n, f, branchX(f, z1, 0), alt); // the trunk widening to the line
     } else {

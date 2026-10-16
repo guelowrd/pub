@@ -531,3 +531,12 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
   (point away) every other slice. I first chased the camera (a car in a lane makes the Y lopsided in perspective) and
   tried holding the camera on the axis through the fork; reverted, Gaylord did not ask for it. Checked at the line from
   the centre lane and the left lane.
+- Gaylord's circle (22:33): the real asymmetry was a lilac wedge on the left of the split: each bore drew a sidewalk on
+  both sides, and while the bores were closer than a sidewalk's width the right bore's inner sidewalk lay over the left
+  bore's lane. A bore has no sidewalk on its gore side now, and the gore is plain road (same shade, same material tile,
+  no markings at all; the chevrons of an hour earlier are gone). Checked 20 m before the line from the centre lane: one
+  surface, the two inner lines meeting in a point.
+- Kinked white line before the tunnel (22:37): the nearest slice is pinned to the near plane but took the branch offset
+  at its segment start; the branch centre is interpolated at the slice's real ends now.
+- Headlights come on 50 m before the mouth (ramp unchanged), so the car enters a lit tunnel; the exit bloom still keys on
+  the actual exit.
