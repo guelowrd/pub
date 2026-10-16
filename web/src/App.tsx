@@ -267,13 +267,13 @@ export default function App() {
               <div className="box yellow post">
                 {posted ? (
                   <>
-                    <div><span>RECORD POSTED, 1 GC ON IT</span><b>{String(posted.score).padStart(5, "0")}</b></div>
+                    <div><span>RECORD POSTED</span><b>{String(posted.score).padStart(5, "0")}</b></div>
                     <p className="actions"><button className="cyan" onClick={() => window.open(recordLinks(posted.recordId, posted.score, posted.expiresAt, STATIONS[posted.song].title).x, "_blank", "noopener")}>SHARE ON X</button><button className="cyan" onClick={() => void navigator.clipboard?.writeText(recordLinks(posted.recordId, posted.score, posted.expiresAt, STATIONS[posted.song].title).url).then(() => setNote("LINK COPIED"), () => setNote("COPY FAILED"))}>COPY LINK</button></p>
                     {note && <p className="verdict">{note}</p>}
                   </>
                 ) : (
                   <>
-                    <div><span>POST YOUR RECORD</span><b>1 GC</b></div>
+                    <div><span>POST YOUR RECORD</span></div>
                     <p className="verdict">{chain?.busy ? `${chain.busy.text}${chain.busy.stage === "wallet" ? ". APPROVE IN YOUR WALLET" : chain.busy.stage === "network" ? ". SENDING TO THE NETWORK" : ""}` : chain?.trouble ? chain.trouble.t.title.toUpperCase() : "RIVALS PAY 1 GC TO TRY TO BEAT YOU. IF THEY DO, THEY TAKE YOUR GC. OTHERWISE THEIR GC IS YOURS."}</p>
                     <p className="actions"><button className="yellow" disabled={!chain || !!chain.busy} onClick={() => { chain?.dismiss(); void chain?.post(s.seed, station, s.score).then((p) => p && setPosted(p)); }}>{chain?.trouble?.retry ? "TRY AGAIN" : "POST IT"}</button></p>
                   </>
