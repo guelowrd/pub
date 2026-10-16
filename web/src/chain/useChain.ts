@@ -41,6 +41,8 @@ export type ChainApi = {
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
   refresh: () => Promise<void>;
+  /** The wallet's Gamecoin balance (Bread asks the player first). */
+  readBalance: () => Promise<void>;
   dismiss: () => void;
   nameOf: (a: AccountFelts) => string;
   /** A record opened by link, fresh from the node. */
@@ -116,6 +118,8 @@ export function useChain(): ChainApi {
     return () => clearInterval(timer);
   }, [isReady, refresh]);
 
+  // Bread opens a popup for every asset read (it asks before sharing them): read on the player's request only; the
+  // local test wallet has no popup, so it reads on its own
   const readBalance = useCallback(async () => {
     if (!walletRef.current.connected) return setBalance(null);
     try {
@@ -124,7 +128,7 @@ export function useChain(): ChainApi {
       console.warn("[pub] balance", e);
     }
   }, []);
-  useEffect(() => void readBalance(), [address, readBalance]);
+  useEffect(() => { if (LOCAL_WALLET) void readBalance(); else setBalance(null); }, [address, readBalance]);
 
   // arcade names for everyone who played, in the order they first did; a newcomer comes last
   const names = useMemo(() => {
@@ -186,7 +190,7 @@ export function useChain(): ChainApi {
       if (live()) {
         setBusy(null);
         void refresh();
-        void readBalance();
+        if (LOCAL_WALLET) void readBalance();
       }
     }
   }
@@ -266,7 +270,7 @@ export function useChain(): ChainApi {
     } finally {
       if (token.current === mine) {
         setBusy(null);
-        void readBalance();
+        if (LOCAL_WALLET) void readBalance();
       }
     }
   };
@@ -311,6 +315,7 @@ export function useChain(): ChainApi {
     connect,
     disconnect: () => wallet.disconnect(),
     refresh: () => refresh(true),
+    readBalance,
     dismiss: () => setTrouble(null),
     nameOf,
     loadRecord,

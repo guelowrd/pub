@@ -2,7 +2,7 @@
 // index, the 13-slot band and the volume, and the Grand Prix control vocabulary. It picks the song (RADIO) or a record to
 // shoot at (RECORDS), shows SCORES and HISTORY, and holds the WALLET and SYSTEM settings; posting a run happens on the
 // results screen. The action key is DRIVE in RADIO and SHOT / COLLECT / CONNECT elsewhere. Geometry from game/data/menu.json (the kit's metadata.json, trimmed), one face per layout.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import geometry from "./game/data/menu.json";
 import { STATIONS } from "./game/stations";
 import type { ChainApi, ChallengeNote } from "./chain/ChainHost";
@@ -67,7 +67,14 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const [note, setNote] = useState<string | null>(null); // a line of our own in the display (copied link, gamecoins)
   const [pressed, setPressed] = useState<string | null>(null);
   const [, setTick] = useState(0);
+  const wheel = useRef(0); // scroll distance pooled until a step
   const G = geometry[layout] as Geometry;
+  // the action key grows over back and select when they sit right above it (desktop, portrait): Enter, Esc and the rows
+  // do their job; landscape keeps them, its keys are elsewhere
+  const act0 = G.controls.find((c) => c.id === "action")!, bk = G.controls.find((c) => c.id === "back")!, sl = G.controls.find((c) => c.id === "select")!;
+  const merged = bk.rect[0] >= act0.rect[0] && sl.rect[0] + sl.rect[2] <= act0.rect[0] + act0.rect[2] && bk.rect[1] < act0.rect[1];
+  const actionRect = merged ? [act0.rect[0], bk.rect[1], act0.rect[2], act0.rect[1] + act0.rect[3] - bk.rect[1]] : act0.rect;
+  const controls = merged ? G.controls.filter((c) => c.id !== "back" && c.id !== "select") : G.controls;
 
   useEffect(() => {
     const fit = () => {
@@ -151,11 +158,11 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     rows = list.map((r, i) => { const mine = same(me, r.who); return { key: r.key, cells: [{ t: String(i + 1).padStart(2, "0"), at: 0, c: DIM, mono: true }, { t: chain?.nameOf(r.who) ?? "???", at: 0.12, c: mine ? YELLOW : CREAM }, { t: score5(r.value), at: 1, right: true, c: YELLOW, mono: true }] }; });
   } else if (mode === "WALLET") {
     const name = me ? chain!.nameOf(me) : chain?.connecting ? chain.walletStatus || "CONNECTING" : "NOT CONNECTED";
-    rows = [lv("WALLET", name, me ? MINT : chain?.connecting ? DISPLAY : PINK), lv("BALANCE", chain?.balance != null ? gc(chain.balance) : "--"), lv("NETWORK", "TESTNET", CREAM), lv("STATUS", busy ? busy.text : trouble ? "ERROR" : "IDLE", busy ? DISPLAY : trouble ? PINK : CREAM)];
+    rows = [lv("WALLET", name, me ? MINT : chain?.connecting ? DISPLAY : PINK), lv("BALANCE", chain?.balance != null ? gc(chain.balance) : me ? "SELECT TO READ" : "--", chain?.balance != null ? YELLOW : DISPLAY), lv("NETWORK", "TESTNET", CREAM), lv("STATUS", busy ? busy.text : trouble ? "ERROR" : "IDLE", busy ? DISPLAY : trouble ? PINK : CREAM)];
     if (me) rows.push(lv("GAMECOINS", "GET 10", DISPLAY), lv("DISCONNECT", "SELECT", DISPLAY));
     if (!chain?.installed) status = "NO BREAD WALLET FOUND. INSTALL IT, THEN COME BACK.";
     if (!me) { action = "CONNECT"; onAction = () => void chain?.connect(); }
-    else { action = "GET GC"; onAction = () => void chain?.gamecoins().then((m) => m && setNote(m)); onSelect = (i) => { if (i === 4) onAction!(); if (i === 5) void chain?.disconnect(); }; }
+    else { action = "GET GC"; onAction = () => void chain?.gamecoins().then((m) => m && setNote(m)); onSelect = (i) => { if (i === 1) void chain?.readBalance(); if (i === 4) onAction!(); if (i === 5) void chain?.disconnect(); }; }
   } else if (mode === "AUDIO") {
     rows = [lv("VOLUME", `${Math.round(volume * 100)} %`), lv("MUTE", muted ? "ON" : "OFF", muted ? PINK : CREAM)];
     onArrow = (d) => { if (cur === 0) setVolume(Math.max(0, Math.min(1, volume + d * 0.1))); };
@@ -229,7 +236,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     <div className="hu-screen" style={{ width: px(G.canvas[0]), height: px(G.canvas[1]), transform: `scale(${scale})` }}>
       <div className="hu-unit" style={{ left: px(G.origin[0]), top: px(G.origin[1]), width: px(G.size[0]), height: px(G.size[1]) }}>
         <img src={`${ART}${layout}/blank-face.png`} alt="" style={{ left: 0, top: 0, width: px(G.size[0]), height: px(G.size[1]) }} />
-        <div className="hu-glass" style={{ left: px(G.glass[0]), top: px(G.glass[1]), width: px(G.glass[2]), height: px(G.glass[3]) }} onWheel={(e) => move(Math.sign(e.deltaY))} />
+        <div className="hu-glass" style={{ left: px(G.glass[0]), top: px(G.glass[1]), width: px(G.glass[2]), height: px(G.glass[3]) }} onWheel={(e) => { wheel.current += e.deltaY; if (Math.abs(wheel.current) >= 80) { move(Math.sign(wheel.current)); wheel.current = 0; } }} />
         {/* upper display */}
         {text(mode, G.title[0], G.title[1], G.title[2], DISPLAY, false, false, "title")}
         {mode === "RADIO" && text(`${String(station + 1).padStart(2, "0")} / ${STATIONS.length}`, gx + gw - 16, G.title[1], small, DIM, true, true, "count")}
@@ -255,15 +262,18 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
         {text(`VOL ${Math.round(volume * 100)}%${muted ? "  MUTE" : ""}`, lx + 16, ly + lh - 10, small, DIM, true, false, "vol")}
         {text(STATIONS[station].title, lx + lw - 16, ly + lh - 10, small, DIM, true, true, "song")}
         {/* controls */}
-        {G.controls.map((c) => (
+        {controls.map((c) => {
+          const r = c.id === "action" ? actionRect : c.rect;
+          return (
           <span key={c.id}>
-            <img src={`${ART}${layout}/${c.id === "action" ? "action-blank" : c.id}-${state(c)}.png`} alt="" style={{ left: px(c.rect[0]), top: px(c.rect[1]), width: px(c.rect[2]), height: px(c.rect[3]) }} />
+            <img src={`${ART}${layout}/${c.id === "action" ? "action-blank" : c.id}-${state(c)}.png`} alt="" style={{ left: px(r[0]), top: px(r[1]), width: px(r[2]), height: px(r[3]) }} />
             {c.id === "vol" ? G.volumeHits.map((h, k) => <button key={k} className="hit" aria-label={k ? "Volume up" : "Volume down"} style={{ left: px(h[0]), top: px(h[1]), width: px(h[2]), height: px(h[3]) }} onClick={() => press(c.id, () => act(c, k as 0 | 1))} />)
-              : <button className="hit" aria-label={c.id === "action" ? action ?? "" : c.label} disabled={disabled(c)} style={{ left: px(c.hit[0]), top: px(c.hit[1]), width: px(c.hit[2]), height: px(c.hit[3]) }} onClick={() => press(c.id, () => act(c))} />}
+              : <button className="hit" aria-label={c.id === "action" ? action ?? "" : c.label} disabled={disabled(c)} style={{ left: px(r[0]), top: px(r[1]), width: px(r[2]), height: px(r[3]) }} onClick={() => press(c.id, () => act(c))} />}
           </span>
-        ))}
+          );
+        })}
         {/* the action key's label, drawn once on the kit's baseline: DRIVE, SHOT, POST, COLLECT... */}
-        {action && <span className="hu-text hu-gt hu-label" style={{ left: px(G.label.baseline[0] - G.label.maxWidth / 2), top: px(G.label.baseline[1] - baselineEm("Chakra Petch") * G.label.size + (pressed === "action" ? 2 : 0)), width: px(G.label.maxWidth), fontSize: px(G.label.size), color: disabled(G.controls.find((c) => c.id === "action")!) ? G.label.disabledFill : G.label.fill }}>{action}</span>}
+        {action && <span className="hu-text hu-gt hu-label" style={{ left: px(G.label.baseline[0] - G.label.maxWidth / 2), top: px((merged ? actionRect[1] + actionRect[3] / 2 + G.label.size * 0.35 : G.label.baseline[1]) - baselineEm("Chakra Petch") * G.label.size + (pressed === "action" ? 2 : 0)), width: px(G.label.maxWidth), fontSize: px(G.label.size * (merged ? 1.3 : 1)), color: disabled(act0) ? G.label.disabledFill : G.label.fill }}>{action}</span>}
       </div>
     </div>
   );

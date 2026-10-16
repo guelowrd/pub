@@ -289,3 +289,5 @@ runs from the dev hook never set the best. For the designer (docs/designer-brief
 HISTORY icons, the pause overlay, the radar DROP OFF and reveal states, the share card, the splash ribbon, phone shots.
 
 Correction (2026-10-16): the prize picker was mine, never asked for; one stake and one prize of 1 GC, as in GQ.
+
+2026-10-16 later: wheel steps every 80 px; DRIVE spans the back/select keys (desktop, portrait; Enter/Esc/rows do their job); Bread asks before sharing assets, so the balance is read on request only (WALLET: BALANCE row, SELECT TO READ), the local wallet still reads by itself. The second Bread popup after a post was my balance refresh.
