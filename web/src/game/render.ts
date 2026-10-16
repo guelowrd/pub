@@ -17,7 +17,7 @@ export const setSong = (id: string) => { sky = SKY[id] ?? DEFAULT_SKY; };
 export const setBeat = (b: number) => { beat = b; };
 // tunnel light: when we went in (headlights click on 0.8 s later) and when we came out (the exit bloom)
 let wasIn = false, inT = -1, exitT = -1;
-// masks tinted with a district colour, cached: the fork trims and the wall strip lens
+// masks tinted with a district colour, cached: the fork trims
 const tinted = new Map<string, HTMLCanvasElement>();
 // repeating patterns per image, made once; a scratch canvas darkens sprites without a canvas filter
 const patterns = new Map<CanvasImageSource, CanvasPattern>();
@@ -105,23 +105,23 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     const top1 = sy[n] - TUN_H * sc[n], top2 = sy[n + 1] - TUN_H * sc[n + 1];
     const u0 = ((z1 % 8) + 8) % 8 / 8 * 1024; // the materials repeat every 8 m along the tunnel
     const poly = (pts: number[][]) => { ctx.beginPath(); pts.forEach(([x, y], j) => (j ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.closePath(); };
-    const wall = img(TUNNEL.wall), ceiling = img(TUNNEL.ceiling), lens = tintMask(TUNNEL.strip, tint, 1024, 1024);
+    const wall = img(TUNNEL.wall), ceiling = img(TUNNEL.ceiling);
     const pattern = (im: CanvasImageSource) => { let p = patterns.get(im); if (!p) { p = ctx.createPattern(im, "repeat")!; patterns.set(im, p); } return p; };
     const shade = SHADE(light);
     for (const [xa, xb] of [[X(n, l1), X(n + 1, l2)], [X(n, r1), X(n + 1, r2)]]) {
-      // the textured band over the lower metres of the wall, plain dark above it, then the darkness laid over both
-      const ya = sy[n], yb = sy[n + 1], ta = ya - TUN_TEX * sc[n], tb = yb - TUN_TEX * sc[n + 1];
-      const m = new DOMMatrix([(xb - xa) / 640, 0, 0, TUN_TEX * sc[n] / 1024, xa - u0 * (xb - xa) / 640, ta]);
+      // the textured band over the lower metres of the wall, plain dark above it, then the darkness laid over both.
+      // The pattern is affine, so it is pinned along the road edge and given the segment's mean height: the seam
+      // between two segments then sits in the dark top of the band instead of stepping at the road
+      const ya = sy[n], yb = sy[n + 1], ta = ya - TUN_TEX * sc[n], tb = yb - TUN_TEX * sc[n + 1], hgt = TUN_TEX * (sc[n] + sc[n + 1]) / 2;
+      const a = (xb - xa) / 640, b = (yb - ya) / 640;
       poly([[xa, ya], [xa, ta], [xb, tb], [xb, yb]]);
-      if (wall) { const pat = pattern(wall); pat.setTransform(m); ctx.fillStyle = pat; } else ctx.fillStyle = "#2a2a3e";
+      if (wall) { const pat = pattern(wall); pat.setTransform(new DOMMatrix([a, b, 0, hgt / 1024, xa - u0 * a, ya - hgt - u0 * b])); ctx.fillStyle = pat; } else ctx.fillStyle = "#2a2a3e";
       ctx.fill();
       ctx.fillStyle = "#141028"; poly([[xa, ta], [xa, top1], [xb, top2], [xb, tb]]); ctx.fill();
       if (light < 1) { ctx.fillStyle = shade; poly([[xa, ya], [xa, top1], [xb, top2], [xb, yb]]); ctx.fill(); }
-      if (lens) { // the strip lens glows in the destination's colour, with the music
-        ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 0.55 + 0.45 * beat;
-        const pat = pattern(lens); pat.setTransform(m); ctx.fillStyle = pat;
-        poly([[xa, ya], [xa, ta], [xb, tb], [xb, yb]]); ctx.fill(); ctx.restore();
-      }
+      // the light strip along the wall, one continuous band in the destination's colour that pulses with the music
+      ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 0.5 + 0.5 * beat; ctx.fillStyle = tint;
+      poly([[xa, ya - 2.6 * sc[n]], [xa, ya - 2.85 * sc[n]], [xb, yb - 2.85 * sc[n + 1]], [xb, yb - 2.6 * sc[n + 1]]]); ctx.fill(); ctx.restore();
     }
     // ceiling: u along the tunnel runs down the screen, v across runs along it
     const xl = X(n, l1), xr = X(n, r1);
@@ -254,20 +254,29 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   }
   for (const f of s.forks) at(f.z - 150, () => {
     const { px, py, k } = place(f.z - 150, 0);
-    const top = py - 6 * k, bw = (W + 3) * 2 * k;
-    ctx.fillStyle = "#1c4a30"; ctx.fillRect(px - bw / 2, top, bw, 1.8 * k);
-    ctx.fillStyle = "#e8e8e8"; ctx.fillRect(px - bw / 2 - 0.3 * k, top, 0.3 * k, 6 * k); ctx.fillRect(px + bw / 2, top, 0.3 * k, 6 * k);
-    ctx.font = `${Math.max(6, k)}px "Boomer GT", monospace`; ctx.textBaseline = "middle";
-    const il = img(ICON[f.left]), ir = img(ICON[f.right]);
-    if (il) ctx.drawImage(il, px - bw / 2 + 0.3 * k, top + 0.2 * k, 1.4 * k, 1.4 * k);
-    ctx.fillStyle = COLOR[f.left]; ctx.textAlign = "left"; ctx.fillText(`< ${NAME[f.left]}`, px - bw / 2 + 2 * k, top + 0.9 * k);
-    if (ir) ctx.drawImage(ir, px + bw / 2 - 1.7 * k, top + 0.2 * k, 1.4 * k, 1.4 * k);
-    ctx.fillStyle = COLOR[f.right]; ctx.textAlign = "right"; ctx.fillText(`${NAME[f.right]} >`, px + bw / 2 - 2 * k, top + 0.9 * k);
-    // badge: how many aboard want that side
+    // a motorway gantry: one green plate per branch, white border, arrow at the outer end, the name sized to fit
+    const bh = 2.4 * k, top = py - 7 * k, half = (W + 3) * k;
+    ctx.fillStyle = "#d8d8e0"; ctx.fillRect(px - half - 0.35 * k, top, 0.35 * k, 7 * k); ctx.fillRect(px + half, top, 0.35 * k, 7 * k);
+    ctx.textBaseline = "middle";
     for (const [side, d] of [[-1, f.left], [1, f.right]] as const) {
+      const x0 = side < 0 ? px - half : px + 0.1 * k, pw = half - 0.1 * k, out = side < 0 ? x0 : x0 + pw, inn = side < 0 ? x0 + pw : x0;
+      ctx.fillStyle = "#f4f4f4"; ctx.fillRect(x0, top, pw, bh);
+      ctx.fillStyle = "#1b6b3a"; ctx.fillRect(x0 + 0.12 * k, top + 0.12 * k, pw - 0.24 * k, bh - 0.24 * k);
+      ctx.fillStyle = COLOR[d]; ctx.fillRect(x0 + 0.12 * k, top + bh - 0.4 * k, pw - 0.24 * k, 0.28 * k); // the district's colour, as on its tunnel
+      const ax = out - side * 0.4 * k, ay = top + 1.05 * k; // the arrow
+      ctx.fillStyle = "#f4f4f4"; ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax - side * 1.2 * k, ay - 0.65 * k); ctx.lineTo(ax - side * 1.2 * k, ay + 0.65 * k); ctx.fill();
+      const ic = img(ICON[d]);
+      if (ic) ctx.drawImage(ic, inn - (side < 0 ? 1.9 : 0.4) * k, top + 0.3 * k, 1.5 * k, 1.5 * k);
+      const room = pw - 4.6 * k, name = NAME[d];
+      ctx.font = `${k}px "Boomer GT", monospace`;
+      const fs = Math.max(4, Math.min(k, k * room / ctx.measureText(name).width));
+      ctx.font = `${fs}px "Boomer GT", monospace`; ctx.textAlign = side < 0 ? "left" : "right";
+      ctx.fillText(name, ax - side * 1.6 * k, ay);
+      // badge under the plate: how many aboard want that side
       const n = s.seats.filter((r) => r && r.dest === d).length;
       if (!n) continue;
-      const bx = px + side * (bw / 2 - 2.2 * k), by = top + 1.8 * k;
+      const bx = x0 + pw / 2, by = top + bh;
+      ctx.font = `${k}px "Boomer GT", monospace`;
       ctx.fillStyle = COLOR[d]; ctx.fillRect(bx - 1.2 * k, by, 2.4 * k, 1.3 * k);
       ctx.fillStyle = "#080c24"; ctx.textAlign = "center"; ctx.fillText(`x${n}`, bx, by + 0.65 * k);
     }
@@ -283,6 +292,23 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   while (puffs.length && s.t - puffs[0].t > 0.5) puffs.shift();
   while (bursts.length && s.t - bursts[0].t > 0.14) bursts.shift();
 
+  // the shared fork structure's place on screen: its two mouths (664 and 1384 of the 2048 sheet) on the two branches
+  const frame = (n: number, f: Sim["forks"][number]) => {
+    const d = i0 + n - seg(f.zDecide), xL = X(n, (-1 - f.side) * f.off[d]), xR = X(n, (1 - f.side) * f.off[d]), k = (xR - xL) / 720;
+    return { k, left: xL - 664 * k, top: sy[n] - 928 * k, a: Math.max(0, Math.min(1, ((i0 + n) * SEG - s.z - 12) / 30)) };
+  };
+  // the painted openings (about 470 x 290 of the sheet) are wider and taller than the tunnel box behind them: darkness
+  // fills each arch before the segments, so the box draws over it and the skyline never shows around it
+  for (const f of s.forks) {
+    const n = seg(f.zDecide + TUN_IN) - i0;
+    if (n < 0 || n > N) continue;
+    const { k, left, top, a } = frame(n, f);
+    ctx.fillStyle = `rgba(10,8,24,${a.toFixed(3)})`;
+    for (const mx of [664, 1384]) {
+      const cxm = left + mx * k, road = top + 928 * k, r = 235 * k;
+      ctx.beginPath(); ctx.moveTo(cxm - r, road); ctx.lineTo(cxm - r, road - 55 * k); ctx.arc(cxm, road - 55 * k, r, Math.PI, 0); ctx.lineTo(cxm + r, road); ctx.fill();
+    }
+  }
   // segments, far to near
   for (let n = N; n >= 0; n--) {
     const i = i0 + n, z1 = i * SEG, z2 = z1 + SEG, alt = (i >> 1) % 2 === 0;
@@ -313,9 +339,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     }
     if (f && mouth) {
       // one shared structure holds both mouths: scaled so its two openings sit on the two branches, fading out as we reach it
-      const d = i - seg(f.zDecide), xL = X(n, (-1 - f.side) * f.off[d]), xR = X(n, (1 - f.side) * f.off[d]);
-      const k = (xR - xL) / 720, left = xL - 664 * k, top = sy[n] - 928 * k, a = Math.max(0, Math.min(1, (z1 - s.z - 12) / 30));
-      const name = FORK_STRUCT[here.district], body = img(`fork-${name}.webp`);
+      const { k, left, top, a } = frame(n, f), name = FORK_STRUCT[here.district], body = img(`fork-${name}.webp`);
       if (body && a > 0) {
         ctx.save(); ctx.globalAlpha = a;
         ctx.drawImage(body, left, top, 2048 * k, 1024 * k);

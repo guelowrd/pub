@@ -44,7 +44,8 @@ export default function App() {
   const setVolume = (v: number) => { audio.volume(v); setVolumeState(v); };
   // music follows the screen: menus loop Boomers, the run plays the station from its first second, results loop Wireline Cosmos
   useEffect(() => {
-    if (mode === "radio") { if (preview) audio.run(STATIONS[station].id); else audio.menu(MENU_TRACK); }
+    if (mode === "ready") audio.menu(MENU_TRACK); // silent until the browser allows sound: a click, or a site it trusts
+    else if (mode === "radio") { if (preview) audio.run(STATIONS[station].id); else audio.menu(MENU_TRACK); }
     else if (mode === "play") { if (sim.current.t === 0) { setSong(STATIONS[station].id); audio.run(STATIONS[station].id); } else audio.resume(); }
     else if (mode === "paused") audio.pause();
     else if (mode === "over") audio.results(RESULTS_TRACK);

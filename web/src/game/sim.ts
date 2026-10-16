@@ -53,6 +53,7 @@ export interface Sim {
   brake: boolean;
   skid: boolean;
   hot: number; // seconds since the car last ran above 60 km/h; a stop within 2.5 s of that is a crazy stop
+  cap: number; // the car's top speed this run: every wreck knocks some off, down to FAST
   spin: number; // seconds of spin-out left
   oil: number; // seconds of grip loss left
   boarding: number; // seconds the car stays put while someone gets in or out
@@ -90,7 +91,7 @@ export function rngFrom(seed: number): () => number {
 export function newSim(seed: number): Sim {
   return {
     seed, rng: rngFrom(seed), t: 0, over: false,
-    z: 20, x: 0, v: 0, steer: 0, brake: false, skid: false, hot: 99, spin: 0, oil: 0, boarding: 0, bumpCd: 0,
+    z: 20, x: 0, v: 0, steer: 0, brake: false, skid: false, hot: 99, cap: TOP, spin: 0, oil: 0, boarding: 0, bumpCd: 0,
     seats: [null, null, null], banked: 0, dist: 0, score: 0, delivered: 0,
     dx: [], y: [], course: [], streets: [], stops: [], hazards: [], traffic: [], forks: [], lights: [],
     callout: null, lost: [], log: [],
@@ -131,6 +132,7 @@ function say(s: Sim, text: string, t = 1.2) {
 function wreck(s: Sim) {
   s.spin = 2.5;
   s.skid = false;
+  s.cap = Math.max(FAST, s.cap - 15 / KMH);
   say(s, s.seats.some(Boolean) ? "WRECK! RIDERS BAILED" : "WRECK!", 2);
   s.seats = [null, null, null];
   s.log.push({ k: "wreck", t: tick(s) });
@@ -164,7 +166,7 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
   } else {
     // brake through a standstill and you reverse: the reflex when you've overshot a stop
     if (inp.brake) s.v = Math.max(-REV, s.v - (s.v > 0 ? 28 : 8) * dt);
-    else if (inp.gas) s.v = Math.min(TOP, s.v + (13 * (1 - (Math.max(0, s.v) / TOP) ** 3) + 0.5) * dt);
+    else if (inp.gas) s.v = Math.min(s.cap, s.v + (13 * (1 - (Math.max(0, s.v) / TOP) ** 3) + 0.5) * dt);
     if (s.v > 0 && dir !== 0) s.v -= Math.abs(s.steer) * (s.v / TOP) ** 3 * 10 * dt; // turning at speed scrubs it off, hard when flat out
     else s.v -= Math.sign(s.v) * Math.min(Math.abs(s.v), 4 * dt);
     s.skid = inp.brake && dir !== 0 && s.v > 15;
