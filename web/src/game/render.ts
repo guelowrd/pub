@@ -331,9 +331,10 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
         spr(zc, m * sidewalkX, PEOPLE[ch.atlasSet ?? "a"], ch.atlasIndex, undefined, flip);
       }
     } else {
-      // the spending place: its door beside the bay, its props along the sidewalk, never in the bay or the waiting patch
-      const [b, ppm, door] = BUILDING[st.drop!];
-      spr(zc, W + BAY + WALK + 1.5 - door, SHEETS.buildings, b, ppm);
+      // the spending place stands behind the sidewalk: its painted front 0.8 m inside the sidewalk's far edge, so no
+      // part of it reaches the bay (players braked for a casino canopy that stood in the bay); its props along the sidewalk
+      const [b, ppm, edge] = BUILDING[st.drop!];
+      spr(zc, W + BAY + WALK - 0.8 + (SHEETS.buildings.ax - edge) / ppm, SHEETS.buildings, b, ppm);
       DPROPS[st.drop!].forEach((p, i) => spr(st.z + [-14, 44, 88][i], W + BAY + WALK + 2.5, SHEETS.dprops, DPROP[p][0], DPROP[p][1]));
     }
     if (st.drop && !st.taken) {

@@ -429,3 +429,7 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
   skipped under 20 m. Measured under the car at 90 km/h: 55 -> 38 -> 53 over 9 m, largest frame-to-frame step 16 (was 39).
 - TV glass over everything (Gaylord, 20:05): the captions and lists were drawn above the glass; the glass img is now
   the last child of the TV, so scanlines and phosphor cover the text too (the designer's note said the same).
+- Drop-off fronts in the bay (Gaylord, 20:15): the buildings atlas is painted edge to edge and the sprite was centred,
+  so the casino's front began 6 m from the road centre (in the bay) and the cruise terminal reached the road edge.
+  BUILDING now holds the first painted column of each ground floor (measured: 63 / 40 / 40 / 40) and the renderer
+  stands the front 0.8 m inside the sidewalk's far edge. Checked casino and cruise at 40 m and 12 m.

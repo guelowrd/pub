@@ -40,8 +40,9 @@ export const VENUE_CELL: Record<string, number> = { school: 0, "nursing-home": 1
 export const PROP = { palm: [0, 49], broadleaf: [1, 45], cypress: [2, 56], jacaranda: [3, 40], agave: [4, 160], hedge: [5, 107], lamp: [6, 54], shelter: [7, 89] } as const;
 export const TREES: Record<District, (keyof typeof PROP)[]> = { downtown: ["broadleaf", "jacaranda"], waterfront: ["palm", "agave"], casino: ["jacaranda", "palm"], golf: ["cypress", "hedge"] };
 export const PEOPLE: Record<string, Sheet> = { a: SHEETS.people, b: SHEETS.peopleB, c: SHEETS.peopleC };
-// destination building: cell, pixels per metre (visible height / world height), entrance offset from the anchor in metres
-export const BUILDING: Record<District, [number, number, number]> = { casino: [0, 62, -1.4], waterfront: [1, 39, -4.6], golf: [2, 71, -2.1], downtown: [3, 70, -2.3] };
+// destination building: cell, pixels per metre (visible height / world height), the first painted column of its ground
+// floor (the cells are painted edge to edge, so the renderer stands each building by that edge, clear of the bay)
+export const BUILDING: Record<District, [number, number, number]> = { casino: [0, 62, 63], waterfront: [1, 39, 40], golf: [2, 71, 40], downtown: [3, 70, 40] };
 export const DPROP: Record<string, [number, number]> = { "casino-fountain": [0, 168], "gold-palm-planter": [1, 183], "slot-machine": [2, 209], "mooring-bollard": [3, 428], yacht: [4, 102], "luggage-trolley": [5, 219], "golf-cart": [6, 211], "fairway-fence": [7, 286], sprinkler: [8, 360], "valet-podium": [9, 365], "velvet-rope": [10, 309], "spiral-topiary": [11, 175] };
 export const DPROPS: Record<District, string[]> = { casino: ["casino-fountain", "gold-palm-planter", "slot-machine"], waterfront: ["mooring-bollard", "yacht", "luggage-trolley"], golf: ["golf-cart", "fairway-fence", "sprinkler"], downtown: ["valet-podium", "velvet-rope", "spiral-topiary"] };
 // handoff 05: district skylines (sky painted in code), decorative fillers, painted portals, light heads
