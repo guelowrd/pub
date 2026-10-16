@@ -111,7 +111,11 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
           text(String(agePoints(r.age)), G.aboard.pts[i][0], G.aboard.pts[i][1], G.aboard.ptsSize, PINK, true, G.aboard.ptsAlign as "left" | "right", undefined, `p${i}`),
         ])}
         {text(heading, G.post.head[0], G.post.head[1], G.post.head[2], color)}
-        {status && <span className="hu-text hu-mono rs-status" style={{ left: px(G.post.status[0]), width: px(G.post.status[3]), top: px(G.post.status[1] - baselineEm("Share Tech Mono") * G.post.status[2]), fontSize: px(G.post.status[2]), color: MUTED }}>{status}</span>}
+        {status && (() => {
+          // a long line (the terms) wraps to two lines, one on a landscape phone, shrinking to fit above the key
+          const [sx, sb, size0, sw] = G.post.status, size = Math.min(size0, (sw * (layout === "landscape" ? 1 : 2)) / (status.length * 0.54));
+          return <span className="hu-text hu-mono rs-status" style={{ left: px(sx), width: px(sw), top: px(sb - baselineEm("Share Tech Mono") * size), fontSize: px(size), color: MUTED }}>{status}</span>;
+        })()}
         {[...keys, ...footer].map((k) => <Key key={k.label} {...k} layout={layout} />)}
       </div>
     </div>

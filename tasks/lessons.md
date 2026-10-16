@@ -12,3 +12,9 @@
 - A generic `.overlay button` rule outranked the `.hit` class on the head unit's invisible buttons and painted them navy over
   the key art; when a skinned screen looks tinted or flat, check `elementsFromPoint` for a styled hit area before suspecting the art.
 - Do not invent mechanics: the prize chips were not in GQ nor asked for. The chain layer mirrors GQ's rules; a new knob needs Gaylord's word first.
+
+## 2026-10-16 results kit
+- A dynamic `import("/src/x.ts")` from the console returns the module instance the page already holds, edits and all missed;
+  add a cache-busting query to get the file as it is on disk.
+- A projection clamp (`max(0.3, dz)`) is a bug wearing a safety belt: the nearest road slice drew from a bogus distance for
+  hours (blurred tile, lane lines cut at a hard edge) because the clamp hid the division by zero. Clip to the near plane instead.

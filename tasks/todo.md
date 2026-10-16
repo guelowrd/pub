@@ -291,3 +291,24 @@ HISTORY icons, the pause overlay, the radar DROP OFF and reveal states, the shar
 Correction (2026-10-16): the prize picker was mine, never asked for; one stake and one prize of 1 GC, as in GQ.
 
 2026-10-16 later: wheel steps every 80 px; DRIVE spans the back/select keys (desktop, portrait; Enter/Esc/rows do their job); Bread asks before sharing assets, so the balance is read on request only (WALLET: BALANCE row, SELECT TO READ), the local wallet still reads by itself. The second Bread popup after a post was my balance refresh.
+
+### Results and HUD kit (2026-10-16, midday)
+The designer's PUB-Results-and-HUD pack, not followed blindly. Results: the kit's frame and wells per layout (results.json
+trimmed from its metadata), the padded score, BEST, three stats, STILL ON BOARD rows, the post well with its states
+(POST YOUR RECORD + the terms line / CONNECT WALLET / NEED GC / CHECK WALLET / GETTING READY / POSTING / the error with
+TRY AGAIN / RECORD POSTED with SHARE ON X, COPY LINK and SAVE CARD), the shot verdict (RECORD BEATEN / RECORD HELD /
+CHECKING RESULT), SAME RUN / NEW RUN or TRY AGAIN, NEW RUN / MENU; the kit's keys in their four states with the label on
+its baseline; the scene frozen under a #060b16 dim at 0.9. The results screen scales from the kit's canvas like the head
+unit (shared board.ts). HUD: the kit's plates for TIME, SCORE, SPEED (no KM/H), the seats as the thin strip top centre
+(TO BANK, FULL, portrait + age + destination line icon, EMPTY); the radar at the kit's 210 x 128 but kept on the right
+under the score, where the rail was (Gaylord: the bottom right was worse), with its five states on the kit's geometry
+(target, DROP OFF with the destination icon, the 2 s reveal, SCAN with two rings, CAR FULL). HISTORY rows: crown and
+target icons by kind, the state word in the kit's colours (OPEN, IN PLAY, COLLECT, BEATEN, DEFENDED, TAKEN BACK, WON,
+LOST). Pause: the kit's card over the dim. Share card at runtime (share.ts: background, title, score, station, up to
+three riders cover-cropped, frame; SAVE CARD downloads the PNG). Splash: the kit's CLICK TO START layer (850 on / 450
+off), the scrolling rules ribbon restyled to the kit's strip (smoked glass, hairline, Chakra 17). Render fixes from the
+audit: the nearest road slice is pinned to the near plane (the 0.3 m clamp blew its tile into a blur and cut the lane
+lines at a hard edge); the fork structure stays solid until driven through (the fade let the outside show through the
+arches); verge tiles 2.5 m at 0.3. Kept from before, against the kit: the radar's place, the terms line in the post
+well, the nine-rule scrolling ribbon. Phone layouts (portrait plates doubled, strip + radar under the scene) are still
+unverified on a device.

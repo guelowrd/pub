@@ -241,7 +241,7 @@ export default function App() {
       )}
       {mode === "paused" && <div className="overlay dim" onClick={() => setMode("play")}><img className="pause" src={`${ART}pause.png`} alt="PAUSED. CLOCK STOPPED" /></div>}
       {mode === "over" && (
-        <div className="overlay dim menu">
+        <div className="overlay dim screen">
           <Results s={s} station={station} chain={chain} posted={posted} setPosted={setPosted} shot={shot.current ? { target: shot.current.record.storage.target } : null} settled={settled}
             onSame={() => start(seed)} onNew={() => { setSeed(randomSeed()); toMenu(); }} onAgain={() => driveShot(shot.current!.shots, shot.current!.record)}
             onMenu={() => { chain?.dismiss(); shot.current = null; setSeed(randomSeed()); toMenu(); }} onRetry={(r) => { chain?.dismiss(); setSettled(null); r(); }} />
