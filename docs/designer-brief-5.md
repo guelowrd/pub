@@ -24,6 +24,8 @@ Your thirteen assignments are the stages, as you wrote them:
 | Synthwave Engine | Downtown | Sunset | Clear | Yellow |
 | Vector World | Casino Strip | Sunset | Clear | Green |
 
+Gaylord set the dial order: NOCTURNAL RUN, SYNTHWAVE ENGINE, ABANDONED FACTORY, MIDNIGHT CHASE, OUTRUN PULSE, VECTOR WORLD, PICKUP TRUCK, DARK HORSE, BITTERSWEET SUNSET, NEON PURSUIT, ORANGE HORIZON, NIGHT CRUISE, PICK UP OR CRUSH UP. Paints stay with their songs.
+
 Ten of them map onto a painting you already made. Three do not, which is the first ask below.
 
 ## What I need from you, in order

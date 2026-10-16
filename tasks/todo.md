@@ -388,3 +388,6 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
 - Results (Gaylord, 18:20): PASSENGERS on the results screen (stats, well title); passengers who bailed in a wreck were
   gone from the seats with no trace, so the recap scored them like deliveries. Sim keeps `bailed`; the recap crosses
   them out in pink with BAILED, like ON BOARD at time-up. HUD callout says WRECK! PASSENGERS BAILED. Test extended.
+- Dial order (Gaylord, 18:30): NOCTURNAL RUN, SYNTHWAVE ENGINE, ABANDONED FACTORY, MIDNIGHT CHASE ("Midnight Pursuit"),
+  OUTRUN PULSE, VECTOR WORLD, PICKUP TRUCK, DARK HORSE, BITTERSWEET SUNSET, NEON PURSUIT, ORANGE HORIZON, NIGHT CRUISE,
+  PICK UP OR CRUSH UP. Song 0 now starts in golf hills, so rules/vectors.json regenerated and both commitments repinned.
