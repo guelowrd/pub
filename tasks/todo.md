@@ -248,3 +248,7 @@ icons, manifest and the share template as the link preview. Vitest runs in jsdom
 is GQ's (isolation headers). End to end on testnet with the two local wallets: DKQ posted 2028 points (1 GC prize),
 LFH shot it and settled. Skipped: the kit's share card as a downloadable image (the template is the link preview),
 other boards than best records, a code paste box (links work), SYSTEM settings beyond version and network.
+Not verified: the head unit's portrait and landscape faces on a real phone (Chrome refuses to resize its window here; the
+geometry is the kit's, the desktop face is right), Bread itself (the local wallets sign the same requests). Testnet blocks
+ran slower than 3 s tonight: the 6-minute shot window outlived the drive, so SHOT_WINDOW_BLOCKS is fine; a rival whose
+tab is hidden (Chrome throttles the frame loop to a crawl) can still miss it.
