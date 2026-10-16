@@ -1,9 +1,9 @@
-// The head unit (designer's menu kit): the Testarossa's Grand Prix radio face with a second DIN display above it. Six
-// modes on the presets (RADIO, RECORDS, POST, HISTORY, SCORES, WALLET) plus AUDIO and SYSTEM; the upper display lists,
-// the lower segment window shows the selection and the AUTO key's action. Layers and geometry come from
-// game/data/headunit.json (the kit's metadata.json, trimmed), one face per layout.
+// The head unit (visual update, skin B "Night Shift"): one fascia, an upper list display, a lower LCD with the station
+// index, the 14-slot band and the volume, and the Grand Prix control vocabulary. Six modes on the presets (RADIO, RECORDS,
+// POST, HISTORY, SCORES, WALLET) plus AUDIO and SYSTEM; the action key is DRIVE in RADIO and SHOT / POST / COLLECT /
+// CONNECT elsewhere. Geometry from game/data/menu.json (the kit's metadata.json, trimmed), one face per layout.
 import { useEffect, useState } from "react";
-import geometry from "./game/data/headunit.json";
+import geometry from "./game/data/menu.json";
 import { STATIONS } from "./game/stations";
 import type { ChainApi, ChallengeNote, Posted } from "./chain/ChainHost";
 import type { Event } from "./game/sim";
@@ -15,22 +15,39 @@ import { noteDeadline } from "./chain/notes";
 type Layout = "desktop" | "portrait" | "landscape";
 export type Mode = "RADIO" | "RECORDS" | "POST" | "HISTORY" | "SCORES" | "WALLET" | "AUDIO" | "SYSTEM";
 const PRIMARY: Mode[] = ["RADIO", "RECORDS", "POST", "HISTORY", "SCORES", "WALLET"];
-const ART = `${import.meta.env.BASE_URL}art/headunit/`;
+const ART = `${import.meta.env.BASE_URL}art/menu/`;
 const px = (n: number) => `${n}px`;
-const CYAN = "#63e7ff", PINK = "#ff40bd", YELLOW = "#ffe564", MINT = "#78ffcb", CREAM = "#fff3f4", GREY = "#8fadb7", DIM = "#8bb6bb", EXPIRED = "#8a9baa";
+// profile B
+const DISPLAY = "#94e6dc", DIM = "#61928f", SELECT = "#163c3b", ACCENT = "#ff6a57", CREAM = "#fff3f4", YELLOW = "#ffe564", MINT = "#78ffcb", PINK = "#ff40bd", EXPIRED = "#8a9baa";
 
-type Rect = number[];
-type Spec = { clip: Rect; baseline: Rect; size: number; align?: string; font?: string };
 type Geometry = (typeof geometry)["desktop"];
 type Control = Geometry["controls"][number];
 export type LastRun = { seed: number; song: number; score: number; log: Event[]; dist: number };
-type Row = { cells: { spec: Spec; text: string; color?: string; font?: "GT" | "LCD" }[]; key: string; mine?: boolean };
+/** One piece of a row: text at a fraction of the row's width (right aligned when `right`), mono for numbers and lists */
+type Cell = { t: string; at: number; c?: string; right?: boolean; mono?: boolean };
+type Row = { key: string; cells: Cell[] };
 
 export function pickLayout(w: number, h: number): Layout {
   return h > w ? "portrait" : h < 460 ? "landscape" : "desktop";
 }
 const courseLabel = (seed: number) => `C${seed.toString(36).toUpperCase()}`;
 const songOf = (i: number) => STATIONS[i]?.title ?? `SONG ${i}`;
+
+/** Where a font's baseline sits under the top of a line-height-1 span, in em: half-leading plus ascent. */
+const baselineEm = (() => {
+  const cache = new Map<string, number>();
+  return (font: string) => {
+    let v = cache.get(font);
+    if (v === undefined) {
+      const c = document.createElement("canvas").getContext("2d")!;
+      c.font = `100px "${font}"`;
+      const m = c.measureText("HX0");
+      v = (100 - (m.fontBoundingBoxAscent + m.fontBoundingBoxDescent)) / 200 + m.fontBoundingBoxAscent / 100;
+      if (document.fonts.check(`100px "${font}"`)) cache.set(font, v);
+    }
+    return v;
+  };
+})();
 
 export default function HeadUnit({ chain, station, setStation, volume, setVolume, muted, toggleMute, lastRun, initialMode = "RADIO", onDrive, onShot, openRecord, onOpened }: {
   chain: ChainApi | null;
@@ -50,12 +67,11 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const [back, setBack] = useState<Mode>(initialMode); // where AUDIO / SYSTEM return to
   const [cursor, setCursor] = useState<Record<string, number>>({});
   const [review, setReview] = useState<ChallengeNote | null>(null);
-  const [band, setBand] = useState(false);
   const [prize, setPrize] = useState(0);
   const [posted, setPosted] = useState<Posted | null>(null);
-  const [note, setNote] = useState<string | null>(null); // a line of our own in the status area (copied link, gamecoins)
+  const [note, setNote] = useState<string | null>(null); // a line of our own in the display (copied link, gamecoins)
   const [pressed, setPressed] = useState<string | null>(null);
-  const [tick, setTick] = useState(0);
+  const [, setTick] = useState(0);
   const G = geometry[layout] as Geometry;
 
   useEffect(() => {
@@ -91,47 +107,45 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const champion = (n: ChallengeNote) => chain?.nameOf(n.storage.champion) ?? "???";
   const rival = (n: ChallengeNote) => (n.storage.rival && chain?.nameOf(n.storage.rival)) ?? "???";
   const game = (n: ChallengeNote) => ({ seed: Number(n.storage.game[0] ?? 0n), song: Number(n.storage.game[4] ?? 0n) });
+  const lv = (label: string, value: string, c = YELLOW): Row => ({ key: label, cells: [{ t: label, at: 0 }, { t: value, at: 1, right: true, c, mono: true }] });
+  const score5 = (n: number) => String(n).padStart(5, "0");
 
-  const R = G.rows, R0 = R[0], rowsN = G.visibleRows;
-  const F = (spec: Spec, text: string, color = CREAM, font?: "GT" | "LCD") => ({ spec, text, color, font });
-  const lv = (label: string, value: string, vc = YELLOW): Row => ({ key: label, cells: [F(R0.label_value_fields.label, label, GREY, "GT"), F(R0.label_value_fields.value, value, vc, "LCD")] });
-
-  // what the current mode lists, and what AUTO does
-  let rows: Row[] = [], status: string | null = null, action: string | null = null, detail = "", secondary = "", onAuto: (() => void) | null = null, onSelect: ((i: number) => void) | null = null, onArrow: ((d: number) => void) | null = null;
+  // what the current mode lists, and what the action key does
+  let rows: Row[] = [], status: string | null = null, action: string | null = null, detail = "", secondary = "", onAction: (() => void) | null = null, onSelect: ((i: number) => void) | null = null, onArrow: ((d: number) => void) | null = null;
   const cur = cursor[mode] ?? 0;
   const notReady = !chain?.ready ? "LOADING THE CHAIN" : !chain.notesRead ? "READING THE CHAIN" : null;
   if (mode === "RADIO") {
-    rows = STATIONS.map((st, i) => ({ key: st.id, cells: [F({ clip: [R0.clip[0], R0.clip[1], 100, R0.clip[3]], baseline: [R0.clip[0] + 12, R0.baseline[1]], size: R0.size }, String(i + 1).padStart(2, "0"), YELLOW, "LCD"), F({ clip: [R0.clip[0] + (layout === "desktop" ? 110 : 60), R0.clip[1], R0.clip[2] - 120, R0.clip[3]], baseline: [R0.clip[0] + (layout === "desktop" ? 120 : 65), R0.baseline[1]], size: R0.size }, st.title, i === station ? MINT : CREAM, "GT")] }));
-    detail = STATIONS[station].title; secondary = muted ? "SOUND OFF" : STATIONS[station].mood; action = "DRIVE";
-    onAuto = onDrive; onSelect = (i) => setStation(i); onArrow = (d) => setStation((station + d + STATIONS.length) % STATIONS.length);
+    rows = STATIONS.map((st, i) => ({ key: st.id, cells: [{ t: String(i + 1).padStart(2, "0"), at: 0, c: DIM, mono: true }, { t: st.title, at: 0.05, c: i === station ? DISPLAY : CREAM, mono: true }] }));
+    action = "DRIVE";
+    onAction = onDrive; onSelect = (i) => setStation(i); onArrow = (d) => setStation((station + d + STATIONS.length) % STATIONS.length);
   } else if (mode === "RECORDS") {
     if (review) {
       const g = game(review), mine = same(me, review.storage.champion), over = review.consumed || height >= review.storage.expiryBlock - 140;
-      rows = [lv("CHAMPION", champion(review), CREAM), lv("SCORE", String(review.storage.target)), lv("PRIZE", gc(review.amount)), lv("STAKE", gc(review.storage.minStake)), lv("COURSE", courseLabel(g.seed), CREAM), lv("STATION", songOf(g.song), CREAM)];
-      detail = String(review.storage.target); secondary = `${courseLabel(g.seed)} / ${songOf(g.song)}`;
+      rows = [lv("CHAMPION", champion(review), CREAM), lv("SCORE", score5(review.storage.target)), lv("PRIZE", gc(review.amount)), lv("STAKE", gc(review.storage.minStake)), lv("COURSE", courseLabel(g.seed), CREAM), lv("STATION", songOf(g.song), CREAM)];
+      detail = score5(review.storage.target); secondary = `${courseLabel(g.seed)} / ${songOf(g.song)}`;
       if (over) status = "THIS ONE IS OVER.";
       else if (mine) status = "THIS ONE IS YOURS.";
-      else { action = "SHOT"; onAuto = () => void chain?.shoot(review).then((r) => r && onShot(r.shots, r.record)); }
+      else { action = "SHOT"; onAction = () => void chain?.shoot(review).then((r) => r && onShot(r.shots, r.record)); }
     } else {
       status = notReady ?? (open.length ? null : "NO OPEN RECORDS. DRIVE, THEN POST YOURS.");
-      rows = open.map((n) => { const g = game(n), r = R0.record_fields; return { key: n.id, cells: [F(r.champion, champion(n), CREAM, "GT"), F(r.score, String(n.storage.target), YELLOW, "LCD"), F(r.prize, gc(n.amount).replace(" GC", ""), YELLOW, "LCD"), F(r.course, courseLabel(g.seed), CREAM, "GT"), F(r.station, songOf(g.song), CREAM, "GT"), F(r.time_left, clock(n.storage.expiryBlock - height), CYAN, "LCD")] }; });
+      rows = open.map((n) => { const g = game(n); return { key: n.id, cells: [{ t: champion(n), at: 0 }, { t: score5(n.storage.target), at: 0.1, c: YELLOW, mono: true }, { t: gc(n.amount), at: 0.22, c: YELLOW, mono: true }, { t: courseLabel(g.seed), at: 0.34, mono: true }, { t: songOf(g.song), at: 0.5, mono: true }, { t: clock(n.storage.expiryBlock - height), at: 1, right: true, c: DISPLAY, mono: true }] }; });
       const sel = open[cur];
-      if (sel) { const g = game(sel); detail = String(sel.storage.target); secondary = `${courseLabel(g.seed)} / ${songOf(g.song)}`; action = "SHOT"; onAuto = () => setReview(sel); onSelect = (i) => setReview(open[i]); }
+      if (sel) { const g = game(sel); detail = score5(sel.storage.target); secondary = `${courseLabel(g.seed)} / ${songOf(g.song)}`; action = "SHOT"; onAction = () => setReview(sel); onSelect = (i) => setReview(open[i]); }
     }
   } else if (mode === "POST") {
     if (!lastRun) status = "DRIVE FIRST. YOUR SCORE COMES HERE.";
     else if (posted) {
-      rows = [lv("POSTED", String(posted.score)), lv("PRIZE", gc(PRIZES[prize])), lv("SHARE ON X", "SELECT", CYAN), lv("COPY LINK", "SELECT", CYAN)];
-      detail = String(posted.score); secondary = "RECORD POSTED";
+      rows = [lv("POSTED", score5(posted.score)), lv("PRIZE", gc(PRIZES[prize])), lv("SHARE ON X", "SELECT", DISPLAY), lv("COPY LINK", "SELECT", DISPLAY)];
+      detail = score5(posted.score); secondary = "RECORD POSTED";
       const { url, x } = recordLinks(posted.recordId, posted.score, posted.expiresAt, songOf(posted.song));
       onSelect = (i) => {
         if (i === 2) window.open(x, "_blank", "noopener");
         if (i === 3) void navigator.clipboard?.writeText(url).then(() => setNote("LINK COPIED"), () => setNote(url));
       };
     } else {
-      rows = [lv("SCORE", String(lastRun.score)), lv("PRIZE", gc(PRIZES[prize])), lv("COURSE", courseLabel(lastRun.seed), CREAM), lv("STATION", songOf(lastRun.song), CREAM)];
-      detail = String(lastRun.score); secondary = `PRIZE ${gc(PRIZES[prize])}`; action = "POST";
-      onAuto = () => void chain?.post(lastRun.seed, lastRun.song, lastRun.score, PRIZES[prize]).then((p) => p && setPosted(p));
+      rows = [lv("SCORE", score5(lastRun.score)), lv("PRIZE", gc(PRIZES[prize])), lv("COURSE", courseLabel(lastRun.seed), CREAM), lv("STATION", songOf(lastRun.song), CREAM)];
+      detail = score5(lastRun.score); secondary = `PRIZE ${gc(PRIZES[prize])}`; action = "POST";
+      onAction = () => void chain?.post(lastRun.seed, lastRun.song, lastRun.score, PRIZES[prize]).then((p) => p && setPosted(p));
       onArrow = (d) => { if (cur === 1) setPrize((prize + d + PRIZES.length) % PRIZES.length); };
     }
   } else if (mode === "HISTORY") {
@@ -141,32 +155,32 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       const past = history(notes, me, height, (a) => chain!.nameOf(a)).map((h) => ({ key: h.id, kind: h.kind, title: `${h.result}${h.kind === "shot" ? ` VS ${h.context.split("'")[0]}` : ""}`.toUpperCase(), score: h.score, state: h.money.toUpperCase(), color: h.tone === "mint" ? MINT : h.tone === "pink" ? PINK : EXPIRED }));
       const items: { key: string; kind: "record" | "shot"; title: string; score: number; state: string; color: string; shots?: ChallengeNote[]; record?: ChallengeNote }[] = [
         ...owed.map((n) => ({ key: n.id, kind: n.kind, title: n.kind === "record" ? "MY RECORD" : `${rival(n)} LOST`, score: n.storage.target, state: `COLLECT ${gc(n.amount)}`, color: MINT })),
-        ...myRecords.map((n) => ({ key: n.id, kind: n.kind, title: "MY RECORD", score: n.storage.target, state: `OPEN ${clock(n.storage.expiryBlock - height)}`, color: CYAN })),
-        ...myShots.map((n) => ({ key: n.id, kind: n.kind, title: `AT ${champion(n)}`, score: n.storage.target, state: `OPEN ${clock(noteDeadline(n) - height)}`, color: CYAN, shots: [n], record: notes.find((r) => r.kind === "record" && !r.consumed && sameWord(r.idWord, n.storage.recordId)) })),
-        ...atMine.map((n) => ({ key: n.id, kind: n.kind, title: `${rival(n)} SHOOTING`, score: n.storage.target, state: "IN PLAY", color: CYAN })),
+        ...myRecords.map((n) => ({ key: n.id, kind: n.kind, title: "MY RECORD", score: n.storage.target, state: `OPEN ${clock(n.storage.expiryBlock - height)}`, color: DISPLAY })),
+        ...myShots.map((n) => ({ key: n.id, kind: n.kind, title: `AT ${champion(n)}`, score: n.storage.target, state: `OPEN ${clock(noteDeadline(n) - height)}`, color: DISPLAY, shots: [n], record: notes.find((r) => r.kind === "record" && !r.consumed && sameWord(r.idWord, n.storage.recordId)) })),
+        ...atMine.map((n) => ({ key: n.id, kind: n.kind, title: `${rival(n)} SHOOTING`, score: n.storage.target, state: "IN PLAY", color: DISPLAY })),
         ...past,
       ];
       status = items.length ? null : "NO GAMES YET. DRIVE, THEN POST YOUR SCORE.";
-      rows = items.map((it) => { const h = R0.history_fields; return { key: it.key, cells: [F({ clip: h.kind_icon.rect!, baseline: [h.kind_icon.rect![0], h.kind_icon.rect![1] + h.kind_icon.rect![3]], size: h.kind_icon.rect![3] }, it.kind === "record" ? "■" : "○", it.kind === "record" ? CYAN : PINK, "GT"), F(h.title, it.title, CREAM, "GT"), F(h.score, String(it.score), YELLOW, "LCD"), F(h.state, it.state, it.color, "GT")] }; });
+      rows = items.map((it) => ({ key: it.key, cells: [{ t: it.kind === "record" ? "R" : "S", at: 0, c: it.kind === "record" ? DISPLAY : PINK, mono: true }, { t: it.title, at: 0.04 }, { t: score5(it.score), at: 0.42, c: YELLOW, mono: true }, { t: it.state, at: 1, right: true, c: it.color, mono: true }] }));
       const sel = items[cur];
-      if (sel) { detail = String(sel.score); secondary = sel.title; }
-      if (owed.length) { action = "COLLECT"; onAuto = () => void chain?.collect(owed); }
-      else if (sel?.shots) { action = "SHOT"; onAuto = () => onShot(sel.shots!, sel.record!); }
+      if (sel) { detail = score5(sel.score); secondary = sel.title; }
+      if (owed.length) { action = "COLLECT"; onAction = () => void chain?.collect(owed); }
+      else if (sel?.shots) { action = "SHOT"; onAction = () => onShot(sel.shots!, sel.record!); }
     }
   } else if (mode === "SCORES") {
     status = notReady ?? (best.top.length ? null : "NO RECORDS YET.");
     const list = best.mine ? [...best.top, best.mine] : best.top;
-    rows = list.map((r) => { const s = R0.score_fields, mine = same(me, r.who); return { key: r.key, mine, cells: [F(s.rank, String(r.rank).padStart(2, "0"), CYAN, "LCD"), F(s.nickname, chain?.nameOf(r.who) ?? "???", mine ? YELLOW : CREAM, "GT"), F(s.score, String(r.value), YELLOW, "LCD")] }; });
+    rows = list.map((r) => { const mine = same(me, r.who); return { key: r.key, cells: [{ t: String(r.rank).padStart(2, "0"), at: 0, c: DIM, mono: true }, { t: chain?.nameOf(r.who) ?? "???", at: 0.12, c: mine ? YELLOW : CREAM }, { t: score5(r.value), at: 1, right: true, c: YELLOW, mono: true }] }; });
     const sel = list[cur], note_ = sel && notes.find((n) => n.id === sel.key);
-    if (sel) { detail = String(sel.value); secondary = `${chain?.nameOf(sel.who) ?? "???"}${note_ ? ` / ${songOf(game(note_).song)}` : ""}`; }
+    if (sel) { detail = score5(sel.value); secondary = `${chain?.nameOf(sel.who) ?? "???"}${note_ ? ` / ${songOf(game(note_).song)}` : ""}`; }
   } else if (mode === "WALLET") {
     const name = me ? chain!.nameOf(me) : chain?.connecting ? chain.walletStatus || "CONNECTING" : "NOT CONNECTED";
-    rows = [lv("WALLET", name, me ? MINT : chain?.connecting ? CYAN : PINK), lv("BALANCE", chain?.balance != null ? gc(chain.balance) : "--"), lv("NETWORK", "TESTNET", CREAM), lv("STATUS", busy ? busy.text : trouble ? "ERROR" : "IDLE", busy ? CYAN : trouble ? PINK : CREAM)];
-    if (me) rows.push(lv("GAMECOINS", "GET 10", CYAN), lv("DISCONNECT", "SELECT", CYAN));
+    rows = [lv("WALLET", name, me ? MINT : chain?.connecting ? DISPLAY : PINK), lv("BALANCE", chain?.balance != null ? gc(chain.balance) : "--"), lv("NETWORK", "TESTNET", CREAM), lv("STATUS", busy ? busy.text : trouble ? "ERROR" : "IDLE", busy ? DISPLAY : trouble ? PINK : CREAM)];
+    if (me) rows.push(lv("GAMECOINS", "GET 10", DISPLAY), lv("DISCONNECT", "SELECT", DISPLAY));
     if (!chain?.installed) status = "NO BREAD WALLET FOUND. INSTALL IT, THEN COME BACK.";
     detail = chain?.balance != null ? gc(chain.balance) : ""; secondary = me ? chain!.local ? "TEST WALLET" : "BREAD" : "";
-    if (!me) { action = "CONNECT"; onAuto = () => void chain?.connect(); }
-    else { action = "GET GC"; onAuto = () => void chain?.gamecoins().then((m) => m && setNote(m)); onSelect = (i) => { if (i === 4) onAuto!(); if (i === 5) void chain?.disconnect(); }; }
+    if (!me) { action = "CONNECT"; onAction = () => void chain?.connect(); }
+    else { action = "GET GC"; onAction = () => void chain?.gamecoins().then((m) => m && setNote(m)); onSelect = (i) => { if (i === 4) onAction!(); if (i === 5) void chain?.disconnect(); }; }
   } else if (mode === "AUDIO") {
     rows = [lv("VOLUME", `${Math.round(volume * 100)} %`), lv("MUTE", muted ? "ON" : "OFF", muted ? PINK : CREAM)];
     detail = `VOL ${Math.round(volume * 100)}`; secondary = muted ? "SOUND OFF" : "";
@@ -176,29 +190,29 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     rows = [lv("VERSION", __PUB_VERSION__, CREAM), lv("NETWORK", "MIDEN TESTNET", CREAM), lv("WALLET", chain?.local ? "TEST (?LOCAL=)" : "BREAD", CREAM), lv("LAYOUT", layout.toUpperCase(), CREAM), lv("KEYS", "1-6 ARROWS ENTER ESC", CREAM)];
     detail = "PUB"; secondary = __PUB_VERSION__;
   }
-  if (busy) { action = null; onAuto = null; onSelect = null; }
-  if (trouble?.retry) { action = "TRY AGAIN"; onAuto = () => { const r = trouble.retry!; chain?.dismiss(); r(); }; }
-  const total = rows.length, at = Math.min(cur, Math.max(0, total - 1));
+  if (busy) { action = null; onAction = null; onSelect = null; }
+  if (trouble?.retry) { action = "TRY AGAIN"; onAction = () => { const r = trouble.retry!; chain?.dismiss(); r(); }; }
+  const total = rows.length, at = Math.min(cur, Math.max(0, total - 1)), rowsN = G.rows;
   const start = Math.min(Math.max(0, at - rowsN + 1), Math.max(0, total - rowsN));
   // up/down walk the list; left/right go to the mode's own arrow rule (tuning, the prize, the volume) or walk the list too
   const move = (d: number) => { if (total) setCursor({ ...cursor, [mode]: (at + d + total) % total }); };
   const sideways = (d: number) => (onArrow ? onArrow(d) : move(d));
 
-  const goMode = (m: Mode) => { if (PRIMARY.includes(m)) setBack(m); setMode(m); setReview(null); setBand(false); setNote(null); chain?.dismiss(); };
-  const goBack = () => { if (trouble) return chain?.dismiss(); if (review) return setReview(null); if (mode === "AUDIO" || mode === "SYSTEM") return setMode(back); if (band) return setBand(false); setNote(null); };
-  const select = () => { if (busy) return; if (trouble) return onAuto ? onAuto() : chain?.dismiss(); if (onSelect) onSelect(at); else onAuto?.(); };
+  const goMode = (m: Mode) => { if (PRIMARY.includes(m)) setBack(m); setMode(m); setReview(null); setNote(null); chain?.dismiss(); };
+  const goBack = () => { if (trouble) return chain?.dismiss(); if (review) return setReview(null); if (mode === "AUDIO" || mode === "SYSTEM") return setMode(back); setNote(null); };
+  const select = () => { if (busy) return; if (trouble) return onAction ? onAction() : chain?.dismiss(); if (onSelect) onSelect(at); else onAction?.(); };
   const press = (id: string, fn: () => void) => { setPressed(id); setTimeout(() => setPressed(null), 80); fn(); };
-  const act = (c: Control, half?: "decrease" | "increase") => {
-    if (c.mode) return goMode(c.mode as Mode);
-    switch (c.action) {
+  const act = (c: Control, half?: 0 | 1) => {
+    if (c.id.startsWith("preset-")) return goMode(PRIMARY[Number(c.id.slice(7)) - 1]);
+    switch (c.id) {
       case "mode": return goMode(PRIMARY[(PRIMARY.indexOf(back) + 1) % PRIMARY.length]);
-      case "frequency-view": return mode === "RADIO" && setBand(!band);
-      case "previous": return sideways(-1);
+      case "band": return goMode("RADIO");
+      case "prev": return sideways(-1);
       case "next": return sideways(1);
       case "back": return goBack();
       case "select": return select();
-      case "primary": return !busy && onAuto?.();
-      case "volume": return setVolume(Math.max(0, Math.min(1, volume + (half === "decrease" ? -0.1 : 0.1))));
+      case "action": return !busy && onAction?.();
+      case "vol": return setVolume(Math.max(0, Math.min(1, volume + (half === 0 ? -0.1 : 0.1))));
       case "audio": return goMode("AUDIO");
       case "system": return goMode("SYSTEM");
       case "mute": return toggleMute();
@@ -212,7 +226,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       else if (e.key === "ArrowDown") move(1);
       else if (e.key === "ArrowLeft") sideways(-1);
       else if (e.key === "ArrowRight") sideways(1);
-      else if (e.key === "Enter") (mode === "RADIO" && !trouble ? onAuto?.() : select());
+      else if (e.key === "Enter") (mode === "RADIO" && !trouble ? onAction?.() : select());
       else if (e.key === "Escape" || e.key === "Backspace") goBack();
       else if (e.key === "m") toggleMute();
       else return;
@@ -222,63 +236,71 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     return () => removeEventListener("keydown", down);
   });
 
-  // the face
-  const lit = (c: Control) => (c.mode ? c.mode === mode : c.id === "audio" ? mode === "AUDIO" : c.id === "system" ? mode === "SYSTEM" : c.id === "mute" ? muted : c.id === "freq-band" ? band : c.id === "auto" ? !!action && !!onAuto && !busy : false);
-  const disabled = (c: Control) => (c.id === "auto" ? !action || !onAuto || !!busy : c.id === "select" ? !!busy : c.id === "freq-band" ? mode !== "RADIO" : false);
-  const state = (c: Control) => (pressed === c.id ? "pressed" : disabled(c) ? "disabled" : lit(c) ? "lit" : "rest");
-  const field = (spec: Spec, text: string, color: string, font: "GT" | "LCD", key?: string | number) => (
-    <div key={key} className="hu-field" style={{ left: px(spec.clip[0]), top: px(spec.clip[1]), width: px(spec.clip[2]), height: px(spec.clip[3]) }}>
-      {/* line-height 1 puts the baseline 0.86 em under the span's top (both fonts: ascent 0.96, descent 0.24 em) */}
-      <span className={font === "LCD" ? "lcd" : "gt"} style={{ [spec.align === "right" ? "right" : "left"]: px(spec.align === "right" ? Math.max(0, spec.clip[0] + spec.clip[2] - spec.baseline[0]) : spec.baseline[0] - spec.clip[0]), top: px(spec.baseline[1] - spec.clip[1] - 0.86 * spec.size), fontSize: px(spec.size), color }}>{text}</span>
-    </div>
+  // the face: the kit's states are rest, hover, pressed, disabled; "hover" also marks the lit key (the mode's preset)
+  const lit = (c: Control) => (c.id.startsWith("preset-") ? PRIMARY[Number(c.id.slice(7)) - 1] === mode : c.id === "audio" ? mode === "AUDIO" : c.id === "system" ? mode === "SYSTEM" : c.id === "mute" ? muted : false);
+  const disabled = (c: Control) => (c.id === "action" ? !action || !onAction || !!busy : c.id === "select" ? !!busy : false);
+  const state = (c: Control) => (pressed === c.id ? "pressed" : disabled(c) ? "disabled" : lit(c) ? "hover" : "rest");
+  const text = (t: string, x: number, baseline: number, size: number, color: string, mono = false, right = false, key?: string | number, width?: number) => (
+    <span key={key} className={`hu-text ${mono ? "hu-mono" : "hu-gt"}`} style={{ [right ? "right" : "left"]: px(right ? G.size[0] - x : x), top: px(baseline - baselineEm(mono ? "Share Tech Mono" : "Chakra Petch") * size), fontSize: px(size), color, maxWidth: width ? px(width) : undefined }}>{t}</span>
   );
   const since = busy ? Math.round((Date.now() - busy.since) / 1000) : 0;
   const stageText = busy ? (busy.stage === "connect" ? chain?.walletStatus || "OPENING YOUR WALLET" : busy.stage === "prepare" ? "GETTING READY" : busy.stage === "wallet" ? "APPROVE IN YOUR WALLET" : `SENDING TO THE NETWORK  ${since} S`) : "";
-  void tick;
-  const statusLines = trouble ? [trouble.t.title.toUpperCase(), trouble.retry ? "AUTO: TRY AGAIN.  BACK: OK." : "BACK: OK."] : busy ? [busy.text, stageText] : note ? [note] : status ? [status] : null;
-  const indicator = busy ? CYAN : trouble ? PINK : null;
-  const bandOn = mode === "RADIO" && band;
-  const needleX = G.band.needleX[0] + station * (G.band.needleX[1] - G.band.needleX[0]) / 13;
-  const windowRows = statusLines || bandOn ? [] : rows.slice(start, start + rowsN);
+  const statusLines = trouble ? [trouble.t.title.toUpperCase(), trouble.retry ? "ACTION KEY: TRY AGAIN.  BACK: OK." : "BACK: OK."] : busy ? [busy.text, stageText] : note ? [note] : status ? [status] : null;
+  const windowRows = statusLines ? [] : rows.slice(start, start + rowsN);
+  const [gx, gy, gw, gh] = G.glass, inner = [gx + 16, gw - 32] as const; // the rows' content box inside the glass
+  const needleX = G.needle.range[0] + station * (G.needle.range[1] - G.needle.range[0]) / 13;
+  const [lx, ly, lw, lh] = G.lcd, big = layout === "desktop" ? 28 : layout === "portrait" ? 22 : 18, small = layout === "landscape" ? 9 : 11;
 
   return (
     <div className="hu-screen" style={{ width: px(G.canvas[0]), height: px(G.canvas[1]), transform: `scale(${scale})` }}>
       <div className="hu-unit" style={{ left: px(G.origin[0]), top: px(G.origin[1]), width: px(G.size[0]), height: px(G.size[1]) }}>
-        {G.layers.map((l) => <img key={l.id} src={`${ART}${layout}/${l.id}.png`} alt="" style={{ left: px(l.rect[0]), top: px(l.rect[1]), width: px(l.rect[2]), height: px(l.rect[3]) }} />)}
+        <img src={`${ART}${layout}/blank-face.png`} alt="" style={{ left: 0, top: 0, width: px(G.size[0]), height: px(G.size[1]) }} />
         {/* upper display */}
-        {field(G.title, mode, CYAN, "GT", "title")}
-        {indicator && <i className="hu-dot" style={{ left: px(G.indicator.center[0] - 7), top: px(G.indicator.center[1] - 7), borderColor: indicator }} />}
-        {bandOn && <>
-          <img src={`${ART}${layout}/frequency-band.png`} alt="" style={{ left: px(G.band.rect[0]), top: px(G.band.rect[1]), width: px(G.band.rect[2]), height: px(G.band.rect[3]) }} />
-          <img src={`${ART}${layout}/frequency-needle.png`} alt="" style={{ left: px(needleX - 4), top: px(G.band.needleY), transition: "left .25s" }} />
-        </>}
+        {text(mode, G.title[0], G.title[1], G.title[2], DISPLAY, false, false, "title")}
+        {mode === "RADIO" && text(`${String(station + 1).padStart(2, "0")} / ${STATIONS.length}`, gx + gw - 16, G.title[1], small, DIM, true, true, "count")}
+        {(busy || trouble) && <i className="hu-dot" style={{ left: px(gx + gw - 30), top: px(gy + 12), borderColor: trouble ? ACCENT : DISPLAY }} />}
         {windowRows.map((row, j) => {
-          const i = start + j, r = R[j];
-          const rel = (spec: Spec): Spec => ({ ...spec, clip: [spec.clip[0] - R0.clip[0], spec.clip[1] - R0.clip[1], spec.clip[2], spec.clip[3]], baseline: [spec.baseline[0] - R0.clip[0], spec.baseline[1] - R0.clip[1]] });
+          const i = start + j, sel = G.selection[j], base = G.baselines[j];
           return (
-            <div key={row.key} className="hu-row" style={{ left: px(r.clip[0]), top: px(r.clip[1]), width: px(r.clip[2]), height: px(r.clip[3]) }} onClick={() => R0.hit && (setCursor({ ...cursor, [mode]: i }), i === at && select())}>
-              {i === at && <img src={`${ART}${layout}/${mode === "POST" && cur === 1 && !posted ? "editing-row" : "selected-row"}.png`} alt="" style={{ left: 0, top: 0, width: px(r.clip[2]), height: px(r.clip[3]) }} />}
-              {row.cells.map((c, k) => field(rel(c.spec), c.text, c.color ?? CREAM, c.font ?? "GT", k))}
+            <div key={row.key} className="hu-row" style={{ left: px(sel[0]), top: px(sel[1]), width: px(sel[2]), height: px(sel[3]), background: i === at ? SELECT : "transparent", borderColor: i === at ? (mode === "POST" && cur === 1 && !posted ? ACCENT : DISPLAY) : "transparent" }} onClick={() => (setCursor({ ...cursor, [mode]: i }), i === at && select())}>
+              {row.cells.map((c, k) => text(c.t, inner[0] + c.at * inner[1] - sel[0], base - sel[1], G.rowSize, c.c ?? CREAM, c.mono, c.right, k, inner[1] * (c.right ? 0.5 : 1 - c.at)))}
             </div>
           );
         })}
         {statusLines && (
-          <div className="hu-status" style={{ left: px(G.status.clip[0]), top: px(G.status.clip[1]), width: px(G.status.clip[2]), height: px(G.status.clip[3]), fontSize: px(G.status.size), color: trouble ? PINK : CYAN }}>
-            {statusLines.map((l, i) => <p key={i} style={i ? { color: DIM, fontSize: px(G.status.size * 0.75) } : {}}>{l}</p>)}
+          <div className="hu-status" style={{ left: px(gx + 24), top: px(gy + 40), width: px(gw - 48), height: px(gh - 56), fontSize: px(G.title[2] * 0.85), color: trouble ? ACCENT : DISPLAY }}>
+            {statusLines.map((l, i) => <p key={i} style={i ? { color: DIM, fontSize: px(G.title[2] * 0.6) } : {}}>{l}</p>)}
           </div>
         )}
-        {/* lower segment window */}
-        {field(G.detail, detail, MINT, "LCD", "detail")}
-        {field(G.secondary, secondary, DIM, "LCD", "secondary")}
-        {field(G.action, action ?? "", YELLOW, "LCD", "action")}
+        {/* lower LCD: the station index, the 14-slot band and the volume in RADIO; the selection elsewhere */}
+        {mode === "RADIO" ? (
+          <>
+            {text(String(station + 1).padStart(2, "0"), G.lcdBaseline[0], G.lcdBaseline[1], big, DISPLAY, true, false, "idx")}
+            {Array.from({ length: 14 }, (_, i) => <i key={i} className="hu-tick" style={{ left: px(G.needle.range[0] + i * (G.needle.range[1] - G.needle.range[0]) / 13), top: px(G.needle.tipY + 6), height: px(layout === "landscape" ? 5 : 8), background: i === station ? DISPLAY : DIM }} />)}
+            <i className="hu-needle" style={{ left: px(needleX - 4), top: px(G.needle.tipY - 2), borderTopColor: DISPLAY }} />
+            {text(`VOL ${Math.round(volume * 100)}%${muted ? "  MUTE" : ""}`, lx + 16, ly + lh - 10, small, DIM, true, false, "vol")}
+          </>
+        ) : (
+          <>
+            {text(detail, G.lcdBaseline[0], G.lcdBaseline[1], big, DISPLAY, true, false, "detail", lw - 32)}
+            {text(secondary, lx + 16, ly + lh - 10, small, DIM, true, false, "secondary", lw - 32)}
+          </>
+        )}
         {/* controls */}
-        {G.controls.map((c) => (
-          <span key={c.id}>
-            <img src={`${ART}${layout}/${c.id}-${state(c)}.png`} alt="" style={{ left: px(c.rect[0]), top: px(c.rect[1]), width: px(c.rect[2]), height: px(c.rect[3]) }} />
-            {c.sub ? Object.entries(c.sub).map(([half, h]) => <button key={half} className="hit" aria-label={`Volume ${half}`} style={{ left: px(h[0]), top: px(h[1]), width: px(h[2]), height: px(h[3]) }} onClick={() => press(c.id, () => act(c, half as "decrease" | "increase"))} />)
-              : <button className="hit" aria-label={c.mode ?? c.action} disabled={disabled(c)} style={{ left: px(c.hit[0]), top: px(c.hit[1]), width: px(c.hit[2]), height: px(c.hit[3]) }} onClick={() => press(c.id, () => act(c))} />}
-          </span>
-        ))}
+        {G.controls.map((c) => {
+          const custom = c.id === "action" && mode !== "RADIO"; // the kit's key says DRIVE: other actions get a key of their own
+          return (
+            <span key={c.id}>
+              {custom ? (
+                <div className={`hu-key${disabled(c) ? " off" : ""}`} style={{ left: px(c.rect[0]), top: px(c.rect[1]), width: px(c.rect[2]), height: px(c.rect[3]), fontSize: px(layout === "desktop" ? 20 : layout === "portrait" ? 15 : 14) }}>{action ?? ""}</div>
+              ) : (
+                <img src={`${ART}${layout}/${c.id}-${state(c)}.png`} alt="" style={{ left: px(c.rect[0]), top: px(c.rect[1]), width: px(c.rect[2]), height: px(c.rect[3]) }} />
+              )}
+              {c.id === "vol" ? G.volumeHits.map((h, k) => <button key={k} className="hit" aria-label={k ? "Volume up" : "Volume down"} style={{ left: px(h[0]), top: px(h[1]), width: px(h[2]), height: px(h[3]) }} onClick={() => press(c.id, () => act(c, k as 0 | 1))} />)
+                : <button className="hit" aria-label={c.id === "action" ? action ?? "" : c.label} disabled={disabled(c)} style={{ left: px(c.hit[0]), top: px(c.hit[1]), width: px(c.hit[2]), height: px(c.hit[3]) }} onClick={() => press(c.id, () => act(c))} />}
+            </span>
+          );
+        })}
       </div>
     </div>
   );

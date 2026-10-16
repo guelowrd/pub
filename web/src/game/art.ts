@@ -78,8 +78,14 @@ export const DECOR: Record<District, { sheet: Sheet; ppm: number[] }> = {
   golf: DC("props-golf-hills.webp", [237, 151, 303, 249, 223, 249, 172, 159]), // bench, timber shelter, ball washer, urn, heron, bin, estate car, fence
 };
 
+// district materials (visual update): a 512 px asphalt tile and a verge tile per district, projected on the road in world
+// space; one soft contact shadow under everything that stands on the ground
+const MAT = (d: string) => ({ asphalt: `materials/${d}-asphalt-repeat.webp`, verge: `materials/${d}-verge-repeat.webp` });
+export const MATERIALS: Record<District, { asphalt: string; verge: string }> = { waterfront: MAT("waterfront"), downtown: MAT("downtown"), casino: MAT("casino-strip"), golf: MAT("golf-hills") };
+export const SHADOW = "materials/contact-shadow.webp";
+
 export function loadArt(onProgress?: (done: number, total: number) => void): Promise<void> {
-  const files = new Set<string>([...Object.values(SHEETS).map((s) => s.file), ...Object.values(ICON), ...Object.values(PANO), ...Object.values(FILLERS).flat().map((s) => s.file), ...Object.values(FORK_STRUCT).flatMap((st) => [`fork-${st}.webp`, `fork-${st}-left.png`, `fork-${st}-right.png`]), ...Object.values(TUNNEL), LIGHT_RED.file, LIGHT_GREEN.file, TITLE, GANTRY.frame, GANTRY.hangers, GANTRY.plate, GANTRY.badge, ...Object.values(GANTRY.trim), ...Object.values(DECOR).map((d) => d.sheet.file)]);
+  const files = new Set<string>([...Object.values(SHEETS).map((s) => s.file), ...Object.values(ICON), ...Object.values(PANO), ...Object.values(FILLERS).flat().map((s) => s.file), ...Object.values(FORK_STRUCT).flatMap((st) => [`fork-${st}.webp`, `fork-${st}-left.png`, `fork-${st}-right.png`]), ...Object.values(TUNNEL), LIGHT_RED.file, LIGHT_GREEN.file, TITLE, GANTRY.frame, GANTRY.hangers, GANTRY.plate, GANTRY.badge, ...Object.values(GANTRY.trim), ...Object.values(DECOR).map((d) => d.sheet.file), ...Object.values(MATERIALS).flatMap((m) => [m.asphalt, m.verge]), SHADOW]);
   let done = 0;
   return Promise.all([...files].map((file) => new Promise<void>((ok, bad) => {
     const im = new Image();

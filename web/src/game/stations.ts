@@ -26,9 +26,9 @@ export const SKY: Record<string, [string, string]> = {
   "vector-world": ["#030a18", "#1a6aa0"],
 };
 export const DEFAULT_SKY: [string, string] = ["#14102e", "#bc448e"];
-// the song owns the car's paint too: the body is multiplied by this (white keeps the silver)
+// the song owns the car's paint too (visual update station-colours.json: 13 families for the 13 songs, silver left over)
 export const CAR: Record<string, string> = {
-  "abandoned-factory": "#8c8c96", "bittersweet-sunset": "#ff9a4a", "dark-horse": "#3a3a44", "midnight-chase": "#a040d0", "neon-pursuit": "#40c0ff",
-  "night-cruise": "#2a4aa0", "nocturnal-run": "#6a3aa0", "orange-horizon": "#ff6a2a", "outrun-pulse": "#ffffff", "pick-up-or-crush-up": "#ff40bd",
-  "pickup-truck": "#c8a040", "synthwave-engine": "#e02a2a", "vector-world": "#30d0b0",
+  "abandoned-factory": "#141b22", "bittersweet-sunset": "#f77916", "dark-horse": "#805037", "midnight-chase": "#933fda", "neon-pursuit": "#1685ed",
+  "night-cruise": "#32387f", "nocturnal-run": "#f5f3e6", "orange-horizon": "#bc8730", "outrun-pulse": "#e32636", "pick-up-or-crush-up": "#f074b8",
+  "pickup-truck": "#cabb96", "synthwave-engine": "#f5d62a", "vector-world": "#24b657",
 };

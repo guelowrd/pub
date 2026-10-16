@@ -27,6 +27,32 @@ const face = (r: Rider) => {
   return `<i class="face" style="background-image:url(${ART}${PORTRAITS[ch.atlasSet ?? "a"]});background-position:${(ch.atlasIndex % 4) * 100 / 3}% ${Math.floor(ch.atlasIndex / 4) * 100 / 3}%"></i>`;
 };
 const icon = (d: District) => `<img class="icon" src="${ART}${ICON[d]}" alt="${PLACE[d]}">`;
+// the radar's portrait (visual update): the face downsampled to 48 samples, mapped to phosphor green and black with a
+// 4 x 4 ordered dither, so a rider is a silhouette with a hint of hair and beard, never a recognisable face. Once per rider.
+const DITHERED = new Map<string, string>();
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+function dithered(r: Rider): string {
+  const hit = DITHERED.get(r.id);
+  if (hit) return hit;
+  const ch = CHARACTERS[r.id], im = new Image();
+  im.src = `${ART}${PORTRAITS[ch.atlasSet ?? "a"]}`;
+  if (!im.complete || !im.naturalWidth) return ""; // the atlas is in the browser cache from the seats; a miss just waits a frame
+  const N = 48, cw = im.naturalWidth / 4, c = document.createElement("canvas"), g = c.getContext("2d")!;
+  c.width = c.height = N;
+  g.drawImage(im, (ch.atlasIndex % 4) * cw, Math.floor(ch.atlasIndex / 4) * cw, cw, cw, 0, 0, N, N);
+  const d = g.getImageData(0, 0, N, N), q = d.data;
+  for (let i = 0, p = 0; i < q.length; i += 4, p++) {
+    // luminance as painted (sRGB): the portraits are dark, the linear reading left them almost all black
+    const lum = (0.2126 * q[i] + 0.7152 * q[i + 1] + 0.0722 * q[i + 2]) / 255;
+    const v = (lum - 0.13) / (0.7 - 0.13) + ((BAYER[(p % N % 4) + 4 * (Math.floor(p / N) % 4)] + 0.5) / 16 - 0.5) * 0.45;
+    const on = v > 0.5;
+    q[i] = on ? 0x85 : 0x03; q[i + 1] = on ? 0xe6 : 0x10; q[i + 2] = on ? 0x4b : 0x09; q[i + 3] = 255;
+  }
+  g.putImageData(d, 0, 0);
+  const url = c.toDataURL();
+  DITHERED.set(r.id, url);
+  return url;
+}
 const best = () => Number(localStorage.getItem("pub.best") ?? 0);
 
 export default function App() {
@@ -154,10 +180,14 @@ export default function App() {
       const f = s.forks.find((o) => o.side === 0 && o.z - 400 < s.z && s.z < o.zDecide);
       const cur = s.streets[s.streets.length - 1];
       const just = e?.k === "pick" && tick(s) - e.t < 200 ? s.stops.find((o) => o.taken && o.i === e.stop && o.z >= cur.z0 && o.z < cur.z1)?.rider : undefined;
-      html("radar", just ? `${face(just)}<div><b>AGE ${just.age}</b><br>${fmt(agePoints(just.age))} TO BANK</div>${icon(just.dest)}`
-        : f ? "" : c?.rider ? `${face(c.rider)}<div>${full ? "<b>CAR FULL</b>" : `<b>${c.rider.lo}-${c.rider.hi}</b><br>${c.rider.cls}`}<br><small>TARGET 70-80</small></div>${icon(c.rider.dest)}`
-        : c?.drop ? `<div><b>DROP OFF</b><br>${PLACE[c.drop]}</div>${icon(c.drop)}` : `<div>SEARCHING<br><small>TARGET 70-80</small></div>`);
-      node("radar").parentElement!.style.display = f ? "none" : "";
+      // the radar's POSITION map: the blip sits on the curb's side and climbs with the distance (centre = here, top = 250 m out)
+      const blip = (st: { z: number; side: number }) => `<i class="blip" style="left:${73.5 + st.side * 6.75}%;top:${44.4 - 21.8 * Math.min(1, Math.max(0, (st.z - s.z) / 250))}%"></i>`;
+      const radar = node("radar").parentElement!;
+      radar.className = `radar-box ${just ? "" : f ? "" : c?.rider && full ? "full" : c?.rider || c?.drop ? "" : "search"}`;
+      html("radar", just ? `${face(just)}<div class="reveal"><b>AGE ${just.age}</b><br>${fmt(agePoints(just.age))} TO BANK</div>${icon(just.dest)}`
+        : f ? "" : c?.rider ? (full ? "" : `<img class="dither" src="${dithered(c.rider)}" alt=""><small class="pos">POSITION</small><img class="reticle" src="${ART}radar/reticle-B.png" alt="">${blip(c)}<small class="lab">AGE RANGE</small><b class="range">${c.rider.lo} TO ${c.rider.hi}</b>`)
+        : c?.drop ? `<small class="pos">POSITION</small><img class="reticle" src="${ART}radar/reticle-B.png" alt="">${blip(c)}<b class="range drop">DROP OFF</b>${icon(c.drop)}` : "");
+      radar.style.display = f ? "none" : "";
       const badge = (d: District) => { const n = s.seats.filter((r) => r && r.dest === d).length; return n ? ` x${n}` : ""; };
       html("fork", f ? `<span style="color:${COLOR[f.left]}">&lt; ${NAME[f.left]}${badge(f.left)}</span><span style="color:${COLOR[f.right]}">${NAME[f.right]}${badge(f.right)} &gt;</span>` : "");
       const text = s.callout?.text ?? "";
@@ -185,7 +215,7 @@ export default function App() {
         <div className="panel bl"><small>SPEED</small><b id="speed" /><small>KM/H</small></div>
         <div className="rail">
           <div className="panel seats"><div id="bank" /><div className="slots"><div id="seat0" /><div id="seat1" /><div id="seat2" /></div></div>
-          <div className="panel radar"><small>BOOMER RADAR</small><div id="radar" /></div>
+          <div className="radar-box"><div id="radar" /></div>
         </div>
         <div className="fork" id="fork" />
         <div className="callout" id="callout" />

@@ -9,3 +9,5 @@
   on a production preview (`vite build && vite preview --port 5181`) and keep the dev tab for edits.
 - A key press sent right after a click that mounts a screen lands before that screen's listener exists; wait a beat in
   automation, it is not a bug for a human.
+- A generic `.overlay button` rule outranked the `.hit` class on the head unit's invisible buttons and painted them navy over
+  the key art; when a skinned screen looks tinted or flat, check `elementsFromPoint` for a styled hit area before suspecting the art.

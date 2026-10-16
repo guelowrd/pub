@@ -253,3 +253,22 @@ Not verified: the head unit's portrait and landscape faces on a real phone (Chro
 geometry is the kit's, the desktop face is right), Bread itself (the local wallets sign the same requests). Testnet blocks
 ran slower than 3 s tonight: the 6-minute shot window outlived the drive, so SHOT_WINDOW_BLOCKS is fine; a rival whose
 tab is hidden (Chrome throttles the frame loop to a crawl) can still miss it.
+
+### Visual update (2026-10-16, morning)
+The designer's PUB-Visual-Update pack, Gaylord's picks: menu B NIGHT SHIFT, radar B with the reticle as a POSITION map.
+Fonts: Chakra Petch SemiBold for words and legends, Share Tech Mono for lists and every number (public/fonts, the Boomer
+faces are gone). Head unit rebuilt on the kit's menu.json geometry: blank face + the four-state key art (rest / hover /
+pressed / disabled; hover doubles as lit for the mode's preset), rows in Share Tech Mono on the kit's baselines, one
+selection rectangle, the lower LCD with the station index, the 14-slot band and VOL; no mood line. The kit's action key
+says DRIVE, so other modes draw their own key (SHOT, POST, COLLECT, CONNECT, GET GC, TRY AGAIN) in the same style.
+Text sits on baselines through measured font metrics (`baselineEm`). Radar: the B shell at 400 x 248 inside the rail,
+the rider's portrait downsampled to 48 samples and dithered to phosphor green (sRGB luminance, black 0.13 / white 0.7,
+4 x 4 Bayer at 0.45), the reticle with a blip on the pickup's curb side that climbs with the distance (centre = here,
+top = 250 m), AGE RANGE under it; search and CAR FULL use the kit's baked shells, drop-off keeps the reticle with
+DROP OFF. District materials: the asphalt tile over the road and the verge tile over the sidewalks, world-space UVs
+pinned per 5 m segment, 0.3 / 0.45 strength fading out over 70 segments; a soft contact shadow under every standing
+sprite. Car paint is body-only now: the silver body (low saturation, lum above 0.22) takes the song's colour with its
+own shading, lamps, glass, tyres and neon reflections untouched; 13 of the kit's 14 families mapped in stations.ts
+(silver unused). Gotcha found: `.overlay button` outranked `.hit`, so the key hit areas painted navy over the key art.
+Not done: the optional radar sweep layer, hover states on mouse-over (hover art marks the lit key instead), the share
+card, the kit's A and C menus (B is the only fully exported one).

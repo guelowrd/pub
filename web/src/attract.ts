@@ -36,7 +36,7 @@ export function startAttract(cv: HTMLCanvasElement): () => void {
       ctx.restore();
     }
     // the rules ribbon, right to left, looping
-    ctx.font = `${26 * k}px "Boomer GT", monospace`; ctx.textBaseline = "middle"; ctx.textAlign = "left";
+    ctx.font = `600 ${26 * k}px "Chakra Petch", sans-serif`; ctx.textBaseline = "middle"; ctx.textAlign = "left";
     const text = `${RULES}      •      `, tw = ctx.measureText(text).width, off = (t * RIBBON_PX_PER_S * k) % tw;
     ctx.fillStyle = "rgba(8,12,36,0.72)"; ctx.fillRect(0, 900 * k, w, 60 * k);
     ctx.fillStyle = "#fff3f4";
