@@ -229,7 +229,7 @@ export default function App() {
       {mode === "ready" && (
         <div className="overlay splash" onClick={() => { if (loaded) { audio.unlock(); setMode("menu"); } }}>
           <canvas className="attract" ref={attract} />
-          {loaded ? <div className="start-prompt"><img src={`${ART}click-to-start-chrome.png`} alt="CLICK TO START" /></div> : <Loading progress={progress} />}
+          {loaded ? <div className="start-prompt" data-text="CLICK TO START"><span className="glyphs" data-text="CLICK TO START">CLICK TO START</span></div> : <Loading progress={progress} />}
           <button className="splash-mute" aria-label={soundOn ? "Mute" : "Sound on"} onClick={(e) => { e.stopPropagation(); audio.unlock(); setSoundOn(audio.toggle()); }}>{soundOn ? "SOUND ON" : "MUTED"}</button>
         </div>
       )}
