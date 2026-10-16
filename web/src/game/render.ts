@@ -92,7 +92,10 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     dx += dxAt(i0 + n);
     zAt[n] = Math.max((i0 + n) * SEG, camZ + near);
     sc[n] = focal / (zAt[n] - camZ);
-    sy[n] = hy + (camY - yAt(i0 + n)) * sc[n];
+    // the road height where the slice starts: on a hill, a pinned start behind the camera must take the near plane's
+    // height, or its slice lands as a band in front of the car
+    const j = Math.floor(zAt[n] / SEG), t = zAt[n] / SEG - j;
+    sy[n] = hy + (camY - yAt(j) * (1 - t) - yAt(j + 1) * t) * sc[n];
   }
 
   // the song's sky, then the district's skyline, which slides a little against the curves. The district swaps inside the tunnel

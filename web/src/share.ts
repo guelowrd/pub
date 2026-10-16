@@ -10,7 +10,7 @@ const load = (src: string) => new Promise<HTMLImageElement>((ok, no) => { const 
 
 export async function saveCard(score: number, station: string, riders: Rider[]) {
   const a = document.createElement("a");
-  a.href = await renderCard(score, station, riders); a.download = `pick-up-boomers-${String(score).padStart(5, "0")}.png`; a.click();
+  a.href = await renderCard(score, station, riders); a.download = `pick-up-boomers-${score}.png`; a.click();
 }
 
 /** The card as a PNG data URL. */
@@ -27,7 +27,7 @@ export async function renderCard(score: number, station: string, riders: Rider[]
     return g.measureText(text).width <= width ? text : `${text}…`;
   };
   g.textBaseline = "alphabetic"; g.fillStyle = "#ffe16f";
-  g.fillText(fit(String(score).padStart(5, "0"), (s) => `${s}px "Share Tech Mono"`, 148, 72, 578), 48, 349);
+  g.fillText(fit(score.toLocaleString("en-US"), (s) => `${s}px "Share Tech Mono"`, 148, 72, 578), 48, 349);
   g.fillStyle = "#fff3f4";
   g.fillText(fit(station, (s) => `600 ${s}px "Chakra Petch"`, 42, 28, 550), 48, 456);
   const atlases = await Promise.all(riders.slice(0, 3).map((r) => load(`${ART}${PORTRAITS[CHARACTERS[r.id].atlasSet ?? "a"]}`)));

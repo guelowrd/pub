@@ -91,7 +91,7 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .hit:disabled { cursor: default; }
 .hit:focus-visible { outline: 2px solid #ffe564; }
 .rk > img { position: absolute; inset: 0; width: 100%; height: 100%; }
-.rs-status { white-space: normal; line-height: 1.25; text-align: left; }
+.rs-status { white-space: pre-line; line-height: 1.25; text-align: left; }
 /* portrait phones: the scene on top, then the seat strip and the radar side by side, then the pad */
 @media (max-aspect-ratio: 1/1) {
   #root { justify-content: flex-start; }

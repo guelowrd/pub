@@ -172,7 +172,7 @@ export default function App() {
       const left = Math.ceil(RUN - s.t);
       set("time", `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`);
       node("time").classList.toggle("late", left <= 20);
-      set("score", String(s.score).padStart(5, "0"));
+      set("score", fmt(s.score));
       set("speed", String(Math.round(s.v * KMH)).padStart(3, "0"));
       const full = !s.seats.includes(null);
       html("bank", `TO BANK <span class="num">${fmt(s.seats.reduce((a, r) => a + (r ? agePoints(r.age) : 0), 0))}</span>${full ? "  FULL" : ""}`);

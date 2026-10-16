@@ -82,7 +82,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const rival = (n: ChallengeNote) => (n.storage.rival && chain?.nameOf(n.storage.rival)) ?? "???";
   const game = (n: ChallengeNote) => ({ seed: Number(n.storage.game[0] ?? 0n), song: Number(n.storage.game[4] ?? 0n) });
   const lv = (label: string, value: string, c = YELLOW): Row => ({ key: label, cells: [{ t: label, at: 0 }, { t: value, at: 1, right: true, c, mono: true }] });
-  const score5 = (n: number) => String(n).padStart(5, "0");
+  const score5 = (n: number) => n.toLocaleString("en-US");
 
   // what the current mode lists, and what the action key does
   let rows: Row[] = [], status: string | null = null, action: string | null = null, onAction: (() => void) | null = null, onSelect: ((i: number) => void) | null = null, onArrow: ((d: number) => void) | null = null;

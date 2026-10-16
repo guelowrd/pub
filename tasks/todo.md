@@ -318,3 +318,10 @@ CSS chrome lettering with the glint from commit 49d9427 is back (Chakra Petch no
 and the PNG are out. He did not like the HUD changes either: the pre-kit HUD is back whole (cyan panels with KM/H, the
 seats panel with portraits, age and points in the right rail, the 400 x 248 radar under it); the kit's plates, seats strip
 and 210 x 128 radar are out. Results screen, pause card, HISTORY icons and the share card stay.
+
+2026-10-16 afternoon, from Gaylord's screenshots: the near-plane fix banded the road on hills (the pinned slice took the road
+height at its own start, now the near plane's); every score shows US thousands separators (results, BEST, HUD, head unit
+lists, share card; no more zero padding); the results' middle well lists every rider picked up (portrait, AGE, points),
+the ones still aboard in pink with ON BOARD and a note at the right (N STILL ON BOARD, X LOST); the posting terms are his
+three lines (RIVALS GOTTA PAY TO CHALLENGE YOUR SCORE / IF THEY BEAT IT, THEY TAKE YOUR GAMECOIN / BUT IF THEY DON'T,
+THEIR GAMECOIN IS YOURS!). Open: the TO BANK wording (FARE / ON BOARD / METER / AT STAKE offered), the splash ribbon copy.
