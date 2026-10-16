@@ -1,9 +1,9 @@
-// The head unit (Grand Prix menu pack, 2026-10-16): a curved CRT above a black electronic GRAND PRIX stereo. The TV is
+// The head unit (Grand Prix menu pack, 2026-10-16; fidelity pass, 2026-10-17): a curved CRT above a black electronic GRAND PRIX stereo. The TV is
 // passive, every input is a key on the radio: four named mode keys (SOLO RUN, CHALLENGE, MY RUNS, HIGH-SCORES) and two
 // utility keys (WALLET, SYSTEM); BACK and ENTER; PREV and NEXT; the programmable red key, which reads the one action the
 // screen allows (DRIVE, SHOT, COLLECT, CONNECT, WAIT) or stays dark; VOL, MUTE, POWER. The LCD states the mode's purpose
-// (the pack's plates) and meters the menu music. Posting a run stays on the results screen. Geometry from
-// game/data/menu.json (the pack's component-contracts.json, trimmed by a one-off), the layers under art/gp/{layout}.
+// and meters the menu music. Posting a run stays on the results screen. Geometry from game/data/menu.json (the pack's
+// component-contracts.json, trimmed by a one-off, plus the fidelity boards' type sizes), the layers under art/gp/{layout}.
 import { useEffect, useRef, useState } from "react";
 import { baselineEm, px, store, stored, useFit } from "./board";
 import geometry from "./game/data/menu.json";
@@ -19,8 +19,10 @@ import { noteDeadline } from "./chain/notes";
 type Mode = "solo" | "challenge" | "my-runs" | "high-scores" | "wallet" | "system";
 const MODES: Mode[] = ["solo", "challenge", "my-runs", "high-scores", "wallet", "system"];
 type Word = "drive" | "shot" | "collect" | "connect" | "wait";
-type Font = "gt" | "lcd" | "cp"; // Boomer GT for headings and names, PUB Stereo LCD for numbers and clocks, Chakra Petch for the rest
-const FAMILY: Record<Font, string> = { gt: "Boomer GT", lcd: "PUB Stereo LCD", cp: "Chakra Petch" };
+type Font = "cp" | "mono"; // Chakra Petch for words, Share Tech Mono for the purpose line, counters, scores and clocks (the fidelity kit's pair)
+const FAMILY: Record<Font, string> = { cp: "Chakra Petch", mono: "Share Tech Mono" };
+// the LCD's one line per mode (the pack's copy)
+const PURPOSE: Record<Mode, string> = { solo: "PICK A STAGE AND DRIVE", challenge: "BEAT A CHAMPION", "my-runs": "YOUR RUNS AND WINNINGS", "high-scores": "THE BEST SCORES", wallet: "YOUR WALLET AND COINS", system: "SET UP YOUR GAME" };
 // the pack's palette
 const AMBER = "#ffd16b", WHITE = "#e6d5b8", CYAN = "#a3dbd5", PINK = "#f28bb1";
 const GP = `${ART}gp/`;
@@ -146,9 +148,9 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     else if (!records.length) status = ["NO CHALLENGES YET"];
     else {
       list(records.length); count = `${records.length} OPEN`;
-      rows = records.map((n, i) => ({ key: n.id, cells: [cell(champion(n), C.challenge.champion, C.challenge.nicknameS, "gt", i === at ? AMBER : WHITE), cell(score(n.storage.target), C.challenge.scoreR, C.challenge.scoreS, "lcd", AMBER, true), cell(songOf(songIn(n)), C.challenge.stage, C.challenge.stageS, "cp", i === at ? AMBER : WHITE, false, C.challenge.stageW)] }));
+      rows = records.map((n, i) => ({ key: n.id, cells: [cell(champion(n), C.challenge.champion, C.challenge.nicknameS, "cp", i === at ? AMBER : WHITE), cell(score(n.storage.target), C.challenge.scoreR, C.challenge.scoreS, "mono", AMBER, true), cell(songOf(songIn(n)), C.challenge.stage, C.challenge.stageS, "cp", i === at ? AMBER : WHITE, false, C.challenge.stageW)] }));
       const s = records[at];
-      footer = [cell(songOf(songIn(s)), TV.safe[0], TV.review.stageS, "gt", AMBER, false, undefined, TV.footer), cell("TIME LEFT", TV.count[0], 14 * u, "cp", CYAN, true, undefined, TV.detail - 4 * u), cell(clock(s.storage.expiryBlock - height), TV.count[0], TV.review.expiryS, "lcd", AMBER, true, undefined, TV.footer + 4 * u)];
+      footer = [cell(songOf(songIn(s)), TV.safe[0], TV.review.stageS, "cp", AMBER, false, undefined, TV.footer), cell("TIME LEFT", TV.count[0], 14 * u, "cp", CYAN, true, undefined, TV.detail - 4 * u), cell(clock(s.storage.expiryBlock - height), TV.count[0], TV.review.expiryS, "mono", AMBER, true, undefined, TV.footer + 4 * u)];
       enter = () => setReview(s);
     }
   } else if (mode === "my-runs") {
@@ -163,7 +165,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     else if (!runs.length) status = ["NO RUNS YET"];
     else {
       list(runs.length); count = `${runs.length} RUNS`;
-      rows = runs.map((r, i) => ({ key: r.key, cells: [cell(r.kind.toUpperCase(), C["my-runs"].type, C["my-runs"].typeS, "gt", i === at ? AMBER : WHITE), cell(score(r.score), C["my-runs"].scoreR, C["my-runs"].scoreS, "lcd", AMBER, true), cell(r.state, C["my-runs"].stateR, C["my-runs"].stateS, "cp", i === at ? AMBER : TONE[r.state] ?? WHITE, true)] }));
+      rows = runs.map((r, i) => ({ key: r.key, cells: [cell(r.kind.toUpperCase(), C["my-runs"].type, C["my-runs"].typeS, "cp", i === at ? AMBER : WHITE), cell(score(r.score), C["my-runs"].scoreR, C["my-runs"].scoreS, "mono", AMBER, true), cell(r.state, C["my-runs"].stateR, C["my-runs"].stateS, "cp", i === at ? AMBER : TONE[r.state] ?? WHITE, true)] }));
       footer = [cell(runs[at].line, TV.safe[0], 24 * u, "cp", CYAN, false, undefined, TV.detail)];
       const k = runs[at].key; enter = () => setOpened(k);
     }
@@ -174,7 +176,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     else { // PREV / NEXT turn the pages here, no row is selected
       const pages = Math.ceil(ranked.length / N), page = Math.min(cur, pages - 1);
       total = pages; at = page; count = `${pad2(page + 1)} / ${pad2(pages)}`;
-      rows = ranked.slice(page * N, page * N + N).map((r, j) => ({ key: r.key, cells: [cell(`${page * N + j + 1} ${chain?.nameOf(r.who) ?? "???"}`, C["high-scores"].name, C.challenge.nicknameS, "gt", same(me, r.who) ? AMBER : WHITE), cell(score(r.value), C["high-scores"].scoreR, C["high-scores"].scoreS, "lcd", AMBER, true)] }));
+      rows = ranked.slice(page * N, page * N + N).map((r, j) => ({ key: r.key, cells: [cell(`${page * N + j + 1} ${chain?.nameOf(r.who) ?? "???"}`, C["high-scores"].name, C.challenge.nicknameS, "cp", same(me, r.who) ? AMBER : WHITE), cell(score(r.value), C["high-scores"].scoreR, C["high-scores"].scoreS, "mono", AMBER, true)] }));
       if (pages > 1) footer = [cell("PREV / NEXT", TV.safe[0], 24 * u, "cp", CYAN, false, undefined, TV.detail)];
     }
   } else if (mode === "wallet") {
@@ -184,7 +186,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       ["BALANCE", chain?.balance != null ? gc(chain.balance) : me ? "ENTER TO READ" : "--", me ? () => void chain?.readBalance() : undefined],
       ["NETWORK", "MIDEN TESTNET"],
       ...(me ? [["PLAYER", chain!.nameOf(me)], ["GAMECOINS", "GET 10", () => void chain?.gamecoins().then((m) => m && setNote(m))], ["DISCONNECT", "ENTER", () => void chain?.disconnect()]] as [string, string, (() => void)?][] : []),
-    ], "lcd", AMBER);
+    ], "mono", AMBER);
     if (!me && chain?.installed && !chain.connecting) { word = "connect"; go = () => void chain.connect(); }
   } else {
     heading = "SYSTEM";
@@ -227,7 +229,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       case "next": return stepTo(1);
       case "back": return back();
       case "enter": return enter?.();
-      case "action": lastWord.current = word; return go?.();
+      case "action": if (swapping.current) return; lastWord.current = word; return go?.();
       case "volume": return setVolume(Math.max(0, Math.min(1, volume + (half === 0 ? -0.1 : 0.1))));
       case "mute": return toggleMute();
       case "power": return onOff();
@@ -252,23 +254,24 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     return () => removeEventListener("keydown", down);
   });
 
-  // the red key's legend: on a real change of the available action the old word fades (60 ms), the lens goes dark (40 ms),
-  // the new word fades in (120 ms) and one scan sweeps the lens; an instant swap under reduced motion
+  // the red key's legend: on a real change of the available action the old word closes to its centreline (60 ms), the cap
+  // stays bare (20 ms), the new word opens (80 ms), a glint settles (40 ms); no click lands during the 200 ms; an instant
+  // swap under reduced motion (the kit's motion contract)
   const [shown, setShown] = useState<Word | null>(word);
-  const [dark, setDark] = useState(false);
-  const [scan, setScan] = useState(0);
+  const [phase, setPhase] = useState<"out" | "in" | null>(null);
   const wordRef = useRef(word), swapping = useRef(false);
   wordRef.current = word;
   useEffect(() => {
     if (word === shown || swapping.current) return;
     if (reduced()) return setShown(word);
-    swapping.current = true; setDark(true); setScan((n) => n + 1);
-    setTimeout(() => { swapping.current = false; setShown(wordRef.current); setDark(false); }, 100);
+    swapping.current = true; setPhase("out");
+    setTimeout(() => { setShown(wordRef.current); setPhase("in"); }, 80);
+    setTimeout(() => { swapping.current = false; setPhase(null); setShown(wordRef.current); }, 200);
   }, [word, shown]);
 
   // the faces: rest, hover (pointer), pressed, selected (the mode's key, MUTE on), disabled
   const lit = (id: string) => id === mode || (id === "mute" && muted);
-  const face = (id: string) => (pressed === id ? "pressed" : !on(id) ? "disabled" : lit(id) ? "selected" : hover === id ? "hover" : "rest");
+  const face = (id: string) => (pressed === id ? (lit(id) ? "selected-pressed" : "pressed") : !on(id) ? "disabled" : lit(id) ? "selected" : hover === id ? "hover" : "rest");
   const box = (r: number[]) => ({ left: px(r[0]), top: px(r[1]), width: px(r[2]), height: px(r[3]) });
   /** Text on its baseline inside the TV */
   const text = (t: string, x: number, baseline: number, size: number, font: Font, color: string, right = false, key?: string | number, width?: number) => (
@@ -285,9 +288,9 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       </span>
     ));
   };
-  const brand = (r: number[], side: "left" | "right") => <img src={`${GP}brand.png`} alt="PICK UP BOOMERS" style={{ ...box(r), objectFit: "contain", objectPosition: `${side} top` }} />;
+  const brand = (r: number[], side: "left" | "right") => <img src={`${GP}brand.png`} alt="PICK UP BOOMERS" style={{ [side]: px(side === "left" ? r[0] : TV.size[0] - r[0] - r[2]), top: px(r[1]), width: px(r[2]) }} />;
   const mid = TV.safe[1] + TV.safe[3] * 0.49;
-  const action = R.controls.find((c) => c.id === "action")!;
+  const action = R.controls.find((c) => c.id === "action")!, cap = box([0, 0, action.rect[2], action.rect[3]]);
 
   return (
     <div className="gp-screen" style={{ left: px(left), top: px(top), width: px(G.canvas[0]), height: px(G.canvas[1]), transform: `scale(${scale})` }}>
@@ -295,6 +298,8 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden="true">
         <clipPath id={`gp-tube-${layout}`} clipPathUnits="userSpaceOnUse"><path transform={`scale(${TV.size[0] / TV.native[0]} ${TV.size[1] / TV.native[1]})`} d={TV.path} /></clipPath>
       </svg>
+      {TV.contact.length > 0 && <i className="gp-contact" style={box(TV.contact)} />}
+      {TV.mounts.map((r, k) => <i key={k} className="gp-mount" style={box(r)} />)}
       <div className="gp-tv" style={box([...TV.origin, ...TV.size])}>
         <div className="gp-content" style={{ width: px(TV.size[0]), height: px(TV.size[1]), clipPath: `url(#gp-tube-${layout})` }}>
           {mode === "solo" && !status && (
@@ -302,16 +307,16 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
               <img className="gp-pic" src={preview} alt="" />
               <div className="gp-shade" />
               {brand(TV.scene.logo, "left")}
-              {text(`${pad2(station + 1)} / ${pad2(STATIONS.length)}`, TV.count[0], TV.count[1], 18 * u, "lcd", CYAN, true)}
-              {text(stage.title, TV.scene.title[0], TV.scene.title[1], TV.scene.title[2], "gt", WHITE)}
+              {text(`${pad2(station + 1)} / ${pad2(STATIONS.length)}`, TV.count[0], TV.count[1], TV.count[2], "mono", CYAN, true)}
+              {text(stage.title, TV.scene.title[0], TV.scene.title[1], TV.scene.title[2], "cp", WHITE)}
               {cond(station, TV.cond[0].text[1])}
             </>
           )}
           {mode !== "solo" && !status && !rev && (
             <>
-              {text(heading, TV.heading[0], TV.heading[1], TV.heading[2], "gt", AMBER)}
+              {text(heading, TV.heading[0], TV.heading[1], TV.heading[2], "cp", AMBER)}
               {brand(TV.brand, "right")}
-              {count && text(count, TV.count[0], TV.count[1], 16 * u, "lcd", CYAN, true)}
+              {count && text(count, TV.count[0], TV.count[1], TV.count[2], "mono", CYAN, true)}
               {rows.slice(start, start + N).map((row, j) => {
                 const i = start + j, r = TV.rows.sel[j];
                 return (
@@ -327,33 +332,32 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
           )}
           {rev && !status && (
             <>
-              {text(rev.heading, TV.heading[0], TV.heading[1], TV.heading[2], "gt", AMBER)}
+              {text(rev.heading, TV.heading[0], TV.heading[1], TV.heading[2], "cp", AMBER)}
               {brand(TV.brand, "right")}
               {text(rev.label, TV.review.champion[0], TV.review.champion[1], 24 * u, "cp", CYAN)}
-              {text(score(rev.score), TV.review.score[0], TV.review.score[1], TV.review.scoreS, "lcd", AMBER)}
-              {rev.line && text(rev.line, TV.review.score[0], TV.review.score[1] + 66 * u, 28 * u, "gt", rev.tone === "pink" ? PINK : WHITE)}
-              {text(songOf(rev.song), TV.review.stage[0], TV.review.stage[1], TV.review.stageS, "gt", WHITE)}
+              {text(score(rev.score), TV.review.score[0], TV.review.score[1], TV.review.scoreS, "mono", AMBER)}
+              {rev.line && text(rev.line, TV.review.score[0], TV.review.score[1] + 66 * u, 28 * u, "cp", rev.tone === "pink" ? PINK : WHITE)}
+              {text(songOf(rev.song), TV.review.stage[0], TV.review.stage[1], TV.review.stageS, "cp", WHITE)}
               {cond(rev.song, TV.review.conditions)}
-              {rev.left !== undefined && text(`TIME LEFT ${clock(rev.left)}`, TV.review.expiry[0], TV.review.expiry[1], TV.review.expiryS, "lcd", CYAN)}
+              {rev.left !== undefined && text(`TIME LEFT ${clock(rev.left)}`, TV.review.expiry[0], TV.review.expiry[1], TV.review.expiryS, "mono", CYAN)}
             </>
           )}
           {status && (
             <>
               {brand(TV.brand, "right")}
-              {text(status[0], TV.safe[0], mid, TV.heading[2], "gt", trouble && !trouble.retry ? PINK : AMBER, false, undefined, TV.safe[2])}
+              {text(status[0], TV.safe[0], mid, TV.heading[2], "cp", trouble && !trouble.retry ? PINK : AMBER, false, undefined, TV.safe[2])}
               {status[1] && <p className="gp-para gp-cp" style={{ left: px(TV.safe[0]), top: px(mid + 34 * u), width: px(TV.safe[2]), fontSize: px(20 * u), color: CYAN }}>{status[1]}</p>}
             </>
           )}
-          <div className="gp-lines" />{/* the Stage TV's scanlines, kept over the new tube (Gaylord: "put back the tv effect") */}
+          <img src={`${GP}${layout}/crt.png`} alt="" style={box([0, 0, ...TV.size])} />{/* scanlines, phosphor, edge shade, sheen: one layer over picture, logo and text */}
         </div>
         <img src={`${GP}${layout}/tv-bezel.png`} alt="" style={box([0, 0, ...TV.size])} />
-        <img src={`${GP}${layout}/tv-glass.png`} alt="" style={box([0, 0, ...TV.size])} />
       </div>
       {/* the radio: fascia, LCD bed, the mode's purpose plate and the meter, the plaque, then the keys */}
       <div className="gp-radio" style={box([...R.origin, ...R.size])}>
         <img src={`${GP}${layout}/fascia.png`} alt="" style={box([0, 0, ...R.size])} />
         <img src={`${GP}${layout}/lcd-bed.png`} alt="" style={box([0, 0, ...R.size])} />
-        <img src={`${GP}${layout}/lcd/${mode}.png`} alt="" style={box(R.lcd)} />
+        <span className="gp-text gp-mono" style={{ left: px(R.purpose[0]), top: px(R.purpose[1] - baselineEm(FAMILY.mono) * R.purpose[2]), fontSize: px(R.purpose[2]), color: AMBER }}>{PURPOSE[mode]}</span>
         <Meter layout={layout} m={R.meter} />
         <img src={`${GP}${layout}/plaque.png`} alt="electronic GRAND PRIX" style={box(R.plaque)} />
         {R.controls.map((c) => {
@@ -368,12 +372,13 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
             </span>
           );
         })}
-        {/* the red key: the dark lens, the word's face, the scan, the hit */}
+        {/* the red key: the bare cap in its state, the word's legend over it (dim when it cannot be pressed), the glint, the hit */}
         <span className={`gp-key${pressed === "action" ? " down" : ""}`} style={box(action.rect)}>
-          <img src={`${GP}${layout}/key/off.png`} alt="" style={box([0, 0, action.rect[2], action.rect[3]])} />
-          {shown && <img className={`gp-legend${dark ? " dark" : ""}`} src={`${GP}${layout}/key/${shown}-${shown === "wait" || !on("action") ? "disabled" : pressed === "action" ? "pressed" : hover === "action" ? "hover" : "rest"}.png`} alt="" style={box([0, 0, action.rect[2], action.rect[3]])} />}
-          {scan > 0 && <i key={scan} className="gp-scan" style={{ ...box([0, 0, action.rect[2], action.rect[3]]), backgroundImage: `url(${GP}${layout}/key/scan.png)`, backgroundSize: `${action.rect[2] * 8}px ${action.rect[3]}px`, ["--w" as string]: px(action.rect[2]) }} />}
+          <img src={`${GP}${layout}/key/blank-${!on("action") ? "disabled" : pressed === "action" ? "pressed" : hover === "action" ? "hover" : "rest"}.png`} alt="" style={cap} />
+          {shown && <img key={shown} className={`gp-legend${phase ? ` ${phase}` : ""}${on("action") || phase === "out" ? "" : " dim"}`} src={`${GP}${layout}/key/${shown}-legend.png`} alt="" style={cap} />}
+          {phase === "in" && <img className="gp-glint" src={`${GP}${layout}/key/blank-hover.png`} alt="" style={cap} />}
           <button className="hit" aria-label={shown ? shown.toUpperCase() : "NO ACTION"} disabled={!on("action")} style={box([action.hit[0] - action.rect[0], action.hit[1] - action.rect[1], action.hit[2], action.hit[3]])} onClick={() => press("action")} onMouseUp={(e) => e.currentTarget.blur()} onMouseEnter={() => setHover("action")} onMouseLeave={() => setHover(null)} />
+          <img className="gp-focus" src={`${GP}${layout}/key/focus.png`} alt="" style={cap} />
         </span>
       </div>
     </div>

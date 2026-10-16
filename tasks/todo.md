@@ -610,3 +610,28 @@ unchanged), the pack's faces on a real phone.
   drawn with its budget, the low tier guard (20 ms median for 2 s -> particles off, 1 strip, no decal pass, 70 segments).
 - Not started: the knobs can go in before the art; the rest waits for the pack.
 - Gaylord (00:30 screenshot, "bug in the menu?"): the results screen came up as bare wells and loose portraits. It shares the head unit's old CSS classes (.hu-screen, .hu-unit, .hu-text, .hu-gt, .hu-mono) and the Grand Prix rewrite deleted them with the rest. Restored under a results comment; the screen checked whole after a run.
+
+## 2026-10-17, menu fidelity pass (Gaylord's feedback to the designer → ~/Code/pub/PUB-Menu-Fidelity-Fix)
+Same geometry as the Grand Prix pack (every rect checked equal), so a face swap plus five corrections.
+- [x] Faces: fascia, LCD bed, grey plaque, dark bezel, every key face (rest / hover / pressed / selected / selected-pressed / disabled; the focus brackets stay) → verify: no 404 on any layout
+- [x] Type: Chakra Petch 600 for headings, names, legends; Share Tech Mono for the purpose line, counters, scores, clocks; PUB Stereo LCD and Boomer GT out of the menu; font-synthesis off; stage title 43 px, counter 24, metadata 20 on desktop (the proof) → verify: computed font-family on the title and a score
+- [x] Logo: the restored compact mark (2.4:1), width set, height auto, in the top-left safe area, under the CRT layer → verify: rendered ratio
+- [x] CRT: one combined layer (scanlines, phosphor, edge shade, sheen) over picture + logo + text inside the clip, the old tile and glass gone, the 256x192 buffer drawn pixelated as on the board; mounts + contact shadow between TV and radio → verify: screenshot vs boards/desktop-solo.png
+- [x] LCD: the purpose line as live text (the plates had the old font baked in) → verify: PICK A STAGE AND DRIVE at 260,136.5
+- [x] Red key: blank cap faces + transparent legends; a change closes the old word (60 ms), gap (20), opens the new (80), a glint settles (40); clicks suppressed for the 200 ms; 2 px press; dim legend when disabled; instant under reduced motion → verify: the phases seen in Chrome
+- [x] tsc, vitest, desktop + portrait + landscape screenshots, 44 px hits
+
+Built and verified (2026-10-17, 00:55): desktop in Chrome (muted): Chakra Petch 43 / 20 px and Share Tech Mono 24 / 30 px
+measured on the title, metadata, counter and purpose line, font-synthesis none, logo 249 x 104 (2.41:1) at 66.8, 69.5;
+no broken image in SOLO, CHALLENGE review, MY RUNS, SYSTEM; the red key's swap recorded frame by frame (close done at
+~80 ms, glint peaks at ~175 ms, gone at 200 ms, NO ACTION on the button during the gap); portrait and landscape iframes:
+no hit under 44 px, no broken image, logo 104 x 43. docs/screens/19-menu-fidelity.jpg. tsc clean.
+Departures from the kit, for Gaylord:
+- No idle bevel-light breath on the available key (optional in the contract; a 3 s pulse on a menu is noise).
+- The glint is the hover cap fading over the last 120 ms of the swap; the disabled legend is the cream legend at 45 %
+  (the kit's disabled face baked the word in, which the vertical close needs apart).
+- The logo file is the restoration downscaled to 520 px wide (1.5 MB at 1942 px is a phone's whole budget); nothing else changed in it.
+- The LCD purpose line is live text (the old plates had the LCD font baked in); the meter bed and segments are still the Grand Prix pack's.
+- SOLO ENTER and root BACK stay disabled as before; list rows stay four tall (the Grand Prix geometry, untouched).
+Not mine, in the tree at the same time: rules/vectors.json, course.ts / course.test.ts, sim.ts, stations.ts (song feels,
+00:46) are another session's uncommitted work; two chain hashes in game.test.ts fail with them in place. Left alone.
