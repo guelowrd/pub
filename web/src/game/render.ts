@@ -63,6 +63,18 @@ let wasIn = false, wasNear = false, inT = -1, exitT = -1;
 const tinted = new Map<string, HTMLCanvasElement>();
 // repeating patterns per image, made once; a scratch canvas darkens sprites without a canvas filter
 const patterns = new Map<CanvasImageSource, CanvasPattern>();
+const hazed = new Map<CanvasImageSource, HTMLCanvasElement>();
+/** The band pushed into the distance: the same pixels under a veil (night: dark; day: the sky's blue) */
+const haze = (im: HTMLImageElement) => {
+  let c = hazed.get(im);
+  if (!c) {
+    c = document.createElement("canvas"); c.width = im.naturalWidth; c.height = im.naturalHeight;
+    const g = c.getContext("2d")!;
+    g.drawImage(im, 0, 0); g.globalCompositeOperation = "source-atop"; g.fillStyle = hour === "night" ? "rgba(10,10,36,0.55)" : hour === "sunset" ? "rgba(120,80,110,0.5)" : "rgba(130,150,180,0.5)"; g.fillRect(0, 0, c.width, c.height);
+    hazed.set(im, c);
+  }
+  return c;
+};
 let scratch: HTMLCanvasElement | null = null;
 const SHADE = (light: number) => `rgba(5,4,16,${(1 - light).toFixed(3)})`;
 function tintMask(file: string, color: string, w: number, h: number): HTMLCanvasElement | undefined {
@@ -316,23 +328,33 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   const facade = (n: number, z1: number, d: District) => {
     const im = img(frontage(d, hour));
     if (!im || zAt[n + 1] <= zAt[n]) return;
-    const [ppm, back] = FRONTAGE[d], H = 512 / ppm, per = 2048 / ppm, xw = W + BAY + WALK + back, hN = H * sc[n], hF = H * sc[n + 1], pat = pattern(im, "repeat-x"); // along the road only: a wrap drew the ground row as a hairline along the band's top
-    const u = (((z1 % per) + per) % per) * ppm; // the band's column at this slice
-    // a slice is a trapezoid (its top converges, its bottom does not), which one affine cannot map: the band is cut into
-    // horizontal strips, each pinned exactly along its bottom edge, enough of them that the top's step stays under 3 px
-    // (a 26 m casino front near the camera stepped 16 px a slice and its spires broke into a trail of floating tips)
-    const strips = Math.min(4, Math.max(1, Math.ceil(Math.abs(hN - hF) / 3)));
-    for (const side of [1, -1] as const) {
-      if (bare(z1, side)) continue;
-      const xa = X(n, side * xw), xb = X(n + 1, side * xw), ya = sy[n], yb = sy[n + 1];
-      const a = side * (xb - xa) / (SEG * ppm), u0 = side > 0 ? u : 2048 - u;
-      for (let j = 0; j < strips; j++) {
-        const v1 = 512 * j / strips, v2 = 512 * (j + 1) / strips, lo = 1 - v2 / 512, hi = 1 - v1 / 512;
-        const bn = ya - hN * lo, bf = yb - hF * lo, b = side * (bf - bn) / (SEG * ppm), dv = (hN + hF) / 2 / 512;
-        pat.setTransform({ a, b, c: 0, d: dv, e: xa - a * u0, f: bn - b * u0 - dv * v2 });
-        ctx.fillStyle = pat; ctx.beginPath(); ctx.moveTo(xa, bn); ctx.lineTo(xa, ya - hN * hi); ctx.lineTo(xb, yb - hF * hi); ctx.lineTo(xb, bf); ctx.fill();
+    const [ppm, back] = FRONTAGE[d], per = 2048 / ppm, xw = W + BAY + WALK + back;
+    // one rank of fronts: `x` metres from the axis, `grow` times the band's height, its columns shifted `shift` metres along the
+    // road, with a shadow at its foot on the ground when `foot`
+    const rank = (pat: CanvasPattern, x: number, grow: number, shift: number, foot: boolean) => {
+      const H = 512 / ppm * grow, hN = H * sc[n], hF = H * sc[n + 1];
+      const u = ((((z1 + shift) % per) + per) % per) * ppm; // the band's column at this slice
+      // a slice is a trapezoid (its top converges, its bottom does not), which one affine cannot map: the band is cut into
+      // horizontal strips, each pinned exactly along its bottom edge, enough of them that the top's step stays under 3 px
+      // (a 26 m casino front near the camera stepped 16 px a slice and its spires broke into a trail of floating tips)
+      const strips = Math.min(4, Math.max(1, Math.ceil(Math.abs(hN - hF) / 3)));
+      for (const side of [1, -1] as const) {
+        if (bare(z1, side)) continue;
+        const xa = X(n, side * x), xb = X(n + 1, side * x), ya = sy[n], yb = sy[n + 1];
+        const a = side * (xb - xa) / (SEG * ppm), u0 = side > 0 ? u : 2048 - u;
+        for (let j = 0; j < strips; j++) {
+          const v1 = 512 * j / strips, v2 = 512 * (j + 1) / strips, lo = 1 - v2 / 512, hi = 1 - v1 / 512;
+          const bn = ya - hN * lo, bf = yb - hF * lo, b = side * (bf - bn) / (SEG * ppm), dv = (hN + hF) / 2 / 512;
+          pat.setTransform({ a, b, c: 0, d: dv, e: xa - a * u0, f: bn - b * u0 - dv * v2 });
+          ctx.fillStyle = pat; ctx.beginPath(); ctx.moveTo(xa, bn); ctx.lineTo(xa, ya - hN * hi); ctx.lineTo(xb, yb - hF * hi); ctx.lineTo(xb, bf); ctx.fill();
+        }
+        if (foot) { ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.beginPath(); ctx.moveTo(X(n, side * (x - 3)), ya); ctx.lineTo(xa, ya); ctx.lineTo(xb, yb); ctx.lineTo(X(n + 1, side * (x - 3)), yb); ctx.fill(); }
       }
-    }
+    };
+    // depth (Gaylord: "flat like paperboard buildings"): a second rank of the same fronts stands 30 m further back, taller
+    // and hazed, so roofs rise behind the near rank and slide slower, and the near rank throws a shadow on the ground
+    rank(pattern(haze(im), "repeat-x"), xw + 30, 1.6, per / 3, false);
+    rank(pattern(im, "repeat-x"), xw, 1, 0, true);
   };
   // street furniture every 55 m, between the lamps and the frontage, on one side or the other (mirrored on the left),
   // clear of the bays and the forks
