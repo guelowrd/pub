@@ -182,7 +182,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     const z1 = (i0 + n) * SEG, lt = lightAt(z1), shade = (c: string) => (lt < 1 ? mix(c, "#050410", 1 - lt) : c);
     const mat = MATERIALS[s.streets.find((o) => z1 >= o.z0 && z1 < o.z1)?.district ?? district];
     quad(n, c1 - hw1 - WALK, c1 + re1 + WALK, c2 - hw2 - WALK, c2 + re2 + WALK, shade(alt ? "#5e5280" : "#665a8a"));
-    if (lt === 1) { material(n, c1 - hw1 - WALK, c1 - hw1, c2 - hw2 - WALK, c2 - hw2, mat.verge, 3, 0.45); material(n, c1 + re1, c1 + re1 + WALK, c2 + re2, c2 + re2 + WALK, mat.verge, 3, 0.45); }
+    if (lt === 1) { material(n, c1 - hw1 - WALK, c1 - hw1, c2 - hw2 - WALK, c2 - hw2, mat.verge, 2.5, 0.3); material(n, c1 + re1, c1 + re1 + WALK, c2 + re2, c2 + re2 + WALK, mat.verge, 2.5, 0.3); }
     quad(n, c1 - hw1, c1 + re1, c2 - hw2, c2 + re2, shade(alt ? asphalt[0] : asphalt[1]));
     if (lt === 1) material(n, c1 - hw1, c1 + re1, c2 - hw2, c2 + re2, mat.asphalt, 4, 0.3);
     const curb = shade(alt ? "#e8e8f8" : "#ff6fc8");
@@ -360,7 +360,8 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   // the shared fork structure's place on screen: its two mouths (664 and 1384 of the 2048 sheet) on the two branches
   const frame = (n: number, f: Sim["forks"][number]) => {
     const d = i0 + n - seg(f.zDecide), xL = X(n, (-1 - f.side) * f.off[d]), xR = X(n, (1 - f.side) * f.off[d]), k = (xR - xL) / 720;
-    return { k, left: xL - 664 * k, top: sy[n] - 928 * k, a: Math.max(0, Math.min(1, ((i0 + n) * SEG - s.z - 12) / 30)) };
+    // solid until the camera is through the plane: the arch is driven through, not faded away (a fade let the outside show)
+    return { k, left: xL - 664 * k, top: sy[n] - 928 * k, a: (i0 + n) * SEG - s.z > 2 ? 1 : 0 };
   };
   // the painted openings (about 470 x 290 of the sheet) are wider and taller than the tunnel box behind them: darkness
   // fills each arch before the segments, so the box draws over it and the skyline never shows around it
