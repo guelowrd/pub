@@ -1,5 +1,6 @@
 /* the Arcade Dash pairing (visual update, 2026-10-16): Chakra Petch for words and legends, Share Tech Mono for lists and every number */
 @font-face { font-family: "Chakra Petch"; src: url("/fonts/ChakraPetch-SemiBold.woff") format("woff"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "PUB Stereo LCD"; src: url("/fonts/PUBStereoLCD-Demi.woff") format("woff"); font-weight: 600; font-display: swap; } /* the menu's numbers and clocks (Grand Prix pack) */
 @font-face { font-family: "Share Tech Mono"; src: url("/fonts/ShareTechMono-Regular.woff") format("woff"); font-weight: 400; font-display: swap; }
 * { box-sizing: border-box; margin: 0; }
 html, body, #root { height: 100%; background: #080c24; color: #fff3f4; font-family: "Chakra Petch", ui-sans-serif, sans-serif; font-weight: 600; overflow: hidden; }
@@ -80,32 +81,30 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .menu, .screen { padding: 0; display: block; overflow: hidden; }
 .screen { text-transform: none; } /* its copy is set in capitals already; the metres keep their small m */
 .menu { background: radial-gradient(ellipse at 50% 40%, #29213f, #111421 55%, #070b10); }
-.hu-screen { position: absolute; transform-origin: top left; }
-.hu-unit { position: absolute; }
-.hu-unit > img, .hu-unit > span > img { position: absolute; pointer-events: none; user-select: none; }
-.hu-text { position: absolute; white-space: nowrap; line-height: 1; overflow: hidden; }
-.hu-gt { font-family: "Chakra Petch", sans-serif; font-weight: 600; }
-.hu-mono { font-family: "Share Tech Mono", monospace; font-weight: 400; font-variant-numeric: tabular-nums; }
-.hu-row { position: absolute; cursor: pointer; border: 1px solid transparent; box-sizing: border-box;}
-/* the TV: tube (the painting clipped to the screen, a caption fade over its lower half), bezel, glass, then the captions */
-.tv { position: absolute; }
-.tv > img, .tv > span > img { position: absolute; pointer-events: none; user-select: none; }
-.tv-screen { position: absolute; overflow: hidden; background: #040a0d; }
-.tv-pic { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; }
-.tv-caption { position: absolute; left: 0; right: 0; top: 53%; bottom: 0; background: linear-gradient(#04091100, #040911cc 42%, #040911f7); }
-.tv-rule { position: absolute; height: 1px; background: #1f4a47; }
-.tv-tuning p:first-child { border-bottom: 1px solid #94e6dc; padding-bottom: .5em; }
-.hu-status { position: absolute; display: flex; flex-direction: column; justify-content: center; gap: .5em; text-align: center; line-height: 1.15; overflow: hidden; padding: 0 .5em; font-family: "Chakra Petch", sans-serif; }
-.hu-dot { position: absolute; width: 12px; height: 12px; border: 2px solid; border-radius: 50%; animation: pub-blink 1.2s steps(1, end) infinite; }
-.hu-tick { position: absolute; width: 1px; }
-.hu-needle { position: absolute; width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 6px solid; }
-.hu-label { text-align: center; pointer-events: none; }
+.gp-screen { position: absolute; transform-origin: top left; }
+.gp-tv, .gp-radio, .gp-key { position: absolute; }
+.gp-tv img, .gp-radio img, .gp-radio i, .gp-key img, .gp-key i { position: absolute; pointer-events: none; user-select: none; }
+.gp-content { position: absolute; left: 0; top: 0; overflow: hidden; background: #080e17; }
+.gp-pic { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; }
+.gp-shade { position: absolute; left: 0; right: 0; top: 62%; bottom: 0; background: linear-gradient(#080e1700, #080e17c8 45%, #080e17f0); }
+.gp-text { position: absolute; white-space: nowrap; line-height: 1; overflow: hidden; }
+.gp-para { position: absolute; line-height: 1.3; }
+.gp-gt { font-family: "Boomer GT", monospace; font-weight: normal; }
+.gp-lcd { font-family: "PUB Stereo LCD", monospace; font-weight: 600; font-variant-numeric: tabular-nums; }
+.gp-cp { font-family: "Chakra Petch", sans-serif; font-weight: 600; }
+/* the red key: the dark lens, the word's face over it (60 ms out, 40 ms dark, 120 ms in), one scan along the atlas on a change */
+.gp-key.down { transform: translateY(1px); }
+.gp-legend { transition: opacity 120ms; } .gp-legend.dark { opacity: 0; transition-duration: 60ms; }
+.gp-scan { background-repeat: no-repeat; animation: gp-scan 220ms steps(8, end) forwards; }
+@keyframes gp-scan { from { background-position-x: 0; } to { background-position-x: calc(-8 * var(--w)); } }
+.gp-seg { background-size: 100% 100%; }
+.gp-focus { opacity: 0; } .hit:focus-visible ~ .gp-focus { opacity: 1; }
 .loading-bar { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: calc(500 * var(--u)); }
 .loading-bar img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
 .loading-bar span { position: absolute; left: 0; right: 0; top: 100%; margin-top: calc(14 * var(--u)); text-align: center; font-family: "Share Tech Mono", monospace; font-size: calc(28 * var(--u)); color: #ffe564; }
 .hit { position: absolute; background: none; border: none; padding: 0; cursor: pointer; }
 .hit:disabled { cursor: default; }
-.hit:focus-visible { outline: 2px solid #ffe564; }
+.hit:focus-visible { outline: 2px solid #ffe564; } .gp-radio .hit:focus-visible { outline: none; }
 .rk > img { position: absolute; inset: 0; width: 100%; height: 100%; }
 .rs-status { white-space: pre-line; line-height: 1.25; text-align: left; }
 /* portrait phones: the scene on top, then the seat strip and the radar side by side, then the pad */

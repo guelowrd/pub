@@ -5,6 +5,9 @@ const music = new Audio();
 let ctx: AudioContext | null = null, master: GainNode, engineOsc: OscillatorNode, engineGain: GainNode, skidGain: GainNode;
 let analysers: AnalyserNode[] = [], musicGain: GainNode;
 const samples = new Uint8Array(256); // reused every frame by levels()
+const freq = new Uint8Array(128), NONE = [0, 0, 0, 0, 0, 0];
+// the head unit's meter: six bands, octave-ish bins of the left analyser (fftSize 256: 172 Hz per bin), 0..1 above a floor
+const BANDS = [[1, 2], [2, 4], [4, 8], [8, 16], [16, 32], [32, 64]];
 let current = "";
 export let sound = true, volume = 0.7;
 /** The effects bus gain as it stands (dev checks of the mute). */
@@ -54,6 +57,11 @@ export const audio = {
     let sum = 0; for (const x of samples) sum += (x - 128) ** 2;
     return Math.min(1, Math.sqrt(sum / samples.length) / 40);
   }).concat([0, 0]).slice(0, 2),
+  bands: (): number[] => {
+    if (!analysers.length || !sound || music.paused) return NONE;
+    analysers[0].getByteFrequencyData(freq);
+    return BANDS.map(([lo, hi]) => { let m = 0; for (let i = lo; i < hi; i++) m = Math.max(m, freq[i]); return Math.max(0, (m / 255 - 0.35) / 0.65); });
+  },
   // per frame while driving: pitch follows speed, volume the throttle; off the road screens call engine(0, false)
   engine: (speed: number, gas: boolean) => {
     if (!ctx) return;

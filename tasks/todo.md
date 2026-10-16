@@ -562,3 +562,39 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
   curve throws x1.3, and a crosswind: a side per run from the seed (`windOf`, no rng call so spawns are unchanged),
   0.9 m/s at top speed scaled by v/TOP. Rain streaks lean and drift with the same wind. Chain replay untouched (it checks
   stop positions and top speed only). Test: dry vs wet on the same downtown course (songs 1 and 2).
+
+### Grand Prix menu (2026-10-16, night): PUB-Grand-Prix-Menu
+Gaylord: "PUB-Grand-Prix-Menu in pub now, follow the info from in here and lmk if anything missing".
+- [x] Art: the pack's layers under `web/public/art/gp/{layout}/` (fascia, lcd-bed, plaque, tv-bezel, tv-glass; 13 controls x
+      rest / hover / pressed / selected / disabled / focus; the red key's seven words x four faces, off, scan atlas; the six
+      purpose lines as the pack's PNGs; meter bed + segment; selection row), icons and the brand at 520 px; PUB Stereo LCD
+      woff in `web/public/fonts`. Old `art/menu`, `art/tv`, `art/icons` removed → verify: no 404 in the console on any screen
+- [x] Geometry: `game/data/menu.json` regenerated from component-contracts.json (scratchpad one-off gp-geometry.py): TV
+      aperture path + safe rect + heading / count / rows / columns per list / review / scene / conditions; radio LCD, plaque,
+      meter pitch, controls with hit rects → verify: desktop and phone keys land on the painted keys (DOM rects vs the boards)
+- [x] HeadUnit.tsx rewritten on the pack: modes solo / challenge / my-runs / high-scores / wallet / system on named keys;
+      BACK, ENTER, PREV / NEXT; the red key (DRIVE, SHOT, COLLECT, CONNECT, WAIT, dark) with the 220 ms legend swap and one
+      scan; SHOT READY step before a funded shot drives; TV passive (no row clicks, no wheel); scores padded to five digits
+      in the menu; six-band music meter from the analyser (35 / 180 ms, 20 Hz); keyboard: arrows, Enter, Esc, D, M, 1-6
+      → verify: tsc, vitest, every state on desktop in Chrome (muted), portrait + landscape iframes
+- [x] Departures and open calls written up for Gaylord (my-runs share rows, SYSTEM rows, collect-all) + designer brief 8
+
+Built and verified (2026-10-17, 00:30): desktop SOLO RUN / CHALLENGE list + review / MY RUNS list + MY RECORD review /
+HIGH-SCORES / WALLET / SYSTEM in Chrome (muted), keys 3, Enter, Esc, arrows, 1; the red key's dark gap and scan element
+seen on a mode change; portrait 390x844 and landscape 740x340 in iframes (solo + challenge). No 404, 77 tests, tsc clean.
+Where I departed from the pack, for Gaylord to overturn:
+- COLLECT in a run's review collects everything owed in one transaction (as before), not that one note.
+- SHOT funds the shot, then the review reads SHOT READY / PRESS DRIVE and the red key DRIVE starts it (the pack's step;
+  before, the run started as soon as the wallet approved). A funded shot also waits under MY RUNS as READY.
+- No CONFIRM, no FINISH: the chain layer has no in-app confirmation and no forfeiture (the champion collects a lost shot).
+- MY RUNS has no COPY LINK / SHARE ON X rows on an open record (the review layout has no room for them; the results screen
+  shares right after posting). Say the word and they go in as ENTER rows.
+- SYSTEM rows: SOUND, VOLUME (ENTER steps 10 %, wraps), RESET BEST, VERSION, WALLET. The pack's MOTION and CONTROLS rows
+  are not settings the game has. WALLET rows: STATUS, BALANCE (ENTER reads it), NETWORK, PLAYER, GAMECOINS (ENTER gets 10),
+  DISCONNECT (ENTER); the red key reads CONNECT only when disconnected (GET GC moved off the red key).
+- Enter no longer drives in SOLO RUN (the pack disables ENTER there); D or the red key does. Rows and the TV take no clicks.
+- The scan steps the atlas at 8 equal 27.5 ms frames (the pack's 30/30/20/20/30/30/30/30 is not worth a JS timer).
+- Trouble: the title (TRY AGAIN when a retry exists) mid-screen, the detail under it; the red key re-reads the word that
+  was pressed. CHECKING (unknown broadcast outcome) is not a phase the chain layer surfaces.
+Not verified: a real SHOT / COLLECT round through the new screens (needs a wallet approval; the flows under them are
+unchanged), the pack's faces on a real phone.
