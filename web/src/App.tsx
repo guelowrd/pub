@@ -175,7 +175,7 @@ export default function App() {
       set("score", fmt(s.score));
       set("speed", String(Math.round(s.v * KMH)).padStart(3, "0"));
       const full = !s.seats.includes(null);
-      html("bank", `TO BANK <span class="num">${fmt(s.seats.reduce((a, r) => a + (r ? agePoints(r.age) : 0), 0))}</span>${full ? "  FULL" : ""}`);
+      html("bank", `BOOMER METER <span class="num">${fmt(s.seats.reduce((a, r) => a + (r ? agePoints(r.age) : 0), 0))}</span>${full ? "  FULL" : ""}`);
       s.seats.forEach((r, i) => html(`seat${i}`, r ? `${face(r)}${icon(r.dest)}<small>AGE</small><b>${r.age}</b><em>${fmt(agePoints(r.age))}<small>PTS</small></em>` : `<span>EMPTY</span>`));
       // radar: the next stop's face and honest range; the reveal for 2 s after boarding; nothing at a fork
       const c = candidate(s), e = s.log[s.log.length - 1];
@@ -188,7 +188,7 @@ export default function App() {
       const tunnel = s.forks.some((o) => s.z >= o.zDecide + 100 && s.z < o.zEnd + 100);
       const radar = node("radar").parentElement!;
       radar.className = `radar-box ${just ? "" : f || tunnel ? "search" : c?.rider && full ? "full" : c?.rider || c?.drop ? "" : "search"}`;
-      html("radar", just ? `${face(just)}<div class="reveal"><b>AGE ${just.age}</b><br>${fmt(agePoints(just.age))} TO BANK</div>${icon(just.dest)}`
+      html("radar", just ? `${face(just)}<div class="reveal"><b>AGE ${just.age}</b><br>+${fmt(agePoints(just.age))} ON THE METER</div>${icon(just.dest)}`
         : f || tunnel ? "" : c?.rider ? (full ? "" : `<img class="dither" src="${dithered(c.rider)}" alt=""><small class="pos">POSITION</small><img class="reticle" src="${ART}radar/reticle-B.png" alt="">${blip(c)}<small class="lab">AGE RANGE</small><b class="range">${c.rider.lo} TO ${c.rider.hi}</b>`)
         : c?.drop ? `<small class="pos">POSITION</small><img class="reticle" src="${ART}radar/reticle-B.png" alt="">${blip(c)}<b class="range drop">DROP OFF</b>${icon(c.drop)}` : "");
       radar.style.display = f ? "none" : "";

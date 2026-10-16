@@ -329,3 +329,4 @@ Same afternoon, second screenshot: "TIME IS UP, YOU SCORED" with POINTS small af
 was points all along, the "m" was wrong), "YOUR BEST: 14,236", riders still aboard have their points struck through
 (the player never scored them) with ON BOARD after, the right-hand note is gone, POST IT stands as tall as the three
 lines beside it (the key follows the status height on desktop).
+Ribbon copy is Gaylord's (fd80084). TO BANK is now BOOMER METER (seats header; the radar reveal says "+80 ON THE METER").
