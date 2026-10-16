@@ -97,3 +97,11 @@ Heat shimmer (per-pixel), long cast shadows (a second draw per prop), full front
 2. Lamps per district, props per song, traffic sets, curbs.
 3. Sky elements and the cheap ambient effects (stars, fireflies, festoon, sun, grid, fog, beams, paths).
 4. The performance guard, then the throttled check.
+
+## Status
+
+- 2026-10-17: step 1 done. `Feel` per station in `stations.ts`, the generator reads rolls, mix, curve and hill scales,
+  `extend()` adds the song's traffic, the crosswind takes the song's strength. Every waterfront street rises (a hill on
+  every stretch, always positive) so the water shows from the crests, Gaylord's ask. Courses changed, so
+  `rules/vectors.json` was regenerated and the two pinned commitments in `chain/__tests__/game.test.ts` updated; the
+  Rust replay passes on the new vectors (4 tests).

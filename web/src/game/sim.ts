@@ -194,7 +194,7 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
     const lat = s.steer * (4 + 10 * (s.v / TOP)) * (s.skid ? 1.5 : 1) * (s.oil > 0 ? 0.25 : grip);
     s.x += lat * dt;
     if (s.oil > 0) s.x += (s.rng() - 0.5) * 20 * dt; // on oil the car wanders and the wheel barely bites
-    s.x += windOf(s) * 0.9 * (Math.max(0, s.v) / TOP) * dt;
+    s.x += windOf(s) * 0.9 * STATIONS[s.song].feel.wind * (Math.max(0, s.v) / TOP) * dt;
   }
   s.x -= curvature(s, s.z) * (s.v / FAST) ** 2 * 75 * (s.rain ? 1.3 : 1) * dt; // the curve throws you outward; hold the wheel against it; past 220 it is dangerous
 

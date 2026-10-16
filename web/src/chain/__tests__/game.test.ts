@@ -8,8 +8,8 @@ import { wordFromFelts } from "../chain";
 import type { Event } from "../../game/sim";
 
 const run = vectors.runs[0];
-const COURSE_COMMIT = "0xc8f44871eb5535dd791b8c5c362b23ee1671c41361869d9c669f853f1f453503";
-const LOG_COMMIT = "0xc8dcf7c6687306a70a9576bed4c5c3b53531200e43803daf641526109e8965fe";
+const COURSE_COMMIT = "0x6814ceec0297251f4a49c8f356e48773ceb1aaaa4d8cb88e988972e4dce9aa08";
+const LOG_COMMIT = "0x4a40a444bd1fbad57c5d8316ab3050e1dd5f5373b8fe2c3d54ecdb7cd612a358";
 const hex = (w: bigint[]) => wordFromFelts(w as [bigint, bigint, bigint, bigint]).toHex();
 
 describe("Pick Up Boomers game data", () => {

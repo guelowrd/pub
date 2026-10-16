@@ -3,7 +3,7 @@
 // as you turn into it. Riders are the designer's characters with their fixed ages, drawn at each venue by its pool weights.
 import characters from "./data/characters.json";
 import venuesFile from "./data/venues.json";
-import { STATIONS } from "./stations";
+import { STATIONS, type Feel } from "./stations";
 import { BAY, DISTRICTS, GREEN, KMH, LANE, LIGHTS, RED, SEG, TRAFFIC, W, WALK, branchX, districtAt, rngFrom, seg, type District, type Hazard, type Node, type RadarClass, type Rider, type Sim } from "./sim";
 
 export const STREET = 1200;
@@ -30,13 +30,15 @@ function rider(rng: () => number, venue: string, district: District): Rider {
   return { id: ch.id, name: ch.name, age: ch.age, dest: pick(rng, DISTRICTS.filter((o) => o !== district)), lo: Math.max(18, lo), hi: Math.min(99, hi), cls };
 }
 
-function node(rng: () => number, district: District, leg: number): Node {
+function node(rng: () => number, district: District, leg: number, feel: Feel): Node {
   const curves: Node["curves"] = [], hills: Node["hills"] = [];
   let z = 150;
   while (z < STREET - 300) {
     const len = 150 + rng() * 200;
-    if (rng() < 0.7) curves.push([z, z + len, (rng() - 0.5) * 0.1]);
-    if (rng() < 0.5) hills.push([z - 50, z + len + 50, (rng() - 0.3) * 12]);
+    if (rng() < 0.7) curves.push([z, z + len, (rng() - 0.5) * 0.1 * feel.curves]);
+    // a waterfront street always rises, so the water shows from the crest (Gaylord: "it's beautiful, a shame to hide it")
+    if (district === "waterfront") hills.push([z - 50, z + len + 50, (0.4 + 0.6 * rng()) * 12 * feel.hills]);
+    else if (rng() < 0.5) hills.push([z - 50, z + len + 50, (rng() - 0.3) * 12 * feel.hills]);
     z += len + 60;
   }
   const n = 3 + Math.floor(rng() * 3), stops: Node["stops"] = [];
@@ -49,12 +51,12 @@ function node(rng: () => number, district: District, leg: number): Node {
     const side = venue === "school" || venue === "bingo" || rng() > 0.35 ? 1 : -1;
     stops.push({ z: sz, venue, rider: rider(rng, venue, district), side });
   }
-  // hazards, clear of the stops and the fork; a barrier trails 4 cones (roadworks)
+  // hazards, clear of the stops and the fork, as many rolls and of the kinds the song's feel says; a barrier trails 4 cones
   const hazards: Hazard[] = [], lane = () => (Math.floor(rng() * 3) - 1) * LANE;
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < feel.hazards; i++) {
     const hz = 160 + rng() * (STREET - 400);
     if (stops.some((o) => Math.abs(o.z + 15 - hz) < 60)) continue;
-    const kind = pick(rng, ["cone", "cone", "oil", "pothole", "barrier"] as Hazard["kind"][]), x = lane();
+    const kind = pick(rng, feel.mix), x = lane();
     hazards.push({ z: hz, x, kind, hit: false });
     if (kind === "barrier") for (let j = 1; j <= 4; j++) hazards.push({ z: hz + 15 * j, x, kind: "cone", hit: false });
   }
@@ -75,7 +77,7 @@ export function pyramid(seed: number, song = 0): Node[][] {
     const row: Node[] = [];
     for (let k = 0; k <= leg; k++) {
       const used = [course[leg - 1]?.[k - 1], course[leg - 1]?.[k], row[k - 1]].map((o) => o?.district);
-      row.push(node(rng, leg === 0 ? STATIONS[song].district : pick(rng, DISTRICTS.filter((d) => !used.includes(d))), leg));
+      row.push(node(rng, leg === 0 ? STATIONS[song].district : pick(rng, DISTRICTS.filter((d) => !used.includes(d))), leg, STATIONS[song].feel));
     }
     course.push(row);
   }
@@ -129,7 +131,7 @@ export function extend(s: Sim) {
   // traffic: keep a few cars ahead, in lanes, slower than us
   const ahead = s.traffic.filter((c) => c.z > s.z).length;
   const here = districtAt(s, s.z);
-  const want = 4 + (here ? TRAFFIC[here] : 0) + Math.min(4, Math.floor(s.t / 30));
+  const want = Math.max(2, 4 + (here ? TRAFFIC[here] : 0) + STATIONS[s.song].feel.traffic + Math.min(4, Math.floor(s.t / 30)));
   if (ahead < want && s.rng() < 0.5) {
     const z = s.z + 760 + s.rng() * 400; // beyond the draw distance, so cars come into view instead of popping in
     let x = (Math.floor(s.rng() * 3) - 1) * LANE, branch: -1 | 1 | undefined;

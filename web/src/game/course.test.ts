@@ -6,6 +6,20 @@ import { SLOTS } from "./chain";
 import { CHARACTERS, FORK_OUT, LEGS, MOUTHS, POOLS, VENUES, VENUE_OF, extend, pyramid } from "./course";
 
 describe("course", () => {
+  it("a song's feel sets the hazards, their kinds, the curves and the hills; every waterfront street rises", () => {
+    const by = (song: number) => pyramid(7, song).flat();
+    const cruise = by(11), crush = by(12), factory = by(2), pulse = by(4); // NIGHT CRUISE, PICK UP OR CRUSH UP, ABANDONED FACTORY, OUTRUN PULSE
+    const count = (ns: typeof cruise) => ns.reduce((a, n) => a + n.hazards.length, 0);
+    expect(count(crush)).toBeGreaterThan(count(cruise) * 3);
+    expect(cruise.every((n) => n.hazards.every((h) => h.kind === "cone"))).toBe(true);
+    expect(factory.some((n) => n.hazards.some((h) => h.kind === "barrier"))).toBe(true);
+    const steepest = (ns: typeof cruise) => Math.max(...ns.flatMap((n) => n.curves.map((c) => Math.abs(c[2]))));
+    expect(steepest(pulse)).toBeGreaterThan(steepest(cruise));
+    expect(steepest(pulse)).toBeLessThanOrEqual(0.05 * 1.5 + 1e-9);
+    for (const n of [...cruise, ...crush, ...factory, ...pulse].filter((o) => o.district === "waterfront")) {
+      expect(n.hills.length).toBeGreaterThan(0); expect(n.hills.every((h) => h[2] > 0)).toBe(true);
+    }
+  });
   it("same seed, same course; another seed, another course", () => {
     expect(JSON.stringify(pyramid(1))).toBe(JSON.stringify(pyramid(1)));
     expect(JSON.stringify(pyramid(1))).not.toBe(JSON.stringify(pyramid(2)));
