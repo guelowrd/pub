@@ -543,3 +543,5 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
 - BOOMER METER (Gaylord, 22:40, clarified: "aligned in its own box"): the name at the left of its box, the points at the
   right, as SCORE does in its own; FULL follows the name, the points drop to their own line then. Measured: the points
   end flush with the panel's inner edge.
+- Radar type (Gaylord, 22:50, "unreadable"): POSITION and AGE RANGE labels 2.8/2.6 to 4.4 cqw (about 6 to 9 px at 1280),
+  the range 5.6 to 7.4 cqw, DROP OFF 4.6 to 6.2, a lighter label colour; labels moved up a little to keep clear of the range.
