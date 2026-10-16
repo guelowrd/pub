@@ -305,8 +305,8 @@ under the score, where the rail was (Gaylord: the bottom right was worse), with 
 (target, DROP OFF with the destination icon, the 2 s reveal, SCAN with two rings, CAR FULL). HISTORY rows: crown and
 target icons by kind, the state word in the kit's colours (OPEN, IN PLAY, COLLECT, BEATEN, DEFENDED, TAKEN BACK, WON,
 LOST). Pause: the kit's card over the dim. Share card at runtime (share.ts: background, title, score, station, up to
-three riders cover-cropped, frame; SAVE CARD downloads the PNG). Splash: the kit's CLICK TO START layer (850 on / 450
-off), the scrolling rules ribbon restyled to the kit's strip (smoked glass, hairline, Chakra 17). Render fixes from the
+three riders cover-cropped, frame; SAVE CARD downloads the PNG). Splash: the kit's CLICK TO START layer was tried and reverted the same day (Gaylord liked the earlier
+chrome one better; it stays, 1.6 s blink), the scrolling rules ribbon restyled to the kit's strip (smoked glass, hairline, Chakra 17). Render fixes from the
 audit: the nearest road slice is pinned to the near plane (the 0.3 m clamp blew its tile into a blur and cut the lane
 lines at a hard edge); the fork structure stays solid until driven through (the fade let the outside show through the
 arches); verge tiles 2.5 m at 0.3. Kept from before, against the kit: the radar's place, the terms line in the post
