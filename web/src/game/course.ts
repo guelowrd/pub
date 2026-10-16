@@ -37,7 +37,7 @@ function node(rng: () => number, district: District, leg: number, feel: Feel): N
     const len = 150 + rng() * 200;
     if (rng() < 0.7) curves.push([z, z + len, (rng() - 0.5) * 0.1 * feel.curves]);
     // a waterfront street always rises, so the water shows from the crest (Gaylord: "it's beautiful, a shame to hide it")
-    if (district === "waterfront") hills.push([z - 50, z + len + 50, (0.4 + 0.6 * rng()) * 12 * feel.hills]);
+    if (district === "waterfront") hills.push([z - 50, z + len + 50, (0.4 + 0.6 * rng()) * 12 * Math.max(0.8, feel.hills)]);
     else if (rng() < 0.5) hills.push([z - 50, z + len + 50, (rng() - 0.3) * 12 * feel.hills]);
     z += len + 60;
   }
