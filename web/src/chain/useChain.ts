@@ -8,7 +8,7 @@ import { useMiden } from "@miden-sdk/react";
 import { useMidenFiWallet } from "@miden-sdk/miden-wallet-adapter-react";
 import { LOCAL_WALLET, useLocalWallet } from "./localWallet";
 import { GAMECOIN_GRANT, gamecoinRefusal, GRANT_PENDING_MS, useGamecoin } from "./gamecoin";
-import { PRIZES, RECORD_LIFETIME_BLOCKS, STAKE } from "./config";
+import { RECORD_LIFETIME_BLOCKS, STAKE } from "./config";
 import { accountFelts, bech32Of, fetchChallengeNote, knownNote, listChallengeNotes, loadScripts, parseAccountId, syncNotes, wordFromHex, type ChallengeNote, type Client } from "./chain";
 import { keyOf, lettersBackward, nicknames, playersInOrder } from "./hub";
 import { collect as collectNotes, gcBalance, postRecord, postShot, setSubmitAttemptListener, setSubmitStageListener, settle as settleNotes, waitFor, type Submitted } from "./bread";
@@ -45,8 +45,8 @@ export type ChainApi = {
   nameOf: (a: AccountFelts) => string;
   /** A record opened by link, fresh from the node. */
   loadRecord: (id: string) => Promise<ChallengeNote | null>;
-  /** Champion: the drive's score as a record with `prize` on it. */
-  post: (seed: number, song: number, score: number, prize: bigint) => Promise<Posted | null>;
+  /** Champion: the drive's score as a record, the stake on it as the prize. */
+  post: (seed: number, song: number, score: number) => Promise<Posted | null>;
   /** Rival: the shot note at `record` (or the open ones already there); the drive starts with what comes back. */
   shoot: (record: ChallengeNote) => Promise<{ shots: ChallengeNote[]; record: ChallengeNote } | null>;
   /** Rival, after the drive: the win claims the prize, the loss waits for the champion. */
@@ -191,13 +191,12 @@ export function useChain(): ChainApi {
     }
   }
 
-  const post: ChainApi["post"] = async (seed, song, score, prize) => {
-    if (!PRIZES.includes(prize)) return (say("That prize is not on the dial."), null);
+  const post: ChainApi["post"] = async (seed, song, score) => {
     const game = newGame(seed, song);
     const submitted = await run("POSTING YOUR RECORD", true, async () => {
       const champion = accountFelts(parseAccountId(walletRef.current.address!));
       const storage: ChallengeStorage = { expiryBlock: heightRef.current + RECORD_LIFETIME_BLOCKS, target: score, minStake: STAKE, champion, rival: null, recordId: ZERO_WORD, shotRoot: ZERO_WORD, game: encodeGame(game), shotDeadline: 0 };
-      return client ? postRecord(client, walletRef.current, storage, prize) : Promise.reject(new Error("client not ready"));
+      return client ? postRecord(client, walletRef.current, storage, STAKE) : Promise.reject(new Error("client not ready"));
     });
     return submitted ? { recordId: submitted.noteIds[0], score, song, expiresAt: blockToMs(heightRef.current + RECORD_LIFETIME_BLOCKS, heightRef.current) } : null;
   };

@@ -11,3 +11,4 @@
   automation, it is not a bug for a human.
 - A generic `.overlay button` rule outranked the `.hit` class on the head unit's invisible buttons and painted them navy over
   the key art; when a skinned screen looks tinted or flat, check `elementsFromPoint` for a styled hit area before suspecting the art.
+- Do not invent mechanics: the prize chips were not in GQ nor asked for. The chain layer mirrors GQ's rules; a new knob needs Gaylord's word first.

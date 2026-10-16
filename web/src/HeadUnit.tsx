@@ -168,7 +168,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   if (trouble?.retry) { action = "TRY AGAIN"; onAction = () => { const r = trouble.retry!; chain?.dismiss(); r(); }; }
   const total = rows.length, at = mode === "RADIO" ? station : Math.min(cur, Math.max(0, total - 1)), rowsN = G.rows;
   const start = Math.min(Math.max(0, at - rowsN + 1), Math.max(0, total - rowsN));
-  // up/down walk the list; left/right go to the mode's own arrow rule (tuning, the prize, the volume) or walk the list too
+  // up/down walk the list; left/right go to the mode's own arrow rule (tuning, the volume) or walk the list too
   const move = (d: number) => { if (mode === "RADIO") return onArrow?.(d); if (total) setCursor({ ...cursor, [mode]: (at + d + total) % total }); };
   const sideways = (d: number) => (onArrow ? onArrow(d) : move(d));
 

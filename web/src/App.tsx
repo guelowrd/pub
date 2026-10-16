@@ -6,8 +6,7 @@ import { ICON, loadArt } from "./game/art";
 import { MENU_TRACK, RESULTS_TRACK, STATIONS } from "./game/stations";
 import { audio, sound as soundNow, volume as volumeNow } from "./audio";
 import HeadUnit from "./HeadUnit";
-import { PRIZES } from "./chain/config";
-import { fmtGc, recordLinks } from "./chain/flow";
+import { recordLinks } from "./chain/flow";
 import { startAttract } from "./attract";
 import Loading from "./Loading";
 import type { ChainApi, ChallengeNote, Posted } from "./chain/ChainHost";
@@ -70,8 +69,7 @@ export default function App() {
   const [seed, setSeed] = useState(randomSeed);
   const [loaded, setLoaded] = useState(false);
   const [chain, setChain] = useState<ChainApi | null>(null);
-  // posting the run just driven, on the results screen: the prize on the dial, then the record's share links
-  const [prize, setPrize] = useState(0);
+  // posting the run just driven, on the results screen, then the record's share links
   const [posted, setPosted] = useState<Posted | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const shot = useRef<Shot | null>(null); // the run on the road is a shot at a record
@@ -269,15 +267,15 @@ export default function App() {
               <div className="box yellow post">
                 {posted ? (
                   <>
-                    <div><span>RECORD POSTED</span><b>{String(posted.score).padStart(5, "0")}</b></div>
+                    <div><span>RECORD POSTED, 1 GC ON IT</span><b>{String(posted.score).padStart(5, "0")}</b></div>
                     <p className="actions"><button className="cyan" onClick={() => window.open(recordLinks(posted.recordId, posted.score, posted.expiresAt, STATIONS[posted.song].title).x, "_blank", "noopener")}>SHARE ON X</button><button className="cyan" onClick={() => void navigator.clipboard?.writeText(recordLinks(posted.recordId, posted.score, posted.expiresAt, STATIONS[posted.song].title).url).then(() => setNote("LINK COPIED"), () => setNote("COPY FAILED"))}>COPY LINK</button></p>
                     {note && <p className="verdict">{note}</p>}
                   </>
                 ) : (
                   <>
-                    <div><span>POST AS A RECORD, PRIZE</span><span className="prizes">{PRIZES.map((p, i) => <button key={i} className={i === prize ? "on" : ""} onClick={() => setPrize(i)} disabled={!!chain?.busy}>{fmtGc(p)}</button>)}</span></div>
-                    <p className="verdict">{chain?.busy ? `${chain.busy.text}${chain.busy.stage === "wallet" ? ". APPROVE IN YOUR WALLET" : chain.busy.stage === "network" ? ". SENDING TO THE NETWORK" : ""}` : chain?.trouble ? chain.trouble.t.title.toUpperCase() : "RIVALS PAY 1 GC FOR A SHOT. BEAT YOU AND THEY TAKE THE PRIZE, LOSE AND THEIR GC IS YOURS."}</p>
-                    <p className="actions"><button className="yellow" disabled={!chain || !!chain.busy} onClick={() => { chain?.dismiss(); void chain?.post(s.seed, station, s.score, PRIZES[prize]).then((p) => p && setPosted(p)); }}>{chain?.trouble?.retry ? "TRY AGAIN" : "POST IT"}</button></p>
+                    <div><span>POST YOUR RECORD</span><b>1 GC</b></div>
+                    <p className="verdict">{chain?.busy ? `${chain.busy.text}${chain.busy.stage === "wallet" ? ". APPROVE IN YOUR WALLET" : chain.busy.stage === "network" ? ". SENDING TO THE NETWORK" : ""}` : chain?.trouble ? chain.trouble.t.title.toUpperCase() : "RIVALS PAY 1 GC TO TRY TO BEAT YOU. IF THEY DO, THEY TAKE YOUR GC. OTHERWISE THEIR GC IS YOURS."}</p>
+                    <p className="actions"><button className="yellow" disabled={!chain || !!chain.busy} onClick={() => { chain?.dismiss(); void chain?.post(s.seed, station, s.score).then((p) => p && setPosted(p)); }}>{chain?.trouble?.retry ? "TRY AGAIN" : "POST IT"}</button></p>
                   </>
                 )}
               </div>

@@ -275,7 +275,7 @@ card, the kit's A and C menus (B is the only fully exported one).
 
 ### Menu fix + results post (2026-10-16, morning)
 Gaylord: the radio is a jukebox (songs, records to shoot, scores, settings), not the post-game menu. Posting moved to the
-results screen (prize chips, POST IT, SHARE ON X, COPY LINK); the head unit's presets are RADIO, RECORDS, SCORES,
+results screen (POST IT, 1 GC like GQ, SHARE ON X, COPY LINK); the head unit's presets are RADIO, RECORDS, SCORES,
 HISTORY, WALLET, SYSTEM. The RADIO list follows the station (keys, click, wheel). PUB-Menu-Fix integrated: label-free
 action key with the runtime label on the kit's baseline, the selection layer, 13 ticks, landscape 16 px rows. Screens
 of every state in docs/screens/ (18 shots), the brief for the designer in docs/designer-brief-3.md. Road tiles 4 m /
@@ -287,3 +287,5 @@ a random station; SCORES one row per player; SYSTEM RESET BEST row; the radar sc
 the results; the radar sits in the bottom right corner (stopgap until the designer redoes the rail); MILLENNIALS; bot
 runs from the dev hook never set the best. For the designer (docs/designer-brief-3.md): the results screen, the rail,
 HISTORY icons, the pause overlay, the radar DROP OFF and reveal states, the share card, the splash ribbon, phone shots.
+
+Correction (2026-10-16): the prize picker was mine, never asked for; one stake and one prize of 1 GC, as in GQ.

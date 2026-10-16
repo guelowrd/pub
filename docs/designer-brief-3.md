@@ -16,7 +16,7 @@ Both of your last packs are in the game: the Visual Update and the Menu Fix. Scr
 
 ## One structural change
 
-The radio is a jukebox: pick the song, pick a record to shoot at, read the scores, change a setting. It is not the post-game menu. Posting a run now happens on the results screen (18-results-post.jpg): prize on four chips, POST IT, then SHARE ON X and COPY LINK. The head unit's presets are RADIO, RECORDS, SCORES, HISTORY, WALLET, SYSTEM; AUDIO keeps its key.
+The radio is a jukebox: pick the song, pick a record to shoot at, read the scores, change a setting. It is not the post-game menu. Posting a run now happens on the results screen (18-results-post.jpg): POST IT puts 1 GC on the record, then SHARE ON X and COPY LINK. One stake, one prize, 1 GC, like GeoQuizz. The head unit's presets are RADIO, RECORDS, SCORES, HISTORY, WALLET, SYSTEM; AUDIO keeps its key.
 
 ## Decisions I am applying in code today, so you can design on top of them
 
@@ -30,7 +30,7 @@ The radio is a jukebox: pick the song, pick a record to shoot at, read the score
 
 ## What I need from you next, in order
 
-1. The results screen. It is code-drawn today (TIME IS UP, three stat rows, the still-on-board box, the post box, SAME RUN and NEW RUN). It needs a design in the same family as the head unit: the score, the stats, the post box with its prize chips and the two share actions, the two run buttons, and the same screen after a shot (the verdict line and DRIVE AGAIN, TRY AGAIN, MENU). The HUD will be hidden under it.
+1. The results screen. It is code-drawn today (TIME IS UP, three stat rows, the still-on-board box, the post box, SAME RUN and NEW RUN). It needs a design in the same family as the head unit: the score, the stats, the post box (one line, 1 GC) and the two share actions, the two run buttons, and the same screen after a shot (the verdict line and DRIVE AGAIN, TRY AGAIN, MENU). The HUD will be hidden under it.
 2. The HUD's right rail. At close range the seats and the radar covered the right sidewalk, the bay and the gantry's right plate (11-drive-gantry.jpg). I need a composition that keeps the right curb visible: the seats as a thinner strip, the radar in a corner, or both smaller. The radar should not grow. My provisional layout (radar bottom right) is a stopgap.
 3. HISTORY rows: a record icon and a shot icon in place of my R and S letters, and the state words in your colours (OPEN, IN PLAY, COLLECT, BEATEN, DEFENDED, TAKEN BACK, WON, LOST).
 4. The pause overlay (15-pause.jpg): unstyled, just PAUSED and CLOCK STOPPED over the dimmed scene.

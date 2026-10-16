@@ -5,11 +5,9 @@ export const APP_NAME = "Pick Up Boomers";
 // Gamecoin (GC): the fungible faucet GeoQuizz deployed on testnet, anyone may mint from it (gq/gamecoin.json).
 export const GC_FAUCET = import.meta.env.VITE_GC_FAUCET ?? "0x6a8e2ccb2090bcd1071cea18da2cce";
 export const GC_DECIMALS = 6;
-export const GC = 10n ** BigInt(GC_DECIMALS);
 
-// A shot stakes this; the champion picks the prize from PRIZES when posting. The contracts only know `min_stake`.
+// The stake, as in GeoQuizz: the champion puts it in the record as the prize, each rival puts the same in a shot.
 export const STAKE: bigint = BigInt(import.meta.env.VITE_GC_STAKE ?? "1000000"); // 1 GC
-export const PRIZES = [1n, 2n, 5n, 10n].map((n) => n * GC);
 // Testnet makes a block about every 3 s.
 export const BLOCK_SECONDS = 3;
 // A record stays open about a day.
