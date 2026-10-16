@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { ChallengeNote } from "../chain";
 import type { ChallengeStorage, Word4 } from "../notes";
 import { GC_FAUCET, MIN_SHOT_WINDOW_BLOCKS, SCORE_MAX } from "../config";
-import { acceptNote, blocksToClock, claimVerdict, explain, fmtGamecoin, fmtGc, isChainBehind, myOpenShotsOn, NOT_FINISHED, noteKind, outcomeText, recordLinks, settlePlan, shotRefusal, submitWithRetry, withTimeout } from "../flow";
+import { acceptNote, blocksToClock, claimVerdict, explain, fmtGamecoin, fmtGc, isChainBehind, myOpenShotsOn, NOT_FINISHED, noteKind, doneText, recordLinks, settlePlan, shotRefusal, submitWithRetry, withTimeout } from "../flow";
 
 const champion = { suffix: 1n, prefix: 2n };
 const me = { suffix: 3n, prefix: 4n };
@@ -147,10 +147,9 @@ describe("plain words for failures", () => {
 });
 
 describe("outcome wording", () => {
-  it("never says done before the chain shows the effect", () => {
-    expect(outcomeText("Posting", true)).toBe("Posting. Done!");
-    expect(outcomeText("5200 points. You win!", true)).toBe("5200 points. You win! Done!");
-    expect(outcomeText("Posting", false)).toMatch(/not done yet/);
+  it("says done in the screen's own case", () => {
+    expect(doneText("POSTING")).toBe("POSTING. DONE!");
+    expect(doneText("5,200 POINTS. YOU WIN!")).toBe("5,200 POINTS. YOU WIN! DONE!");
   });
 });
 

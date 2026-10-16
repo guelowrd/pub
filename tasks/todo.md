@@ -458,3 +458,20 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
   on the score line and collided with POINTS (now under the score, left), the terms' third line hid under POST IT
   (key down 14 px), the score line clipped POINTS (wider). Landscape results: one line of terms with the key over the
   rest (key now beside the terms, as on desktop; score 56 px so five digits + POINTS fit).
+- Code audit, two read-only agents (engine, app) + my phone pass; applied (one commit):
+  engine: sprites past the mouth sit on the bore until the frame shifts (the drop building stood mid-bore and jumped;
+  place() adds branchX); dead conditions dropped (other-bore guard, `!st.taken` on drop stops); flare.webp and
+  TUNNEL.flare gone; DISTRICT_NAME folded into sim NAME; kk array -> scalar; others() inlined; sidewalkX uses BAY;
+  districtAt reused in course/render; TUN_* / GORE / FLAT hoisted out of draw(); pattern transforms without a
+  DOMMatrix per call; branchX without a closure; fork loop iterates a copy (extend pushes); rules/chain comments;
+  App's radar tunnel test uses fork.mouth; test: a street never holds more stops than SLOTS.
+  app: settle effect guarded by a ref (chain is a new object per state change: a WON shot could settle twice);
+  localStorage behind stored()/store() (blocked storage threw inside the frame loop and the run never ended);
+  "YOU WIN! Done!" mixed case -> doneText "DONE!"; GC amounts en-US like every score; netSlow and audio.stop dead;
+  ART / PORTRAITS in art.ts, fmt in board.ts (five copies before); status no longer repeats the key (CONNECT, POSTING);
+  splash mute aria-label read the opposite state (dropped); action key aria-label falls back to the control's label;
+  css: one .hud rule, the HUD number rule folded in, "seats" class word gone; results.json riders.note unread;
+  79 art files no code path can name (menu -lit/-disabled faces the state machine never produces, share-blank-disabled,
+  share *.webp duplicates of the .png the code loads, two stage previews for combos not on the dial, arrow-left,
+  cone-cluster, sawhorse-on/off). Build clean, 66 tests, smoke run with no failed loads.
+  Reported, not changed (Gaylord's calls): see the reply of 21:50.

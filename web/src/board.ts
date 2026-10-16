@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 
 export type Layout = "desktop" | "portrait" | "landscape";
 export const px = (n: number) => `${n}px`;
+/** Every score the player reads: US thousands separators, no padding */
+export const fmt = (n: number) => n.toLocaleString("en-US");
+/** localStorage behind a guard: blocked storage (private modes, "block all cookies") must not stop the game */
+export const stored = (key: string): string | null => { try { return localStorage.getItem(key); } catch { return null; } };
+export const store = (key: string, value: string | null) => { try { value === null ? localStorage.removeItem(key) : localStorage.setItem(key, value); } catch { /* storage blocked: the best score just does not persist */ } };
 
 export function pickLayout(w: number, h: number): Layout {
   return h > w ? "portrait" : h < 460 ? "landscape" : "desktop";

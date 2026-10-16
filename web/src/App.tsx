@@ -2,11 +2,12 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { KMH, NAME, PLACE, RUN, TOP, agePoints, candidate, newSim, step, tick, type District, type Input, type Rider, type Sim } from "./game/sim";
 import { CHARACTERS, extend } from "./game/course";
 import { COLOR, draw, setBeat, setSong } from "./game/render";
-import { ICON, loadArt } from "./game/art";
+import { ART, ICON, PORTRAITS, loadArt } from "./game/art";
 import { MENU_TRACK, RESULTS_TRACK, STATIONS } from "./game/stations";
 import { audio, level, sound as soundNow, volume as volumeNow } from "./audio";
 import HeadUnit from "./HeadUnit";
 import { startAttract } from "./attract";
+import { fmt, store, stored } from "./board";
 import Loading from "./Loading";
 import Results from "./Results";
 import type { ChainApi, ChallengeNote, Posted } from "./chain/ChainHost";
@@ -21,9 +22,6 @@ type Shot = { shots: ChallengeNote[]; record: ChallengeNote };
 type Mode = "ready" | "menu" | "play" | "paused" | "over";
 const STEP = 1 / 120;
 const KEYS: Record<string, keyof Input> = { ArrowUp: "gas", w: "gas", ArrowDown: "brake", s: "brake", ArrowLeft: "left", a: "left", ArrowRight: "right", d: "right" };
-const ART = `${import.meta.env.BASE_URL}art/`;
-const PORTRAITS: Record<string, string> = { a: "portraits.webp", b: "portraits-b.webp", c: "portraits-c.webp" };
-const fmt = (n: number) => n.toLocaleString("en-US");
 const face = (r: Rider) => {
   const ch = CHARACTERS[r.id];
   return `<i class="face" style="background-image:url(${ART}${PORTRAITS[ch.atlasSet ?? "a"]});background-position:${(ch.atlasIndex % 4) * 100 / 3}% ${Math.floor(ch.atlasIndex / 4) * 100 / 3}%"></i>`;
@@ -55,7 +53,7 @@ function dithered(r: Rider): string {
   DITHERED.set(r.id, url);
   return url;
 }
-const best = () => Number(localStorage.getItem("pub.best") ?? 0);
+const best = () => Number(stored("pub.best") ?? 0);
 
 export default function App() {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -73,6 +71,7 @@ export default function App() {
   // posting the run just driven, on the results screen, then the record's share links
   const [posted, setPosted] = useState<Posted | null>(null);
   const shot = useRef<Shot | null>(null); // the run on the road is a shot at a record
+  const settling = useRef(false);
   const botRun = useRef(false); // driven from the dev hook: never a best
   const [settled, setSettled] = useState<Settled | null>(null);
   const [openRecord, setOpenRecord] = useState<ChallengeNote | null>(null);
@@ -95,15 +94,14 @@ export default function App() {
   }, [chain]);
   // music follows the screen: menus loop Omotesando, the run plays the station from its first second, results loop Wireline Cosmos
   useEffect(() => {
-    if (mode === "ready") audio.menu(MENU_TRACK); // silent until the browser allows sound: a click, or a site it trusts
-    else if (mode === "menu") audio.menu(MENU_TRACK); // the song starts with the run, the menu keeps its own track
+    if (mode === "ready" || mode === "menu") audio.menu(MENU_TRACK); // silent until the browser allows sound; the song starts with the run
     else if (mode === "play") { if (sim.current.t === 0) { setSong(STATIONS[station].id); audio.run(STATIONS[station].id); } else audio.resume(); }
     else if (mode === "paused") audio.pause();
     else if (mode === "over") audio.results(RESULTS_TRACK);
     if (mode !== "play") { audio.engine(0, false); audio.skid(false); }
   }, [mode, station]);
 
-  const start = (sd: number, song: number) => { setSettled(null); setPosted(null); botRun.current = false; sim.current = newSim(sd, song); setSeed(sd); setMode("play"); };
+  const start = (sd: number, song: number) => { settling.current = false; setSettled(null); setPosted(null); botRun.current = false; sim.current = newSim(sd, song); setSeed(sd); setMode("play"); };
   /** A free drive on the station's song. */
   const drive = (sd: number) => { shot.current = null; start(sd, station); };
   /** A shot: the record's course and song, the stake on the table. */
@@ -118,8 +116,9 @@ export default function App() {
   useEffect(() => {
     if (mode !== "over") return;
     const s = sim.current, at = shot.current;
-    if (!at || settled || !chain) return;
-    void chain.settle(at.shots, at.record, s.seed, s.song, s.log, s.dist, s.score).then((r) => r && setSettled(r));
+    if (!at || settled || !chain || settling.current) return; // chain is a new object on every chain state change: settle once
+    settling.current = true;
+    void chain.settle(at.shots, at.record, s.seed, s.song, s.log, s.dist, s.score).then((r) => { settling.current = false; if (r) setSettled(r); });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, chain]);
   const onOpened = useCallback(() => setOpenRecord(null), []);
@@ -153,7 +152,7 @@ export default function App() {
       const playing = modeRef.current === "play";
       if (playing) {
         while (acc >= STEP) { step(s, input.current, STEP, extend); acc -= STEP; }
-        if (s.over) { if (s.score > best() && !botRun.current) localStorage.setItem("pub.best", String(s.score)); setMode("over"); }
+        if (s.over) { if (s.score > best() && !botRun.current) store("pub.best", String(s.score)); setMode("over"); }
         for (; logged < s.log.length; logged++) { const e = s.log[logged]; if (e.k === "pick") audio.sfx("pick"); else if (e.k === "drop") audio.sfx("drop"); else if (e.k === "wreck") audio.sfx("crash"); }
         if (s.callout && s.callout !== lastCallout && /BUMP|SPIN/.test(s.callout.text)) audio.sfx("thud");
         lastCallout = s.callout;
@@ -185,7 +184,7 @@ export default function App() {
       // the radar's POSITION map: the blip sits on the curb's side and climbs with the distance (centre = here, top = 250 m out)
       const blip = (st: { z: number; side: number }) => `<i class="blip" style="left:${73.5 + st.side * 6.75}%;top:${44.4 - 21.8 * Math.min(1, Math.max(0, (st.z - s.z) / 250))}%"></i>`;
       // in a tunnel the radar scans: the next street's stop is not a target yet
-      const tunnel = s.forks.some((o) => s.z >= o.zDecide + 100 && s.z < o.zEnd + 100);
+      const tunnel = s.forks.some((o) => s.z >= o.mouth && s.z < o.zEnd + 100);
       const radar = node("radar").parentElement!;
       radar.className = `radar-box ${just ? "" : f || tunnel ? "search" : c?.rider && full ? "full" : c?.rider || c?.drop ? "" : "search"}`;
       html("radar", just ? `${face(just)}<div class="reveal"><b>AGE ${just.age}</b><br>+${fmt(agePoints(just.age))} ON THE METER</div>${icon(just.dest)}`
@@ -218,7 +217,7 @@ export default function App() {
         <div className="panel tr"><small>SCORE</small><b id="score" /></div>
         <div className="panel bl"><small>SPEED</small><b id="speed" /><small>KM/H</small></div>
         <div className="rail">
-          <div className="panel seats"><div id="bank" /><div className="slots"><div id="seat0" /><div id="seat1" /><div id="seat2" /></div></div>
+          <div className="panel"><div id="bank" /><div className="slots"><div id="seat0" /><div id="seat1" /><div id="seat2" /></div></div>
           <div className="radar-box"><div id="radar" /></div>
         </div>
         <div className="fork" id="fork" />
@@ -228,7 +227,7 @@ export default function App() {
         <div className="overlay splash" onClick={() => { if (loaded) { audio.unlock(); setMode("menu"); } }}>
           <canvas className="attract" ref={attract} />
           {loaded ? <div className="start-prompt" data-text="CLICK TO START"><span className="glyphs" data-text="CLICK TO START">CLICK TO START</span></div> : <Loading progress={progress} />}
-          <button className="splash-mute" aria-label={soundOn ? "Mute" : "Sound on"} onClick={(e) => { e.stopPropagation(); audio.unlock(); setSoundOn(audio.toggle()); }}>{soundOn ? "SOUND ON" : "MUTED"}</button>
+          <button className="splash-mute" onClick={(e) => { e.stopPropagation(); audio.unlock(); setSoundOn(audio.toggle()); }}>{soundOn ? "SOUND ON" : "MUTED"}</button>
         </div>
       )}
       {mode === "menu" && (

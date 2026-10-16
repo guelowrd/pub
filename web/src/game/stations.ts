@@ -20,7 +20,6 @@ export const STATIONS: Station[] = [
   { id: "night-cruise", title: "NIGHT CRUISE", mood: "LAID-BACK CRUISING", district: "waterfront", time: "night", rain: false },
   { id: "pick-up-or-crush-up", title: "PICK UP OR CRUSH UP", mood: "CHEEKY MAYHEM", district: "casino", time: "midday", rain: false },
 ];
-export const DISTRICT_NAME: Record<District, string> = { downtown: "DOWNTOWN", waterfront: "WATERFRONT", casino: "CASINO STRIP", golf: "GOLF HILLS" };
 export const MENU_TRACK = "omotesando-menu", RESULTS_TRACK = "wireline-cosmos";
 // the song owns the sky: top and bottom of the gradient behind the district's skyline
 export const SKY: Record<string, [string, string]> = {

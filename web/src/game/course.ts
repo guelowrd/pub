@@ -4,7 +4,7 @@
 import characters from "./data/characters.json";
 import venuesFile from "./data/venues.json";
 import { STATIONS } from "./stations";
-import { DISTRICTS, GREEN, KMH, LANE, LIGHTS, RED, SEG, TRAFFIC, W, WALK, branchX, rngFrom, seg, type District, type Hazard, type Node, type RadarClass, type Rider, type Sim } from "./sim";
+import { BAY, DISTRICTS, GREEN, KMH, LANE, LIGHTS, RED, SEG, TRAFFIC, W, WALK, branchX, districtAt, rngFrom, seg, type District, type Hazard, type Node, type RadarClass, type Rider, type Sim } from "./sim";
 
 export const STREET = 1200;
 export const FORK_IN = 120; // the trunk widens over this before the decision line
@@ -17,7 +17,6 @@ export const VENUE_OF: Record<District, string> = { downtown: "restaurant", wate
 
 export const POOLS: Record<string, { character_id: string; relative_weight: number }[]> = Object.fromEntries(venuesFile.venues.map((v) => [v.id, v.candidates]));
 export const CHARACTERS: Record<string, { id: string; name: string; age: number; atlasIndex: number; atlasSet?: string }> = Object.fromEntries(characters.map((c) => [c.id, c]));
-const others = (d: District) => DISTRICTS.filter((o) => o !== d);
 const pick = <T,>(rng: () => number, xs: T[]) => xs[Math.floor(rng() * xs.length)];
 
 function rider(rng: () => number, venue: string, district: District): Rider {
@@ -28,7 +27,7 @@ function rider(rng: () => number, venue: string, district: District): Rider {
   const cls: RadarClass = roll < 0.4 ? "TIGHT" : roll < 0.8 ? "FUZZY" : "WILD";
   const [lo, hi] = cls === "TIGHT" ? [ch.age - Math.floor(rng() * 4), ch.age + Math.floor(rng() * 4)]
     : cls === "FUZZY" ? [ch.age - 4 - Math.floor(rng() * 12), ch.age + 4 + Math.floor(rng() * 12)] : [18, 99];
-  return { id: ch.id, name: ch.name, age: ch.age, dest: pick(rng, others(district)), lo: Math.max(18, lo), hi: Math.min(99, hi), cls };
+  return { id: ch.id, name: ch.name, age: ch.age, dest: pick(rng, DISTRICTS.filter((o) => o !== district)), lo: Math.max(18, lo), hi: Math.min(99, hi), cls };
 }
 
 function node(rng: () => number, district: District, leg: number): Node {
@@ -110,15 +109,15 @@ function place(s: Sim, leg: number, k: number, z0: number) {
   // the branches sweep apart in an S over the first half of FORK_OUT (out, then back to straight), so each bore is
   // reached head-on and the two run parallel from the mouths; the sweep is scaled to put the mouths MOUTHS apart.
   // off[] integrates a curvature twice (the renderer's own road integration), one entry per segment from the line
-  const segs = FORK_OUT / SEG, sweep = segs / 2, kk: number[] = [], off = [W];
+  const segs = FORK_OUT / SEG, sweep = segs / 2, off = [W];
   const shape = (i: number) => (i < sweep ? Math.sin((2 * Math.PI * (i + 0.5)) / sweep) : 0);
   let reach = 0;
   for (let i = 0, bdx = 0; i < sweep; i++) { reach += bdx + shape(i) / 2; bdx += shape(i); }
   const scale = (MOUTHS / 2 - W) / reach;
   for (let i = 0, bdx = 0; i < segs * 2; i++) {
-    kk.push(shape(i) * scale);
-    off.push(off[i] + bdx + kk[i] / 2);
-    bdx += kk[i];
+    const k = shape(i) * scale;
+    off.push(off[i] + bdx + k / 2);
+    bdx += k;
   }
   s.forks.push({ z: z1, zDecide: z1 + FORK_IN, mouth: z1 + FORK_IN + FORK_OUT / 2, zEnd: z1 + FORK_IN + FORK_OUT, left: s.course[leg + 1][k].district, right: s.course[leg + 1][k + 1].district, side: 0, shifted: false, off });
 }
@@ -129,7 +128,7 @@ export function extend(s: Sim) {
   if (f && f.side !== 0 && s.streets.length === s.forks.length) place(s, last.leg + 1, last.k + (f.side < 0 ? 0 : 1), f.zEnd);
   // traffic: keep a few cars ahead, in lanes, slower than us
   const ahead = s.traffic.filter((c) => c.z > s.z).length;
-  const here = s.streets.find((st) => s.z >= st.z0 && s.z < st.z1)?.district;
+  const here = districtAt(s, s.z);
   const want = 4 + (here ? TRAFFIC[here] : 0) + Math.min(4, Math.floor(s.t / 30));
   if (ahead < want && s.rng() < 0.5) {
     const z = s.z + 760 + s.rng() * 400; // beyond the draw distance, so cars come into view instead of popping in
@@ -143,4 +142,4 @@ export function extend(s: Sim) {
   }
 }
 
-export const sidewalkX = W + 2.5 + WALK / 2; // where a waiting person stands, on the right
+export const sidewalkX = W + BAY + WALK / 2; // where a waiting person stands, on the right

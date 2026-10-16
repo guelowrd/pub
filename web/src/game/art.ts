@@ -57,7 +57,10 @@ export const FILLERS: Record<District, Sheet[]> = {
 };
 // tunnel kit: one shared two-mouth structure per fork, chosen by the street you're on; wall and ceiling materials; glow cookies
 export const FORK_STRUCT: Record<District, string> = { waterfront: "harbour-causeway", downtown: "tower-podium", casino: "highway-overpass", golf: "wooded-ridge" };
-export const TUNNEL = { wall: "tunnel-wall.webp", ceiling: "tunnel-ceiling.webp", headlight: "headlight.webp", flare: "flare.webp" };
+/** The art folder and the three portrait sheets, shared by every screen that draws a face */
+export const ART = `${import.meta.env.BASE_URL}art/`;
+export const PORTRAITS: Record<string, string> = { a: "portraits.webp", b: "portraits-b.webp", c: "portraits-c.webp" };
+export const TUNNEL = { wall: "tunnel-wall.webp", ceiling: "tunnel-ceiling.webp", headlight: "headlight.webp" };
 export const LIGHT_RED = SH("light-red.webp", 512, 1024, 1, 256, 980, 600), LIGHT_GREEN = SH("light-green.webp", 512, 1024, 1, 256, 980, 600);
 // road material tints (source-atop on the asphalt only)
 export const ROAD_TINT: Record<District, [string, number]> = { waterfront: ["#175e79", 0.12], downtown: ["#655071", 0.12], casino: ["#7d285f", 0.14], golf: ["#2c6255", 0.12] };

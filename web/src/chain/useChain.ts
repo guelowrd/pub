@@ -13,7 +13,7 @@ import { accountFelts, bech32Of, fetchChallengeNote, knownNote, listChallengeNot
 import { keyOf, lettersBackward, nicknames, playersInOrder } from "./hub";
 import { collect as collectNotes, gcBalance, postRecord, postShot, setSubmitAttemptListener, setSubmitStageListener, settle as settleNotes, waitFor, type Submitted } from "./bread";
 import { shotDeadline, shotStorage, ZERO_WORD, type AccountFelts, type ChallengeStorage } from "./notes";
-import { blockToMs, claimVerdict, explain, fmtGamecoin, myOpenShotsOn, NOT_FINISHED, outcomeText, settlePlan, SHOT_LOST, shotRefusal, withTimeout, type Trouble } from "./flow";
+import { blockToMs, claimVerdict, explain, fmtGamecoin, myOpenShotsOn, NOT_FINISHED, doneText, settlePlan, SHOT_LOST, shotRefusal, withTimeout, type Trouble } from "./flow";
 import { decodeGame, encodeGame, genuine, newGame, pubAnswer } from "./game";
 import type { Event } from "../game/sim";
 
@@ -34,7 +34,6 @@ export type ChainApi = {
   height: number;
   notes: ChallengeNote[];
   notesRead: boolean;
-  netSlow: boolean;
   balance: bigint | null;
   busy: Busy | null;
   trouble: { t: Trouble; retry?: () => void } | null;
@@ -73,7 +72,6 @@ export function useChain(): ChainApi {
   const [height, setHeight] = useState(0);
   const [notes, setNotes] = useState<ChallengeNote[]>([]);
   const [notesRead, setNotesRead] = useState(false);
-  const [netSlow, setNetSlow] = useState(false);
   const [balance, setBalance] = useState<bigint | null>(null);
   const [busy, setBusy] = useState<Busy | null>(null);
   const [trouble, setTrouble] = useState<ChainApi["trouble"]>(null);
@@ -102,10 +100,8 @@ export function useChain(): ChainApi {
           notesReadRef.current = true;
           setNotesRead(true);
         }
-        setNetSlow(false);
       } catch (e) {
         console.warn("[pub] background sync failed", e);
-        setNetSlow(true);
       }
     },
     [client, runExclusive],
@@ -241,7 +237,7 @@ export function useChain(): ChainApi {
       if (verdict === "lost") throw new Error(SHOT_LOST);
       return client ? settleNotes(client, walletRef.current, shots, claimPrize ? record : undefined, pubAnswer(seed, song, log, dist)) : Promise.reject(new Error("client not ready"));
     });
-    return submitted ? { won, claimed: true, again: false, text: outcomeText(text, true) } : null;
+    return submitted ? { won, claimed: true, again: false, text: doneText(text) } : null;
   };
 
   const collect: ChainApi["collect"] = async (picked) => {
@@ -308,7 +304,6 @@ export function useChain(): ChainApi {
     height,
     notes,
     notesRead,
-    netSlow,
     balance,
     busy,
     trouble,

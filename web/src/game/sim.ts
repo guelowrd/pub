@@ -117,8 +117,8 @@ export function stopAt(s: Sim, z: number): Stop | undefined {
 }
 /** The centre of fork branch `side` (0 = the trunk) at z, in the current frame */
 export function branchX(f: Fork, z: number, side: number): number {
-  const at = (zz: number) => f.off[Math.max(0, Math.min(f.off.length - 1, seg(zz) - seg(f.zDecide)))];
-  return side * at(z) - (f.shifted ? f.side * at(f.mouth) : 0);
+  const d0 = seg(f.zDecide), last = f.off.length - 1;
+  return side * f.off[Math.max(0, Math.min(last, seg(z) - d0))] - (f.shifted ? f.side * f.off[Math.min(last, seg(f.mouth) - d0)] : 0);
 }
 /** The road's left and right edge at z (bays aside): the trunk widening to the split, then the branch you are in */
 export function edges(s: Sim, z: number): [number, number] {
@@ -199,7 +199,7 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
 
   // fork: crossing the decision line picks the side you're on; the axis stays the trunk's and you steer into your branch.
   // At the mouth of your bore the frame shifts onto it: the bore is straight there, so the shift moves nothing on screen
-  for (const f of s.forks) {
+  for (const f of [...s.forks]) { // extend() below pushes the next fork
     if (f.side === 0 && s.z >= f.zDecide) {
       f.side = s.x < 0 ? -1 : 1;
       s.log.push({ k: "fork", side: f.side, t: tick(s) });

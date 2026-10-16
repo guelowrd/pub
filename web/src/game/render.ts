@@ -1,10 +1,13 @@
 // Pseudo-3D view: road segments projected from a low chase camera, sprites sorted by segment and drawn at their anchors.
-import { BAY, CAR_W, LANE, NAME, SEG, TOP, W, WALK, branchX, isRed, leftEdge, rightEdge, seg, stopAt, type District, type Sim } from "./sim";
+import { BAY, CAR_W, LANE, NAME, SEG, TOP, W, WALK, branchX, districtAt, isRed, leftEdge, rightEdge, seg, stopAt, type District, type Sim } from "./sim";
 import { CHARACTERS, FORK_OUT, sidewalkX } from "./course";
 import { BUILDING, DECOR, DPROP, DPROPS, DROP, FILLERS, FORK_STRUCT, GANTRY, ICON, MATERIALS, SHADOW, LIGHT_GREEN, LIGHT_RED, PANO, PANO_HORIZON, PEOPLE, PROP, ROAD_TINT, SHEETS, TRAFFIC, TREES, TUNNEL, VENUE_CELL, img, type Sheet } from "./art";
 import { CAR, DEFAULT_SKY, SKY } from "./stations";
 
 const N = 140; // segments drawn ahead
+const TUN_H = 12, TUN_TEX = 6, TUN_IN = FORK_OUT / 2, TUN_OUT = 100; // 200 m of tunnel from the fork's mouth
+const GORE = 7; // the hatched gore runs until the branches are this far apart
+const FLAT = new Set<Sheet>([SHEETS.smoke, SHEETS.burst, SHEETS.oil, SHEETS.pothole]); // sprites that cast no contact shadow
 const CAM_H = 2.2, CAM_BACK = 5;
 export const COLOR: Record<District, string> = { downtown: "#ffe564", waterfront: "#63e7ff", casino: "#ff40bd", golf: "#78ffcb" };
 const SMOKE_MS = [50, 100, 170, 260, 370, 500], SMOKE_A = [1, 1, 1, 0.85, 0.35, 0.1]; // frame ends and alphas from the metadata
@@ -129,7 +132,6 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   };
   // tunnels join the areas: from where the branches run straight to the first metres of the next street. Inside it is
   // dark; the headlights come up a beat after the mouth; the wall strips glow; the exit blooms
-  const TUN_H = 12, TUN_TEX = 6, TUN_IN = FORK_OUT / 2, TUN_OUT = 100; // 200 m of tunnel
   const tunnelAt = (z: number) => s.forks.find((o) => z >= o.zDecide + TUN_IN && z < o.zEnd + TUN_OUT);
   const inside = tunnelAt(s.z);
   if (inside && !wasIn) inT = s.t;
@@ -172,7 +174,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
       const ya = sy[n], yb = sy[n + 1], ta = ya - TUN_TEX * sc[n], tb = yb - TUN_TEX * sc[n + 1], hgt = TUN_TEX * (sc[n] + sc[n + 1]) / 2;
       const a = (xb - xa) / 640, b = (yb - ya) / 640;
       poly([[xa, ya], [xa, ta], [xb, tb], [xb, yb]]);
-      if (wall) { const pat = pattern(wall); pat.setTransform(new DOMMatrix([a, b, 0, hgt / 1024, xa - u0 * a, ya - hgt - u0 * b])); ctx.fillStyle = pat; } else ctx.fillStyle = "#2a2a3e";
+      if (wall) { const pat = pattern(wall); pat.setTransform({ a, b, c: 0, d: hgt / 1024, e: xa - u0 * a, f: ya - hgt - u0 * b }); ctx.fillStyle = pat; } else ctx.fillStyle = "#2a2a3e";
       ctx.fill();
       ctx.fillStyle = "#141028"; poly([[xa, ta], [xa, top1], [xb, top2], [xb, tb]]); ctx.fill();
       if (light < 1) { ctx.fillStyle = shade; poly([[xa, ya], [xa, top1], [xb, top2], [xb, yb]]); ctx.fill(); }
@@ -185,7 +187,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     poly([[xl, top1], [xr, top1], [X(n + 1, r2), top2], [X(n + 1, l2), top2]]);
     if (ceiling) {
       const su = (top2 - top1) / 640, sv = (xr - xl) / ((r1 - l1) / 8 * 1024);
-      const pat = pattern(ceiling); pat.setTransform(new DOMMatrix([0, su, sv, 0, xl, top1 - u0 * su])); ctx.fillStyle = pat;
+      const pat = pattern(ceiling); pat.setTransform({ a: 0, b: su, c: sv, d: 0, e: xl, f: top1 - u0 * su }); ctx.fillStyle = pat;
     } else ctx.fillStyle = "#1c1838";
     ctx.fill();
     if (light < 1) { ctx.fillStyle = shade; ctx.fill(); }
@@ -198,7 +200,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     if (fade <= 0 || !im || zAt[n + 1] <= zAt[n]) return;
     const z1 = zAt[n], rate = (sy[n] - sy[n + 1]) / (zAt[n + 1] - z1), k = sc[n] * metres / 512;
     const pat = pattern(im);
-    pat.setTransform(new DOMMatrix([k, 0, 0, -rate * metres / 512, X(n, 0), sy[n] + z1 * rate]));
+    pat.setTransform({ a: k, b: 0, c: 0, d: -rate * metres / 512, e: X(n, 0), f: sy[n] + z1 * rate });
     ctx.save(); ctx.globalAlpha = alpha * fade; ctx.fillStyle = pat;
     ctx.beginPath(); ctx.moveTo(X(n, l1), sy[n]); ctx.lineTo(X(n, r1), sy[n]); ctx.lineTo(X(n + 1, r2), sy[n + 1]); ctx.lineTo(X(n + 1, l2), sy[n + 1]); ctx.fill();
     ctx.restore();
@@ -206,7 +208,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   // a road slice centred at c (relative to the main road), with its sidewalks, curbs and lane dashes
   const road = (n: number, c1: number, c2: number, hw1: number, hw2: number, re1: number, re2: number, alt: boolean, inner: -1 | 0 | 1 = 0) => {
     const z1 = (i0 + n) * SEG, lt = lightAt(z1), shade = (c: string) => (lt < 1 ? mix(c, "#050410", 1 - lt) : c);
-    const mat = MATERIALS[s.streets.find((o) => z1 >= o.z0 && z1 < o.z1)?.district ?? district];
+    const mat = MATERIALS[districtAt(s, z1) ?? district];
     quad(n, c1 - hw1 - WALK, c1 + re1 + WALK, c2 - hw2 - WALK, c2 + re2 + WALK, shade(alt ? "#5e5280" : "#665a8a"));
     if (lt === 1) { material(n, c1 - hw1 - WALK, c1 - hw1, c2 - hw2 - WALK, c2 - hw2, mat.verge, 2.5, 0.3); material(n, c1 + re1, c1 + re1 + WALK, c2 + re2, c2 + re2 + WALK, mat.verge, 2.5, 0.3); }
     quad(n, c1 - hw1, c1 + re1, c2 - hw2, c2 + re2, shade(alt ? asphalt[0] : asphalt[1]));
@@ -224,7 +226,6 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   };
   // the gore at the split: the pavement stays continuous between the two inner edges and carries hatching until the
   // branches are GORE apart; past that the ground between them shows
-  const GORE = 7;
   const gore = (n: number, el1: number, er1: number, el2: number, er2: number, alt: boolean) => {
     if (er1 - el1 >= GORE) return;
     const lt = lightAt((i0 + n) * SEG), shade = (c: string) => (lt < 1 ? mix(c, "#050410", 1 - lt) : c);
@@ -244,6 +245,8 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   };
   const place = (z: number, x: number) => {
     const n = seg(z) - i0, t = z / SEG - seg(z), k = focal / Math.max(0.3, z - camZ);
+    const f = s.forks.find((o) => o.side !== 0 && !o.shifted && z >= o.mouth && z < o.zEnd + FORK_OUT);
+    if (f) x += branchX(f, z, f.side); // past the mouth the road is our bore, off the trunk axis until the frame shifts onto it
     const y = yAt(seg(z)) * (1 - t) + yAt(seg(z) + 1) * t;
     return { px: cx + (xo[n] + (xo[n + 1] - xo[n]) * t + x - s.x) * k, py: hy + (camY - y) * k, k };
   };
@@ -270,7 +273,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     } else ctx2.drawImage(im, sx, sy0, sh.cw, sh.ch, -sh.ax * f, -sh.ay * f, dw, dh);
     ctx2.restore();
   };
-  const shadow = img(SHADOW), FLAT = new Set<Sheet>([SHEETS.smoke, SHEETS.burst, SHEETS.oil, SHEETS.pothole]);
+  const shadow = img(SHADOW);
   const spr = (z: number, x: number, sh: Sheet, i: number, ppm = sh.ppm, flip = false, alpha = 1, lift = 0, light = 1, floor = 0) => at(z, () => {
     const { px, py, k } = place(z, x);
     const lt = Math.max(floor, light * lightAt(z));
@@ -345,7 +348,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
       spr(zc, W + BAY + WALK - 0.8 + (SHEETS.buildings.ax - edge) / ppm, SHEETS.buildings, b, ppm);
       DPROPS[st.drop!].forEach((p, i) => spr(st.z + [-14, 44, 88][i], W + BAY + WALK + 2.5, SHEETS.dprops, DPROP[p][0], DPROP[p][1]));
     }
-    if (st.drop && !st.taken) {
+    if (st.drop) {
       spr(st.z + 6, W + BAY / 2 + 0.2, DROP[st.drop], 0);
       at(zc, () => {
         const { px, py, k } = place(zc, W + BAY + 1.2);
@@ -436,7 +439,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
       for (const side of [-1, 1] as const) {
         const c1 = at(side, z1), c2 = at(side, z2);
         road(n, c1, c2, W, W, W, W, alt, (-side) as -1 | 1);
-        if (tun && (f.side === 0 || side === f.side || s.z < f.mouth)) tunnel(n, c1, c2, W, side < 0 ? f.left : f.right); // the other bore only matters until we are in ours
+        if (tun) tunnel(n, c1, c2, W, side < 0 ? f.left : f.right);
       }
       gore(n, at(-1, z1) + W, at(1, z1) - W, at(-1, z2) + W, at(1, z2) - W, alt);
     } else if (f) {

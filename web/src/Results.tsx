@@ -2,8 +2,9 @@
 // on board; the post well (POST IT, then SHARE ON X / COPY LINK / SAVE CARD) or the shot's verdict; SAME RUN / NEW RUN.
 // Geometry from game/data/results.json (the kit's metadata, trimmed), one frame per layout.
 import { useState } from "react";
-import { baselineEm, px, useFit } from "./board";
+import { baselineEm, fmt, px, stored, useFit } from "./board";
 import geometry from "./game/data/results.json";
+import { ART, PORTRAITS } from "./game/art";
 import { CHARACTERS } from "./game/course";
 import { RATE, agePoints, type Rider, type Sim } from "./game/sim";
 import { STATIONS } from "./game/stations";
@@ -13,11 +14,8 @@ import { saveCard } from "./share";
 import type { ChainApi, Posted } from "./chain/ChainHost";
 import type { Settled } from "./chain/useChain";
 
-const ART = `${import.meta.env.BASE_URL}art/`;
-const PORTRAITS: Record<string, string> = { a: "portraits.webp", b: "portraits-b.webp", c: "portraits-c.webp" };
 const CYAN = "#94e6dc", YELLOW = "#ffe16f", MINT = "#91efbc", PINK = "#fa79a6", MUTED = "#91a8aa", LIGHT = "#e6eae1";
 const TERMS = "RIVALS GOTTA PAY TO CHALLENGE YOUR SCORE.\nIF THEY BEAT IT, THEY TAKE YOUR GAMECOIN.\nBUT IF THEY DON'T, THEIR GAMECOIN IS YOURS!";
-const fmt = (n: number) => n.toLocaleString("en-US");
 type Geometry = (typeof geometry)["desktop"];
 type Kind = "post" | "share" | "footer";
 type KeyDef = { kind: Kind; rect: number[]; label: string; disabled?: boolean; onClick?: () => void };
@@ -53,7 +51,7 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
     const ch = CHARACTERS[r.id];
     return <i key={key} className="face" style={{ position: "absolute", left: px(x), top: px(y), width: px(G.riders.face), height: px(G.riders.face), border: 0, backgroundImage: `url(${ART}${PORTRAITS[ch.atlasSet ?? "a"]})`, backgroundPosition: `${(ch.atlasIndex % 4) * 100 / 3}% ${Math.floor(ch.atlasIndex / 4) * 100 / 3}%` }} />;
   };
-  const best = Math.max(Number(localStorage.getItem("pub.best") ?? 0), s.score);
+  const best = Math.max(Number(stored("pub.best") ?? 0), s.score);
   // every passenger picked up, in order; the ones still aboard at time-up, or gone in a wreck, are a note (and pink)
   const picked = s.stops.filter((o) => o.taken && o.rider).map((o) => o.rider!);
   const R = G.riders, shown = picked.slice(0, R.cols * R.rows);
@@ -80,9 +78,9 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
       keys = [["SHARE ON X", () => window.open(links.x, "_blank", "noopener")], ["COPY LINK", () => void navigator.clipboard?.writeText(links.url).then(() => setNote("LINK COPIED"), () => setNote("COPY FAILED"))], ["SAVE CARD", () => void saveCard(posted.score, STATIONS[posted.song].title, riders).catch(() => setNote("COULD NOT SAVE"))]]
         .map(([label, onClick], i) => ({ kind: "share" as const, rect: [a[0] + i * (w + gap), a[1], w, a[3]], label: label as string, onClick: onClick as () => void }));
     } else if (trouble) { status = trouble.t.title.toUpperCase(); keys = [postKey("TRY AGAIN", false, () => { const r = trouble.retry; chain?.dismiss(); r ? r() : post(); })]; }
-    else if (busy) { status = busy.stage === "connect" ? "CONNECTING" : busy.stage === "wallet" ? "CHECK WALLET" : busy.stage === "prepare" ? "GETTING READY" : "POSTING"; keys = [postKey(busy.stage === "network" ? "POSTING" : "POST IT", true)]; }
+    else if (busy) { status = busy.stage === "connect" ? "CONNECTING" : busy.stage === "wallet" ? "CHECK WALLET" : busy.stage === "prepare" ? "GETTING READY" : "POSTING"; keys = [postKey(busy.stage === "network" ? "POSTING" : "POST IT", true)]; if (status === "POSTING") status = null; } // the key says it
     else if (!chain?.ready) { status = "LOADING THE CHAIN"; keys = [postKey("POST IT", true)]; }
-    else if (!chain.me) { status = "CONNECT WALLET"; keys = [postKey("CONNECT", false, () => void chain.connect())]; }
+    else if (!chain.me) { status = null; keys = [postKey("CONNECT", false, () => void chain.connect())]; } // the key says it
     else if (chain.balance != null && chain.balance < STAKE) { status = "NEED GC"; keys = [postKey("GET GC", false, () => void chain.gamecoins().then((m) => m && setNote(m)))]; }
     else { status = note ?? TERMS; keys = [postKey("POST IT")]; }
   }

@@ -6,7 +6,7 @@ import { GROUP, RATE, RUN, TOP, agePoints, type Event, type Node, type Rider } f
 import { FORK_IN, FORK_OUT, STREET } from "./course";
 
 const LEG_LEN = STREET + FORK_IN + FORK_OUT, DROP_Z = 130, STOP_MID = 15, PICK_TICKS = 120, DROP_TICKS = 100, REVERSE_M = 60;
-const CM_PER_TICK = Math.floor(TOP * 100 / 100); // 83: top speed in cm per 10 ms tick
+const CM_PER_TICK = Math.floor(TOP); // 83: top speed in m/s is also cm per 10 ms tick
 
 export function replay(course: Node[][], log: Event[], dist: number): { banked: number; score: number } {
   const fail = (m: string): never => { throw new Error(m); };

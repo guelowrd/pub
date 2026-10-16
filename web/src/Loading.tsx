@@ -1,6 +1,7 @@
 // The loading bar (ship kit's 14-segment bed) where CLICK TO START will be, over the splash scene itself, so a fast load
 // is one screen settling and not two screens flashing.
-const ART = `${import.meta.env.BASE_URL}art/loading/`;
+import { ART as ROOT } from "./game/art";
+const ART = `${ROOT}loading/`;
 // the desktop bed: 500 x 34, the fill clipped inside [6, 6, 488, 22]
 const [BW, BH] = [500, 34], [CX, CY, CW, CH] = [6, 6, 488, 22];
 

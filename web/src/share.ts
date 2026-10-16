@@ -1,10 +1,10 @@
 // The share card (ship kit template, 1200 x 630): background, chrome title, the score and the station, up to three riders,
 // the frame. Saved as a PNG from the results screen.
+import { fmt } from "./board";
+import { ART, PORTRAITS } from "./game/art";
 import { CHARACTERS } from "./game/course";
 import type { Rider } from "./game/sim";
 
-const ART = `${import.meta.env.BASE_URL}art/`;
-const PORTRAITS: Record<string, string> = { a: "portraits.webp", b: "portraits-b.webp", c: "portraits-c.webp" };
 const SLOTS = [[666, 285, 146, 196], [829, 285, 146, 196], [992, 285, 146, 196]];
 const load = (src: string) => new Promise<HTMLImageElement>((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = no; im.src = src; });
 
@@ -27,7 +27,7 @@ export async function renderCard(score: number, station: string, riders: Rider[]
     return g.measureText(text).width <= width ? text : `${text}…`;
   };
   g.textBaseline = "alphabetic"; g.fillStyle = "#ffe16f";
-  g.fillText(fit(score.toLocaleString("en-US"), (s) => `${s}px "Share Tech Mono"`, 148, 72, 578), 48, 349);
+  g.fillText(fit(fmt(score), (s) => `${s}px "Share Tech Mono"`, 148, 72, 578), 48, 349);
   g.fillStyle = "#fff3f4";
   g.fillText(fit(station, (s) => `600 ${s}px "Chakra Petch"`, 42, 28, 550), 48, 456);
   const atlases = await Promise.all(riders.slice(0, 3).map((r) => load(`${ART}${PORTRAITS[CHARACTERS[r.id].atlasSet ?? "a"]}`)));

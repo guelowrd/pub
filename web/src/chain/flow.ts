@@ -142,10 +142,8 @@ export function withTimeout<T>(p: Promise<T>, ms: number, what: string): Promise
 }
 
 /** The outcome line after Bread accepted a request: only a chain-confirmed effect is "confirmed". */
-export function outcomeText(action: string, seenOnChain: boolean): string {
-  const sentence = /[.!?]$/.test(action) ? action : `${action}.`;
-  return seenOnChain ? `${sentence} Done!` : `${action}… not done yet. Check your wallet.`;
-}
+/** The outcome line once the chain shows the effect: "YOU WIN! DONE!" */
+export const doneText = (action: string) => `${/[.!?]$/.test(action) ? action : `${action}.`} DONE!`;
 
 /** Bread had not synced up to the block the request binds yet. */
 export const isChainBehind = (e: unknown) => /ChainBehindBoundBlock|has not reached that block/i.test(e instanceof Error ? e.message : String(e));
@@ -167,11 +165,11 @@ export const toGc = (v: bigint) => Number(v) / 10 ** GC_DECIMALS;
 /** An amount of Gamecoin in words: "1 Gamecoin", "10 Gamecoins". */
 export function fmtGamecoin(v: bigint): string {
   const n = toGc(v);
-  return `${n.toLocaleString(undefined, { maximumFractionDigits: GC_DECIMALS })} ${n === 1 ? "Gamecoin" : "Gamecoins"}`;
+  return `${n.toLocaleString("en-US", { maximumFractionDigits: GC_DECIMALS })} ${n === 1 ? "Gamecoin" : "Gamecoins"}`;
 }
 
 /** "1 GC", "2.5 GC": what fits a head-unit row. */
-export const fmtGc = (v: bigint) => `${toGc(v).toLocaleString(undefined, { maximumFractionDigits: GC_DECIMALS })} GC`;
+export const fmtGc = (v: bigint) => `${toGc(v).toLocaleString("en-US", { maximumFractionDigits: GC_DECIMALS })} GC`;
 
 /** A moment in UTC, for readers anywhere: 13 Oct 14:05 UTC. */
 function utcLabel(ms: number): string {

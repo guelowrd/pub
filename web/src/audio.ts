@@ -1,4 +1,4 @@
-// Music on one audio element (menus loop Boomers, the run plays the chosen station, results loop Wireline Cosmos);
+// Music on one audio element (menus loop Omotesando, the run plays the chosen station, results loop Wireline Cosmos);
 // engine, skid and event sounds synthesised in WebAudio, so no sound files beyond the songs.
 const MUSIC = `${import.meta.env.BASE_URL}music/`;
 const music = new Audio();
@@ -14,7 +14,7 @@ function ac() {
   if (ctx) return ctx;
   ctx = new AudioContext();
   master = ctx.createGain(); master.gain.value = sound ? 1 : 0; master.connect(ctx.destination); // a mute set before the first gesture holds for the effects too
-  // the music runs through the context so the radio's VU can read each channel
+  // the music runs through the context so its level can drive the beat-reactive glow
   const src = ctx.createMediaElementSource(music), split = ctx.createChannelSplitter(2);
   musicGain = ctx.createGain(); musicGain.gain.value = volume;
   src.connect(musicGain).connect(master); musicGain.connect(split);
@@ -43,13 +43,12 @@ export const audio = {
   menu: (track: string) => play(track, true),
   run: (track: string) => play(track, false),
   results: (track: string) => play(track, true),
-  stop: () => { music.pause(); current = ""; },
   pause: () => { music.pause(); if (ctx) ctx.suspend(); },
   resume: () => { if (current) music.play().catch(() => {}); if (ctx) ctx.resume(); },
   fade: (v: number) => { music.volume = Math.max(0, Math.min(1, v)); },
   toggle: () => { sound = !sound; music.muted = !sound; if (ctx) master.gain.value = sound ? 1 : 0; return sound; },
   volume: (v: number) => { volume = v; if (ctx) musicGain.gain.value = v; },
-  // left and right music levels, 0..1, for the radio's VU
+  // left and right music levels, 0..1 (render.ts setBeat reads the left one)
   levels: (): number[] => analysers.map((a) => {
     a.getByteTimeDomainData(samples);
     let sum = 0; for (const x of samples) sum += (x - 128) ** 2;

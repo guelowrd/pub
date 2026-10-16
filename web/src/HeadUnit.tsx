@@ -5,9 +5,11 @@
 // action key is DRIVE in RADIO and SHOT / COLLECT / CONNECT elsewhere. Geometry from game/data/menu.json (the pack's
 // component-contracts.json, trimmed, plus the TV's list and caption geometry), one fascia per layout.
 import { useEffect, useRef, useState } from "react";
-import { baselineEm, px, useFit } from "./board";
+import { baselineEm, fmt, px, store, stored, useFit } from "./board";
 import geometry from "./game/data/menu.json";
-import { DISTRICT_NAME, STATIONS, type Station } from "./game/stations";
+import { ART } from "./game/art";
+import { STATIONS, type Station } from "./game/stations";
+import { NAME } from "./game/sim";
 import type { ChainApi, ChallengeNote } from "./chain/ChainHost";
 import { blocksToClock as clock, fmtGc as gc, sameAccount as same, sameWord } from "./chain/flow";
 import { boards, history, owed as owedNotes } from "./chain/hub";
@@ -15,7 +17,6 @@ import { noteDeadline } from "./chain/notes";
 
 export type Mode = "RADIO" | "RECORDS" | "SCORES" | "HISTORY" | "WALLET" | "SYSTEM" | "AUDIO";
 const PRIMARY: Mode[] = ["RADIO", "RECORDS", "SCORES", "HISTORY", "WALLET", "SYSTEM"];
-const ART = `${import.meta.env.BASE_URL}art/`;
 // the pack's palette
 const DISPLAY = "#94e6dc", DIM = "#61928f", ACCENT = "#ff6a57", CREAM = "#fff3f4", YELLOW = "#ffe564", MINT = "#78ffcb", PINK = "#ff40bd", EXPIRED = "#8a9baa";
 const TAG = "#aff7e8", COUNT = "#effae5", TITLE = "#fff2d9", PLACE = "#b2e8e2", LIGHT = "#eec7e8", WEATHER = "#f1d896", LCD = "#98e7dc", LCD_DIM = "#71b7b2", TICK = "#58938f";
@@ -29,7 +30,7 @@ type Row = { key: string; cells: Cell[] };
 
 const courseLabel = (seed: number) => `C${seed.toString(36).toUpperCase()}`;
 const songOf = (i: number) => STATIONS[i]?.title ?? `SONG ${i}`;
-// the TV's painting of a stage: the district at its hour, rain or not (PUB-Stage-Previews-Checked 2)
+// the TV's painting of a stage: the district at its hour, rain or not
 const previewOf = (st: Station) => `${ART}stage/${st.district}-${st.time}${st.rain ? "-rain" : ""}.png`;
 // history (results kit): the kind's icon, the state word in its colour
 const ICON = `${ART}icons/`;
@@ -88,7 +89,6 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const rival = (n: ChallengeNote) => (n.storage.rival && chain?.nameOf(n.storage.rival)) ?? "???";
   const game = (n: ChallengeNote) => ({ seed: Number(n.storage.game[0] ?? 0n), song: Number(n.storage.game[4] ?? 0n) });
   const lv = (label: string, value: string, c = YELLOW): Row => ({ key: label, cells: [{ t: label, col: "name" }, { t: value, col: "value", c }] });
-  const score5 = (n: number) => n.toLocaleString("en-US");
 
   // what the current mode lists, and what the action key does
   let rows: Row[] = [], status: string | null = null, action: string | null = null, onAction: (() => void) | null = null, onSelect: ((i: number) => void) | null = null, onArrow: ((d: number) => void) | null = null;
@@ -100,13 +100,13 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   } else if (mode === "RECORDS") {
     if (review) {
       const g = game(review), mine = same(me, review.storage.champion), over = review.consumed || height >= review.storage.expiryBlock - 140;
-      rows = [lv("CHAMPION", champion(review), CREAM), lv("SCORE", score5(review.storage.target)), lv("PRIZE", gc(review.amount)), lv("STAKE", gc(review.storage.minStake)), lv("COURSE", courseLabel(g.seed), CREAM), lv("STAGE", songOf(g.song), CREAM), lv("TIME LEFT", clock(review.storage.expiryBlock - height), DISPLAY)];
+      rows = [lv("CHAMPION", champion(review), CREAM), lv("SCORE", fmt(review.storage.target)), lv("PRIZE", gc(review.amount)), lv("STAKE", gc(review.storage.minStake)), lv("COURSE", courseLabel(g.seed), CREAM), lv("STAGE", songOf(g.song), CREAM), lv("TIME LEFT", clock(review.storage.expiryBlock - height), DISPLAY)];
       if (over) status = "THIS ONE IS OVER.";
       else if (mine) status = "THIS ONE IS YOURS.";
       else { action = "SHOT"; onAction = () => void chain?.shoot(review).then((r) => r && onShot(r.shots, r.record)); }
     } else {
       status = notReady ?? (open.length ? null : "NO OPEN RECORDS. DRIVE, THEN POST YOURS.");
-      rows = open.map((n, i) => ({ key: n.id, cells: [{ t: String(i + 1), col: "num", c: DIM }, { t: champion(n), col: "name" }, { t: score5(n.storage.target), col: "score", c: YELLOW }, { t: songOf(game(n).song), col: "state", c: DISPLAY }, { t: "", col: "state", icon: "record" }] }));
+      rows = open.map((n, i) => ({ key: n.id, cells: [{ t: String(i + 1), col: "num", c: DIM }, { t: champion(n), col: "name" }, { t: fmt(n.storage.target), col: "score", c: YELLOW }, { t: songOf(game(n).song), col: "state", c: DISPLAY }, { t: "", col: "state", icon: "record" }] }));
       const sel = open[cur];
       if (sel) { action = "SHOT"; onAction = () => setReview(sel); onSelect = (i) => setReview(open[i]); }
     }
@@ -124,7 +124,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
         ...past,
       ];
       status = items.length ? null : "NO GAMES YET. DRIVE, THEN POST YOUR SCORE.";
-      rows = items.map((it) => ({ key: it.key, cells: [{ t: it.title, col: "name" }, { t: score5(it.score), col: "score", c: YELLOW }, { t: it.state, col: "state", c: stateColor(it.state) }, { t: "", col: "state", icon: it.kind }] }));
+      rows = items.map((it) => ({ key: it.key, cells: [{ t: it.title, col: "name" }, { t: fmt(it.score), col: "score", c: YELLOW }, { t: it.state, col: "state", c: stateColor(it.state) }, { t: "", col: "state", icon: it.kind }] }));
       const sel = items[cur];
       if (owed.length) { action = "COLLECT"; onAction = () => void chain?.collect(owed); }
       else if (sel?.shots) { action = "SHOT"; onAction = () => onShot(sel.shots!, sel.record!); }
@@ -134,7 +134,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     // one row per player: the board lists records, the first one met per champion is their best
     const seen = new Set<string>(), top = best.top.filter((r) => !seen.has(`${r.who.prefix}:${r.who.suffix}`) && seen.add(`${r.who.prefix}:${r.who.suffix}`));
     const list = best.mine && !seen.has(`${best.mine.who.prefix}:${best.mine.who.suffix}`) ? [...top, best.mine] : top;
-    rows = list.map((r, i) => { const mine = same(me, r.who); return { key: r.key, cells: [{ t: String(i + 1), col: "num", c: DIM }, { t: chain?.nameOf(r.who) ?? "???", col: "name", c: mine ? YELLOW : CREAM }, { t: score5(r.value), col: "score", c: YELLOW }] }; });
+    rows = list.map((r, i) => { const mine = same(me, r.who); return { key: r.key, cells: [{ t: String(i + 1), col: "num", c: DIM }, { t: chain?.nameOf(r.who) ?? "???", col: "name", c: mine ? YELLOW : CREAM }, { t: fmt(r.value), col: "score", c: YELLOW }] }; });
   } else if (mode === "WALLET") {
     const name = me ? chain!.nameOf(me) : chain?.connecting ? chain.walletStatus || "CONNECTING" : "NOT CONNECTED";
     rows = [lv("WALLET", name, me ? MINT : chain?.connecting ? DISPLAY : PINK), lv("BALANCE", chain?.balance != null ? gc(chain.balance) : me ? "SELECT TO READ" : "--", chain?.balance != null ? YELLOW : DISPLAY), lv("NETWORK", "TESTNET", CREAM), lv("STATUS", busy ? busy.text : trouble ? "ERROR" : "IDLE", busy ? DISPLAY : trouble ? PINK : CREAM)];
@@ -147,8 +147,8 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     onArrow = (d) => { if (cur === 0) setVolume(Math.max(0, Math.min(1, volume + d * 0.1))); };
     onSelect = (i) => { if (i === 1) toggleMute(); };
   } else {
-    rows = [lv("VERSION", __PUB_VERSION__, CREAM), lv("NETWORK", "MIDEN TESTNET", CREAM), lv("WALLET", chain?.local ? "TEST (?LOCAL=)" : "BREAD", CREAM), lv("LAYOUT", layout.toUpperCase(), CREAM), lv("KEYS", "1-6 ARROWS ENTER ESC", CREAM), lv("RESET BEST", `${Number(localStorage.getItem("pub.best") ?? 0)}  SELECT`, DISPLAY)];
-    onSelect = (i) => { if (i === 5) { localStorage.removeItem("pub.best"); setNote("BEST SCORE CLEARED"); } };
+    rows = [lv("VERSION", __PUB_VERSION__, CREAM), lv("NETWORK", "MIDEN TESTNET", CREAM), lv("WALLET", chain?.local ? "TEST (?LOCAL=)" : "BREAD", CREAM), lv("LAYOUT", layout.toUpperCase(), CREAM), lv("KEYS", "1-6 ARROWS ENTER ESC", CREAM), lv("RESET BEST", `${Number(stored("pub.best") ?? 0)}  SELECT`, DISPLAY)];
+    onSelect = (i) => { if (i === 5) { store("pub.best", null); setNote("BEST SCORE CLEARED"); } };
   }
   if (busy) { action = null; onAction = null; onSelect = null; }
   if (trouble?.retry) { action = "TRY AGAIN"; onAction = () => { const r = trouble.retry!; chain?.dismiss(); r(); }; }
@@ -212,12 +212,12 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const [sx, sy, sw, sh] = TV.screen, L = TV.list, [cx, , cw] = L.clip;
   const needleX = G.needle.range[0] + station * (G.needle.range[1] - G.needle.range[0]) / 12;
   const [lx, , lw] = G.lcd;
-  const conditions: [string, string, string][] = [["location", DISTRICT_NAME[stage.district], PLACE], [stage.time, stage.time.toUpperCase(), LIGHT], [stage.rain ? "rain" : "clear", stage.rain ? "RAIN" : "CLEAR", WEATHER]];
+  const conditions: [string, string, string][] = [["location", NAME[stage.district], PLACE], [stage.time, stage.time.toUpperCase(), LIGHT], [stage.rain ? "rain" : "clear", stage.rain ? "RAIN" : "CLEAR", WEATHER]];
   const labelTop = G.label.centre[1] + G.label.size * 0.35 - baselineEm("Chakra Petch") * G.label.size + (pressed === "action" ? 2 : 0);
 
   return (
     <div className="hu-screen" style={{ left: px(left), top: px(top), width: px(G.canvas[0]), height: px(G.canvas[1]), transform: `scale(${scale})` }}>
-      {/* the TV: the painting in the tube, the bezel and glass over it, the captions on top of the glass */}
+      {/* the TV: the painting in the tube, the bezel, the captions, the glass over everything */}
       <div className="tv" style={{ left: px(TV.origin[0]), top: px(TV.origin[1]), width: px(TV.size[0]), height: px(TV.size[1]) }} onWheel={(e) => { wheel.current += e.deltaY; if (Math.abs(wheel.current) >= 80) { move(Math.sign(wheel.current)); wheel.current = 0; } }}>
         <div className="tv-screen" style={{ left: px(sx), top: px(sy), width: px(sw), height: px(sh), borderRadius: px(TV.radius) }}>
           {mode === "RADIO" && !tuning && <img className="tv-pic" src={preview} alt="" />}
@@ -225,7 +225,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
         </div>
         {mode !== "RADIO" && <img src={`${ART}tv/${layout}/display.png`} alt="" style={{ left: 0, top: 0, width: px(TV.size[0]), height: px(TV.size[1]) }} />}
         <img src={`${ART}tv/${layout}/bezel.png`} alt="" style={{ left: 0, top: 0, width: px(TV.size[0]), height: px(TV.size[1]) }} />
-        {/* the lists name themselves (the stage picture needs no tag); the count at the right is the station on the dial or the row */}
+        {/* the lists name themselves; the count at the right is the station on the dial or the row */}
         {mode !== "RADIO" && text(mode, L.title[0], L.title[1], L.title[2], TAG, false, false, "title")}
         {mode !== "RADIO" && <i className="tv-rule" style={{ left: px(cx), top: px(L.title[1] + L.title[2] * 0.4), width: px(cw) }} />}
         {(mode === "RADIO" || total > 0) && text(mode === "RADIO" ? `${String(station + 1).padStart(2, "0")} / ${STATIONS.length}` : `${at + 1} / ${total}`, L.page[0], L.page[1], L.page[2], COUNT, true, true, "count", undefined, TV.size[0])}
@@ -261,7 +261,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
             {statusLines.map((l, i) => <p key={i} style={i ? { color: DIM, fontSize: px(TV.title.size * 0.42) } : {}}>{l}</p>)}
           </div>
         )}
-        {/* the glass last: scanlines and phosphor over the picture and the text alike (the text was over the glass before) */}
+        {/* the glass last: scanlines and phosphor over the picture and the text alike */}
         <img src={`${ART}tv/${layout}/glass.png`} alt="" style={{ left: 0, top: 0, width: px(TV.size[0]), height: px(TV.size[1]) }} />
       </div>
       {/* the radio */}
@@ -279,7 +279,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
           <span key={c.id}>
             <img src={`${ART}menu/${layout}/${c.id}-${state(c)}.png`} alt="" style={{ left: px(r[0]), top: px(r[1]), width: px(r[2]), height: px(r[3]) }} />
             {c.id === "vol" ? c.hits!.map((h, k) => <button key={k} className="hit" aria-label={k ? "Volume up" : "Volume down"} style={{ left: px(h[0]), top: px(h[1]), width: px(h[2]), height: px(h[3]) }} onClick={() => press(c.id, () => act(c, k as 0 | 1))} />)
-              : <button className="hit" aria-label={c.id === "action" ? action ?? "" : c.label} disabled={disabled(c)} style={{ left: px(r[0]), top: px(r[1]), width: px(r[2]), height: px(r[3]) }} onClick={() => press(c.id, () => act(c))} onMouseEnter={c.id === "action" ? () => setHover(true) : undefined} onMouseLeave={c.id === "action" ? () => setHover(false) : undefined} />}
+              : <button className="hit" aria-label={(c.id === "action" && action) || c.label} disabled={disabled(c)} style={{ left: px(r[0]), top: px(r[1]), width: px(r[2]), height: px(r[3]) }} onClick={() => press(c.id, () => act(c))} onMouseEnter={c.id === "action" ? () => setHover(true) : undefined} onMouseLeave={c.id === "action" ? () => setHover(false) : undefined} />}
           </span>
           );
         })}

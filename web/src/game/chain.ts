@@ -5,7 +5,7 @@ import { DISTRICTS, agePoints, type Event, type Node } from "./sim";
 export const NODE_FELTS = 8, SLOTS = NODE_FELTS - 1;
 const district = (d: Node["district"]) => DISTRICTS.indexOf(d);
 
-/// One felt per street header (district * 16 + stop count), then up to 7 stops as dest << 24 | points << 12 | z / 5.
+// One felt per street header (district * 16 + stop count), then up to 7 stops as dest << 24 | points << 12 | z / 5.
 export function packCourse(course: Node[][]): number[] {
   const out: number[] = [];
   for (const row of course) for (const n of row) {
@@ -19,7 +19,7 @@ export function packCourse(course: Node[][]): number[] {
   return out;
 }
 
-/// kind << 24 | arg << 16 | t: fork (side 0 left, 1 right), pick (stop index), drop, wreck.
+// kind << 24 | arg << 16 | t: fork (side 0 left, 1 right), pick (stop index), drop, wreck.
 export const packEvent = (e: Event): number =>
   (e.k === "fork" ? 0 * 2 ** 24 + (e.side < 0 ? 0 : 1) * 2 ** 16 : e.k === "pick" ? 1 * 2 ** 24 + e.stop * 2 ** 16 : e.k === "drop" ? 2 * 2 ** 24 : 3 * 2 ** 24) + e.t;
 

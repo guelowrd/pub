@@ -3,17 +3,15 @@
 @font-face { font-family: "Share Tech Mono"; src: url("/fonts/ShareTechMono-Regular.woff") format("woff"); font-weight: 400; font-display: swap; }
 * { box-sizing: border-box; margin: 0; }
 html, body, #root { height: 100%; background: #080c24; color: #fff3f4; font-family: "Chakra Petch", ui-sans-serif, sans-serif; font-weight: 600; overflow: hidden; }
-.num, .panel > b, .slots > div > b, .slots > div > em, #radar b { font-family: "Share Tech Mono", monospace; font-weight: 400; font-variant-numeric: tabular-nums; }
 #root { display: flex; flex-direction: column; align-items: center; justify-content: center; }
 /* the view is 4:3 like the boards (1280 x 960 reference); --u is one board pixel. The pad takes the room under it on phones */
 .app { position: relative; width: min(100vw, calc(100vh * 4 / 3)); height: min(100vh, calc(100vw * 3 / 4)); --u: calc(min(100vw, 100vh * 4 / 3) / 1280); font-size: calc(18 * var(--u)); }
 canvas { display: block; width: 100%; height: 100%; touch-action: none; }
-.hud { position: absolute; inset: 0; pointer-events: none; text-transform: uppercase; }
 /* the HUD keeps the pixel fonts: Chakra Petch and Share Tech Mono read tiny in these boxes (Gaylord, 2026-10-16) */
 @font-face { font-family: "Boomer GT"; src: url("/art/BoomerGT.woff") format("woff"); font-display: swap; }
 @font-face { font-family: "Boomer LCD"; src: url("/art/BoomerLCD.woff") format("woff"); font-display: swap; }
-.hud { font-family: "Boomer GT", ui-monospace, monospace; font-weight: normal; }
-.hud .num, .hud .panel > b, .hud .slots > div > b, .hud .slots > div > em { font-family: "Boomer LCD", monospace; }
+.hud { position: absolute; inset: 0; pointer-events: none; text-transform: uppercase; font-family: "Boomer GT", ui-monospace, monospace; font-weight: normal; }
+.hud .num, .hud .panel > b, .hud .slots > div > b, .hud .slots > div > em { font-family: "Boomer LCD", monospace; font-variant-numeric: tabular-nums; }
 .app.over .hud { display: none; }
 .panel { position: absolute; background: rgba(11,16,45,.88); border: calc(2 * var(--u)) solid #63e7ff; padding: calc(10 * var(--u)) calc(16 * var(--u)); }
 .panel::before { content: ""; position: absolute; top: calc(-2 * var(--u)); left: calc(-2 * var(--u)); width: calc(28 * var(--u)); height: calc(4 * var(--u)); background: #ff40bd; }
@@ -65,7 +63,7 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .attract { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .splash-mute { position: absolute; top: calc(22 * var(--u)); right: calc(26 * var(--u)); font: inherit; font-size: calc(16 * var(--u)); letter-spacing: .06em; color: #94e6dc; background: rgba(8,12,36,.7); border: calc(1.5 * var(--u)) solid #3a4652; border-radius: calc(6 * var(--u)); padding: calc(6 * var(--u)) calc(14 * var(--u)); cursor: pointer; }
 /* the designer's first start prompt (components/start-prompt.css), back by Gaylord's choice: chrome lettering with a pink
-   stroked shadow, 1.6 s blink, a glint sweeping across every 3.2 s. Set in Chakra Petch since the pixel font went */
+   stroked shadow, 1.6 s blink, a glint sweeping across every 3.2 s. Set in Chakra Petch (the pixel fonts stay on the HUD) */
 .start-prompt { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) skewX(-12deg); font: 600 calc(56 * var(--u)) / 1 "Chakra Petch", sans-serif; white-space: nowrap; letter-spacing: .03em; animation: pub-blink 1.6s steps(1, end) infinite; isolation: isolate; }
 .start-prompt::before { content: attr(data-text); position: absolute; inset: 0; transform: translate(calc(4 * var(--u)), calc(5 * var(--u))); color: #67155e; -webkit-text-stroke: calc(2 * var(--u)) #ff40bd; z-index: -1; }
 .start-prompt .glyphs { display: block; color: transparent; -webkit-text-stroke: .4px #fff2ff; background-image: repeating-linear-gradient(0deg, #080c2440 0 1px, transparent 1px 5px), linear-gradient(#fff 0%, #b9f5ff 28%, #5385e8 48%, #201a5b 49%, #f9abff 58%, #ff37bd 80%, #fff4ff 100%); background-clip: text; -webkit-background-clip: text; filter: drop-shadow(calc(-2 * var(--u)) 0 #63e7ff); }

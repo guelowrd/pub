@@ -1,6 +1,7 @@
 import { STATIONS } from "./stations";
 import { describe, expect, it } from "vitest";
 import { DISTRICTS, agePoints, newSim, type District } from "./sim";
+import { SLOTS } from "./chain";
 import { CHARACTERS, FORK_OUT, LEGS, MOUTHS, POOLS, VENUES, VENUE_OF, extend, pyramid } from "./course";
 
 describe("course", () => {
@@ -31,6 +32,7 @@ describe("course", () => {
             expect(l).not.toBe(n.district); expect(r).not.toBe(n.district); expect(l).not.toBe(r);
           }
           expect(n.stops.length).toBeGreaterThanOrEqual(leg ? 4 : 3);
+          expect(n.stops.length).toBeLessThanOrEqual(SLOTS); // packCourse throws past this
           if (leg) expect(n.stops[0].venue).toBe(VENUE_OF[n.district]);
           for (const st of n.stops) {
             expect([...VENUES[n.district], VENUE_OF[n.district]]).toContain(st.venue);
