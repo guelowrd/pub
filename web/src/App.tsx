@@ -1,15 +1,16 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { KMH, NAME, PLACE, RATE, RUN, TOP, agePoints, candidate, newSim, step, tick, type District, type Input, type Rider, type Sim } from "./game/sim";
+import { KMH, NAME, PLACE, RUN, TOP, agePoints, candidate, newSim, step, tick, type District, type Input, type Rider, type Sim } from "./game/sim";
 import { CHARACTERS, extend } from "./game/course";
 import { COLOR, draw, setBeat, setSong } from "./game/render";
-import { ICON, loadArt } from "./game/art";
+import { loadArt } from "./game/art";
 import { MENU_TRACK, RESULTS_TRACK, STATIONS } from "./game/stations";
 import { audio, sound as soundNow, volume as volumeNow } from "./audio";
 import HeadUnit from "./HeadUnit";
-import { recordLinks } from "./chain/flow";
 import { startAttract } from "./attract";
 import Loading from "./Loading";
+import Results from "./Results";
 import type { ChainApi, ChallengeNote, Posted } from "./chain/ChainHost";
+import type { Settled } from "./chain/useChain";
 
 // the chain (Miden SDK, Bread) loads beside the game: its wasm must never hold the splash
 const ChainHost = lazy(() => import("./chain/ChainHost"));
@@ -27,7 +28,8 @@ const face = (r: Rider) => {
   const ch = CHARACTERS[r.id];
   return `<i class="face" style="background-image:url(${ART}${PORTRAITS[ch.atlasSet ?? "a"]});background-position:${(ch.atlasIndex % 4) * 100 / 3}% ${Math.floor(ch.atlasIndex / 4) * 100 / 3}%"></i>`;
 };
-const icon = (d: District) => `<img class="icon" src="${ART}${ICON[d]}" alt="${PLACE[d]}">`;
+// the kit's line icons for the destinations (seats strip, radar drop-off)
+const icon = (d: District) => `<img class="icon" src="${ART}icons/${PLACE[d].toLowerCase()}-64.png" alt="${PLACE[d]}">`;
 // the radar's portrait (visual update): the face downsampled to 48 samples, mapped to phosphor green and black with a
 // 4 x 4 ordered dither, so a rider is a silhouette with a hint of hair and beard, never a recognisable face. Once per rider.
 const DITHERED = new Map<string, string>();
@@ -71,10 +73,9 @@ export default function App() {
   const [chain, setChain] = useState<ChainApi | null>(null);
   // posting the run just driven, on the results screen, then the record's share links
   const [posted, setPosted] = useState<Posted | null>(null);
-  const [note, setNote] = useState<string | null>(null);
   const shot = useRef<Shot | null>(null); // the run on the road is a shot at a record
   const botRun = useRef(false); // driven from the dev hook: never a best
-  const [settled, setSettled] = useState<{ text: string; again: boolean; claimed: boolean } | null>(null);
+  const [settled, setSettled] = useState<Settled | null>(null);
   const [openRecord, setOpenRecord] = useState<ChallengeNote | null>(null);
   const sharedId = useRef(new URLSearchParams(location.search).get("record"));
   const [progress, setProgress] = useState(0);
@@ -104,7 +105,7 @@ export default function App() {
     if (mode !== "play") { audio.engine(0, false); audio.skid(false); }
   }, [mode, preview, station]);
 
-  const start = (sd: number) => { setPreview(false); setSettled(null); setPosted(null); setNote(null); botRun.current = false; sim.current = newSim(sd); setSeed(sd); setMode("play"); };
+  const start = (sd: number) => { setPreview(false); setSettled(null); setPosted(null); botRun.current = false; sim.current = newSim(sd); setSeed(sd); setMode("play"); };
   /** A free drive on the station's song. */
   const drive = (sd: number) => { shot.current = null; start(sd); };
   /** A shot: the record's course and song, the stake on the table. */
@@ -175,22 +176,23 @@ export default function App() {
       set("score", String(s.score).padStart(5, "0"));
       set("speed", String(Math.round(s.v * KMH)).padStart(3, "0"));
       const full = !s.seats.includes(null);
-      html("bank", `TO BANK <span class="num">${fmt(s.seats.reduce((a, r) => a + (r ? agePoints(r.age) : 0), 0))}</span>${full ? "  FULL" : ""}`);
-      s.seats.forEach((r, i) => html(`seat${i}`, r ? `${face(r)}${icon(r.dest)}<small>AGE</small><b>${r.age}</b><em>${fmt(agePoints(r.age))}<small>PTS</small></em>` : `<span>EMPTY</span>`));
+      html("bank", `<small>TO BANK</small><b class="num">${fmt(s.seats.reduce((a, r) => a + (r ? agePoints(r.age) : 0), 0))}</b>${full ? "<em>FULL</em>" : ""}`);
+      s.seats.forEach((r, i) => html(`seat${i}`, r ? `${face(r)}<b>${r.age}</b>${icon(r.dest)}` : `<span>EMPTY</span>`));
       // radar: the next stop's face and honest range; the reveal for 2 s after boarding; nothing at a fork
       const c = candidate(s), e = s.log[s.log.length - 1];
       const f = s.forks.find((o) => o.side === 0 && o.z - 400 < s.z && s.z < o.zDecide);
       const cur = s.streets[s.streets.length - 1];
       const just = e?.k === "pick" && tick(s) - e.t < 200 ? s.stops.find((o) => o.taken && o.i === e.stop && o.z >= cur.z0 && o.z < cur.z1)?.rider : undefined;
       // the radar's POSITION map: the blip sits on the curb's side and climbs with the distance (centre = here, top = 250 m out)
-      const blip = (st: { z: number; side: number }) => `<i class="blip" style="left:${73.5 + st.side * 6.75}%;top:${44.4 - 21.8 * Math.min(1, Math.max(0, (st.z - s.z) / 250))}%"></i>`;
+      const blip = (st: { z: number; side: number }) => `<img class="blip" src="${ART}radar/blip.png" alt="" style="left:${73 + st.side * 6.9}%;top:${42 - 25 * Math.min(1, Math.max(0, (st.z - s.z) / 250))}%">`;
       // in a tunnel the radar scans: the next street's stop is not a target yet
       const tunnel = s.forks.some((o) => s.z >= o.zDecide + 100 && s.z < o.zEnd + 100);
       const radar = node("radar").parentElement!;
       radar.className = `radar-box ${just ? "" : f || tunnel ? "search" : c?.rider && full ? "full" : c?.rider || c?.drop ? "" : "search"}`;
-      html("radar", just ? `${face(just)}<div class="reveal"><b>AGE ${just.age}</b><br>${fmt(agePoints(just.age))} TO BANK</div>${icon(just.dest)}`
-        : f || tunnel ? "" : c?.rider ? (full ? "" : `<img class="dither" src="${dithered(c.rider)}" alt=""><small class="pos">POSITION</small><img class="reticle" src="${ART}radar/reticle-B.png" alt="">${blip(c)}<small class="lab">AGE RANGE</small><b class="range">${c.rider.lo} TO ${c.rider.hi}</b>`)
-        : c?.drop ? `<small class="pos">POSITION</small><img class="reticle" src="${ART}radar/reticle-B.png" alt="">${blip(c)}<b class="range drop">DROP OFF</b>${icon(c.drop)}` : "");
+      const reticle = `<img class="reticle" src="${ART}radar/reticle.png" alt="">`;
+      html("radar", just ? `${face(just)}<small class="age">AGE</small><b class="exact">${just.age}</b><small class="bank">TO BANK</small><b class="pts">${fmt(agePoints(just.age))}</b>`
+        : f || tunnel ? `<i class="ring"></i><i class="ring big"></i><b class="scan">SCAN</b>` : c?.rider ? (full ? `<b class="scan carfull">CAR FULL</b>` : `<img class="dither" src="${dithered(c.rider)}" alt="">${reticle}${blip(c)}<small class="lab">AGE RANGE</small><b class="range">${c.rider.lo} TO ${c.rider.hi}</b>`)
+        : c?.drop ? `${icon(c.drop)}${reticle}${blip(c)}<b class="drop">DROP OFF</b>` : `<i class="ring"></i><i class="ring big"></i><b class="scan">SCAN</b>`);
       radar.style.display = f ? "none" : "";
       const badge = (d: District) => { const n = s.seats.filter((r) => r && r.dest === d).length; return n ? ` x${n}` : ""; };
       html("fork", f ? `<span style="color:${COLOR[f.left]}">&lt; ${NAME[f.left]}${badge(f.left)}</span><span style="color:${COLOR[f.right]}">${NAME[f.right]}${badge(f.right)} &gt;</span>` : "");
@@ -216,9 +218,9 @@ export default function App() {
       <div className="hud" ref={hud}>
         <div className="panel tl"><small>TIME</small><b id="time" /></div>
         <div className="panel tr"><small>SCORE</small><b id="score" /></div>
-        <div className="panel bl"><small>SPEED</small><b id="speed" /><small>KM/H</small></div>
+        <div className="panel bl"><small>SPEED</small><b id="speed" /></div>
         <div className="rail">
-          <div className="panel seats"><div id="bank" /><div className="slots"><div id="seat0" /><div id="seat1" /><div id="seat2" /></div></div>
+          <div className="seats"><div id="bank" /><div id="seat0" /><div id="seat1" /><div id="seat2" /></div>
           <div className="radar-box"><div id="radar" /></div>
         </div>
         <div className="fork" id="fork" />
@@ -227,7 +229,7 @@ export default function App() {
       {mode === "ready" && (
         <div className="overlay splash" onClick={() => { if (loaded) { audio.unlock(); setMode("menu"); } }}>
           <canvas className="attract" ref={attract} />
-          {loaded ? <div className="start-prompt"><img src={`${ART}click-to-start-chrome.png`} alt="CLICK TO START" /></div> : <Loading progress={progress} />}
+          {loaded ? <img className="start-prompt" src={`${ART}splash/start-on.png`} alt="CLICK TO START" /> : <Loading progress={progress} />}
           <button className="splash-mute" aria-label={soundOn ? "Mute" : "Sound on"} onClick={(e) => { e.stopPropagation(); audio.unlock(); setSoundOn(audio.toggle()); }}>{soundOn ? "SOUND ON" : "MUTED"}</button>
         </div>
       )}
@@ -237,52 +239,12 @@ export default function App() {
             onDrive={() => drive(seed)} onShot={driveShot} onOff={() => setMode("ready")} openRecord={openRecord} onOpened={onOpened} />
         </div>
       )}
-      {mode === "paused" && <div className="overlay" onClick={() => setMode("play")}><h1>PAUSED</h1><p>CLOCK STOPPED</p></div>}
+      {mode === "paused" && <div className="overlay dim" onClick={() => setMode("play")}><img className="pause" src={`${ART}pause.png`} alt="PAUSED. CLOCK STOPPED" /></div>}
       {mode === "over" && (
-        <div className="overlay results">
-          <h1>TIME IS UP</h1>
-          <p className="big">{String(s.score).padStart(5, "0")}</p>
-          <p className="best">BEST {fmt(Math.max(best(), s.score))}</p>
-          <div className="box cyan">
-            <div><span>RIDERS DELIVERED</span><b>{s.delivered}</b></div>
-            <div><span>DELIVERY POINTS</span><b>{fmt(s.banked)}</b></div>
-            <div><span>DISTANCE</span><b>{fmt(Math.floor(s.dist * RATE))}</b></div>
-          </div>
-          <div className="box pink">
-            <div><span>STILL ON BOARD</span><b>{s.lost.length ? `LOST ${fmt(s.lost.reduce((a, r) => a + agePoints(r.age), 0))}` : "NO RIDERS LEFT"}</b></div>
-            {s.lost.map((r, i) => <div key={i} className="rider"><span dangerouslySetInnerHTML={{ __html: face(r) + icon(r.dest) }} /><span>{r.name} / AGE {r.age}</span><b>{fmt(agePoints(r.age))} LOST</b></div>)}
-          </div>
-          {shot.current ? (
-            <>
-              <p className="verdict" style={{ color: settled ? (settled.claimed || /WIN|BEAT/.test(settled.text) ? "#78ffcb" : "#ff40bd") : "#63e7ff" }}>
-                {settled ? settled.text : chain?.trouble ? chain.trouble.t.title.toUpperCase() : chain?.busy ? `${chain.busy.text}${chain.busy.stage === "wallet" ? ". APPROVE IN YOUR WALLET" : chain.busy.stage === "network" ? ". SENDING TO THE NETWORK" : ""}` : `BEAT ${shot.current.record.storage.target}`}
-              </p>
-              <p className="actions">
-                {chain?.trouble?.retry && <button className="cyan" onClick={() => { const r = chain.trouble!.retry!; chain.dismiss(); setSettled(null); r(); }}>TRY AGAIN</button>}
-                {settled?.again && <button className="cyan" onClick={() => driveShot(shot.current!.shots, shot.current!.record)}>DRIVE AGAIN</button>}
-                {(settled || chain?.trouble) && !chain?.busy && <button className="pink" onClick={() => { chain?.dismiss(); shot.current = null; setSeed(randomSeed()); toMenu(); }}>MENU</button>}
-              </p>
-            </>
-          ) : (
-            <>
-              <div className="box yellow post">
-                {posted ? (
-                  <>
-                    <div><span>RECORD POSTED</span><b>{String(posted.score).padStart(5, "0")}</b></div>
-                    <p className="actions"><button className="cyan" onClick={() => window.open(recordLinks(posted.recordId, posted.score, posted.expiresAt, STATIONS[posted.song].title).x, "_blank", "noopener")}>SHARE ON X</button><button className="cyan" onClick={() => void navigator.clipboard?.writeText(recordLinks(posted.recordId, posted.score, posted.expiresAt, STATIONS[posted.song].title).url).then(() => setNote("LINK COPIED"), () => setNote("COPY FAILED"))}>COPY LINK</button></p>
-                    {note && <p className="verdict">{note}</p>}
-                  </>
-                ) : (
-                  <>
-                    <div><span>POST YOUR RECORD</span></div>
-                    <p className="verdict">{chain?.busy ? `${chain.busy.text}${chain.busy.stage === "wallet" ? ". APPROVE IN YOUR WALLET" : chain.busy.stage === "network" ? ". SENDING TO THE NETWORK" : ""}` : chain?.trouble ? chain.trouble.t.title.toUpperCase() : "RIVALS PAY TO TRY TO BEAT YOU. IF THEY DO, THEY TAKE YOUR GAMECOIN. OTHERWISE THEIRS IS YOURS."}</p>
-                    <p className="actions"><button className="yellow" disabled={!chain || !!chain.busy} onClick={() => { chain?.dismiss(); void chain?.post(s.seed, station, s.score).then((p) => p && setPosted(p)); }}>{chain?.trouble?.retry ? "TRY AGAIN" : "POST IT"}</button></p>
-                  </>
-                )}
-              </div>
-              <p className="actions"><button className="cyan" onClick={() => start(seed)}>SAME RUN</button><button className="pink" onClick={() => { setSeed(randomSeed()); toMenu(); }}>NEW RUN</button></p>
-            </>
-          )}
+        <div className="overlay dim menu">
+          <Results s={s} station={station} chain={chain} posted={posted} setPosted={setPosted} shot={shot.current ? { target: shot.current.record.storage.target } : null} settled={settled}
+            onSame={() => start(seed)} onNew={() => { setSeed(randomSeed()); toMenu(); }} onAgain={() => driveShot(shot.current!.shots, shot.current!.record)}
+            onMenu={() => { chain?.dismiss(); shot.current = null; setSeed(randomSeed()); toMenu(); }} onRetry={(r) => { chain?.dismiss(); setSettled(null); r(); }} />
         </div>
       )}
       </div>

@@ -36,11 +36,13 @@ export function startAttract(cv: HTMLCanvasElement): () => void {
       ctx.restore();
     }
     // the rules ribbon, right to left, looping
-    ctx.font = `600 ${26 * k}px "Chakra Petch", sans-serif`; ctx.textBaseline = "middle"; ctx.textAlign = "left";
+    // the kit's smoked-glass strip (results kit): 64 px at 896, a hairline on top, Chakra at 17 px on a .6 h baseline
+    ctx.font = `600 ${17 * k}px "Chakra Petch", sans-serif`; ctx.textBaseline = "alphabetic"; ctx.textAlign = "left";
     const text = `${RULES}      •      `, tw = ctx.measureText(text).width, off = (t * RIBBON_PX_PER_S * k) % tw;
-    ctx.fillStyle = "rgba(8,12,36,0.72)"; ctx.fillRect(0, 900 * k, w, 60 * k);
-    ctx.fillStyle = "#fff3f4";
-    for (let x = -off; x < w; x += tw) ctx.fillText(text, x, 930 * k);
+    ctx.fillStyle = "rgba(7,16,26,0.91)"; ctx.fillRect(0, 896 * k, w, 64 * k);
+    ctx.fillStyle = "#4b6970"; ctx.fillRect(12 * k, 897 * k, w - 24 * k, 1);
+    ctx.fillStyle = "#d5e3e0";
+    for (let x = -off; x < w; x += tw) ctx.fillText(text, x, (896 + 38.4) * k);
   };
   raf = requestAnimationFrame(frame);
   return () => cancelAnimationFrame(raf);

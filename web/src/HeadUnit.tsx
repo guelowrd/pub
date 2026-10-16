@@ -3,6 +3,7 @@
 // shoot at (RECORDS), shows SCORES and HISTORY, and holds the WALLET and SYSTEM settings; posting a run happens on the
 // results screen. The action key is DRIVE in RADIO and SHOT / COLLECT / CONNECT elsewhere. Geometry from game/data/menu.json (the kit's metadata.json, trimmed), one face per layout.
 import { useEffect, useRef, useState } from "react";
+import { baselineEm, px, useFit } from "./board";
 import geometry from "./game/data/menu.json";
 import { STATIONS } from "./game/stations";
 import type { ChainApi, ChallengeNote } from "./chain/ChainHost";
@@ -10,41 +11,24 @@ import { blocksToClock as clock, fmtGc as gc, sameAccount as same, sameWord } fr
 import { boards, history, owed as owedNotes } from "./chain/hub";
 import { noteDeadline } from "./chain/notes";
 
-type Layout = "desktop" | "portrait" | "landscape";
 export type Mode = "RADIO" | "RECORDS" | "SCORES" | "HISTORY" | "WALLET" | "SYSTEM" | "AUDIO";
 const PRIMARY: Mode[] = ["RADIO", "RECORDS", "SCORES", "HISTORY", "WALLET", "SYSTEM"];
 const ART = `${import.meta.env.BASE_URL}art/menu/`;
-const px = (n: number) => `${n}px`;
 // profile B
 const DISPLAY = "#94e6dc", DIM = "#61928f", ACCENT = "#ff6a57", CREAM = "#fff3f4", YELLOW = "#ffe564", MINT = "#78ffcb", PINK = "#ff40bd", EXPIRED = "#8a9baa";
 
 type Geometry = (typeof geometry)["desktop"];
 type Control = Geometry["controls"][number];
 /** One piece of a row: text at a fraction of the row's width (right aligned when `right`), mono for numbers and lists */
-type Cell = { t: string; at: number; c?: string; right?: boolean; mono?: boolean };
+type Cell = { t: string; at: number; c?: string; right?: boolean; mono?: boolean; icon?: string };
 type Row = { key: string; cells: Cell[] };
 
-export function pickLayout(w: number, h: number): Layout {
-  return h > w ? "portrait" : h < 460 ? "landscape" : "desktop";
-}
 const courseLabel = (seed: number) => `C${seed.toString(36).toUpperCase()}`;
 const songOf = (i: number) => STATIONS[i]?.title ?? `SONG ${i}`;
-
-/** Where a font's baseline sits under the top of a line-height-1 span, in em: half-leading plus ascent. */
-const baselineEm = (() => {
-  const cache = new Map<string, number>();
-  return (font: string) => {
-    let v = cache.get(font);
-    if (v === undefined) {
-      const c = document.createElement("canvas").getContext("2d")!;
-      c.font = `100px "${font}"`;
-      const m = c.measureText("HX0");
-      v = (100 - (m.fontBoundingBoxAscent + m.fontBoundingBoxDescent)) / 200 + m.fontBoundingBoxAscent / 100;
-      if (document.fonts.check(`100px "${font}"`)) cache.set(font, v);
-    }
-    return v;
-  };
-})();
+// history (results kit): the kind's icon, the state word in its colour
+const ICON = `${import.meta.env.BASE_URL}art/icons/`;
+const STATE: Record<string, string> = { OPEN: "#70d4e7", "IN PLAY": "#f5bd62", COLLECT: "#91efbc", BEATEN: "#fa79a6", DEFENDED: "#f1d36f", "TAKEN BACK": "#a0acb5", WON: "#91efbc", LOST: "#fa79a6" };
+const stateColor = (state: string) => STATE[Object.keys(STATE).find((k) => state.startsWith(k)) ?? ""] ?? EXPIRED;
 
 export default function HeadUnit({ chain, station, setStation, volume, setVolume, muted, toggleMute, onDrive, onShot, onOff, openRecord, onOpened }: {
   chain: ChainApi | null;
@@ -58,8 +42,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   openRecord: ChallengeNote | null;
   onOpened: () => void;
 }) {
-  const [layout, setLayout] = useState<Layout>(() => pickLayout(innerWidth, innerHeight));
-  const [scale, setScale] = useState(1);
+  const { layout, scale } = useFit(geometry);
   const [mode, setMode] = useState<Mode>("RADIO");
   const [back, setBack] = useState<Mode>("RADIO"); // where AUDIO returns to
   const [cursor, setCursor] = useState<Record<string, number>>({});
@@ -76,16 +59,6 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const actionRect = merged ? [act0.rect[0], bk.rect[1], act0.rect[2], act0.rect[1] + act0.rect[3] - bk.rect[1]] : act0.rect;
   const controls = merged ? G.controls.filter((c) => c.id !== "back" && c.id !== "select") : G.controls;
 
-  useEffect(() => {
-    const fit = () => {
-      const lay = pickLayout(innerWidth, innerHeight), g = geometry[lay];
-      setLayout(lay);
-      setScale(Math.min(innerWidth / g.canvas[0], innerHeight / g.canvas[1]));
-    };
-    fit();
-    addEventListener("resize", fit);
-    return () => removeEventListener("resize", fit);
-  }, []);
   useEffect(() => { const t = setInterval(() => setTick((n) => n + 1), 1000); return () => clearInterval(t); }, []); // the waiting counter and the clocks
   useEffect(() => {
     if (!openRecord) return;
@@ -136,16 +109,17 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     if (!me) status = chain?.connecting ? chain.walletStatus || "CONNECTING" : "CONNECT YOUR WALLET TO SEE YOUR GAMES.";
     else {
       // the finished games (hub.ts history): the result and, for a shot, whose record it was; the money that moved
-      const past = history(notes, me, height, (a) => chain!.nameOf(a)).map((h) => ({ key: h.id, kind: h.kind, title: `${h.result}${h.kind === "shot" ? ` VS ${h.context.split("'")[0]}` : ""}`.toUpperCase(), score: h.score, state: h.money.toUpperCase(), color: h.tone === "mint" ? MINT : h.tone === "pink" ? PINK : EXPIRED }));
-      const items: { key: string; kind: "record" | "shot"; title: string; score: number; state: string; color: string; shots?: ChallengeNote[]; record?: ChallengeNote }[] = [
-        ...owed.map((n) => ({ key: n.id, kind: n.kind, title: n.kind === "record" ? "MY RECORD" : `${rival(n)} LOST`, score: n.storage.target, state: `COLLECT ${gc(n.amount)}`, color: MINT })),
-        ...myRecords.map((n) => ({ key: n.id, kind: n.kind, title: "MY RECORD", score: n.storage.target, state: `OPEN ${clock(n.storage.expiryBlock - height)}`, color: DISPLAY })),
-        ...myShots.map((n) => ({ key: n.id, kind: n.kind, title: `AT ${champion(n)}`, score: n.storage.target, state: `OPEN ${clock(noteDeadline(n) - height)}`, color: DISPLAY, shots: [n], record: notes.find((r) => r.kind === "record" && !r.consumed && sameWord(r.idWord, n.storage.recordId)) })),
-        ...atMine.map((n) => ({ key: n.id, kind: n.kind, title: `${rival(n)} SHOOTING`, score: n.storage.target, state: "IN PLAY", color: DISPLAY })),
+      // state words: OPEN and IN PLAY carry their clock; a finished game says what became of it (BEATEN, DEFENDED, TAKEN BACK, WON, LOST)
+      const past = history(notes, me, height, (a) => chain!.nameOf(a)).map((h) => ({ key: h.id, kind: h.kind, title: h.kind === "shot" ? `AT ${h.context.split("'")[0]}` : "MY RECORD", score: h.score, state: h.result.replace(/^You /, "").toUpperCase() }));
+      const items: { key: string; kind: "record" | "shot"; title: string; score: number; state: string; shots?: ChallengeNote[]; record?: ChallengeNote }[] = [
+        ...owed.map((n) => ({ key: n.id, kind: n.kind, title: n.kind === "record" ? "MY RECORD" : `${rival(n)} LOST`, score: n.storage.target, state: `COLLECT ${gc(n.amount)}` })),
+        ...myRecords.map((n) => ({ key: n.id, kind: n.kind, title: "MY RECORD", score: n.storage.target, state: `OPEN ${clock(n.storage.expiryBlock - height)}` })),
+        ...myShots.map((n) => ({ key: n.id, kind: n.kind, title: `AT ${champion(n)}`, score: n.storage.target, state: `OPEN ${clock(noteDeadline(n) - height)}`, shots: [n], record: notes.find((r) => r.kind === "record" && !r.consumed && sameWord(r.idWord, n.storage.recordId)) })),
+        ...atMine.map((n) => ({ key: n.id, kind: n.kind, title: `${rival(n)} SHOOTING`, score: n.storage.target, state: "IN PLAY" })),
         ...past,
       ];
       status = items.length ? null : "NO GAMES YET. DRIVE, THEN POST YOUR SCORE.";
-      rows = items.map((it) => ({ key: it.key, cells: [{ t: it.kind === "record" ? "R" : "S", at: 0, c: it.kind === "record" ? DISPLAY : PINK, mono: true }, { t: it.title, at: 0.04 }, { t: score5(it.score), at: 0.42, c: YELLOW, mono: true }, { t: it.state, at: 1, right: true, c: it.color, mono: true }] }));
+      rows = items.map((it) => ({ key: it.key, cells: [{ t: "", at: 0, icon: it.kind }, { t: it.title, at: 0.04 }, { t: score5(it.score), at: 0.42, c: YELLOW, mono: true }, { t: it.state, at: 1, right: true, c: stateColor(it.state) }] }));
       const sel = items[cur];
       if (owed.length) { action = "COLLECT"; onAction = () => void chain?.collect(owed); }
       else if (sel?.shots) { action = "SHOT"; onAction = () => onShot(sel.shots!, sel.record!); }
@@ -246,7 +220,8 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
           return (
             <div key={row.key} className="hu-row" style={{ left: px(sel[0]), top: px(sel[1]), width: px(sel[2]), height: px(sel[3]), borderColor: "transparent" }} onClick={() => (mode === "RADIO" ? setStation(i) : setCursor({ ...cursor, [mode]: i }), i === at && select())}>
               {i === at && <img src={`${ART}${layout}/selection-selected.png`} alt="" style={{ position: "absolute", left: 0, top: 0, width: px(sel[2]), height: px(sel[3]) }} />}
-              {row.cells.map((c, k) => text(c.t, inner[0] + c.at * inner[1] - sel[0], base - sel[1], G.rowSize, c.c ?? CREAM, c.mono, c.right, k, inner[1] * (c.right ? 0.5 : 1 - c.at)))}
+              {row.cells.map((c, k) => c.icon ? <img key={k} src={`${ICON}${c.icon}-32.png`} alt={c.icon} style={{ position: "absolute", left: px(inner[0] - sel[0]), top: px(base - sel[1] - G.rowSize * 0.75), width: px(G.rowSize), height: px(G.rowSize) }} />
+                : text(c.t, inner[0] + c.at * inner[1] - sel[0], base - sel[1], G.rowSize, c.c ?? CREAM, c.mono, c.right, k, inner[1] * (c.right ? 0.5 : 1 - c.at)))}
             </div>
           );
         })}
