@@ -124,7 +124,8 @@ Reuse `masm/challenge/*` untouched; write one `beats_target` (`masm/games/pub_sc
 - [x] `pub_score.masm` replaying the log: win, loss, broken route, too-fast gap, stop twice, 4th rider, wrong drop, nobody aboard, over 3:00, time backwards, distance → verify: `cargo test -p integration --test pub_test` green (4 tests, 52 s), MASM pinned to `rules/vectors.json` (4 runs: score - 1 settles, score is refused); `web/public/scripts/{record,shot}.bin` built by `cargo run --bin build_scripts`
 
 ### M5: challenge flows
-- [ ] Copy GQ's `bread.ts`, `notes.ts`, `flow.ts`, hub/boards; own note tag; Gamecoin; record = seed + song → verify: record, shot, settle, collect on testnet via `?local=1` / `?local=2`
+- [x] Copy GQ's `bread.ts`, `notes.ts`, `flow.ts`, hub/boards; own note tag; Gamecoin; record = seed + song → verify: record, shot, settle, collect on testnet via `?local=1` / `?local=2` (2026-10-16: record posted by DKQ, shot by LFH, settled; collect path shares the code with GQ)
+- [x] The head unit (menu kit) as the whole menu: RADIO, RECORDS, POST, HISTORY, SCORES, WALLET, AUDIO, SYSTEM
 - [ ] Gaylord's Bread round on desktop and phone
 
 ### M6: ship (on Gaylord's word)
@@ -223,3 +224,27 @@ on the splash (plays once the browser allows sound). Invisible tunnel traffic, r
 camera draws ~10,000 px wide and grew the darkening scratch canvas past Chrome's 32,767 px limit, after which every dark
 sprite (tunnel traffic, dimmed fillers) drew nothing for the rest of the session; sprites closer than 1.5 m to the camera
 are now culled, and traffic keeps a 0.6 light floor in tunnels so its lights show before the headlights reach it.
+
+### M5 (2026-10-16, small hours)
+Chain layer = GeoQuizz's, copied into `web/src/chain/` (notes, chain, bread, flow, hub, localWallet, funding, gamecoin,
+providers) with the quiz parts cut, tag 0x50420001, Gamecoin only, no v1 roots. `chain/game.ts` is the game: data =
+SEED(4) | song, version, 0, 0 | course commitment (4); the claim's note argument is the log's commitment, the course and
+the log travel under their commitments (Poseidon2.hashElements hashes exactly as `note::compute_storage_commitment`;
+`game.test.ts` pins both to the Rust-printed hexes). `useChain.ts` is one hook: wallet (Bread, or `?local=1|2`), height
+and notes every 15 s, balance, and the four moves through GQ's `run` (wallet, then wait until the node shows the effect;
+Try again looks first whether the attempt landed). `ChainHost.tsx` is loaded lazily and publishes the hook's object to
+App: the SDK awaits its 20 MB wasm at import, the splash never waits for it. The head unit (`HeadUnit.tsx`, geometry
+in `game/data/headunit.json` trimmed from the kit's metadata) replaced the radio screen: presets 1-6 are the modes, MODE
+cycles, left arrows move or tune, right arrows back/select, AUTO is the lower LCD's action (DRIVE, SHOT, POST, COLLECT,
+CONNECT, GET GC, TRY AGAIN), keys 1-6, arrows, Enter, Esc, m. Text sits on the kit's baselines: with line-height 1 both
+fonts put the baseline 0.86 em under the span's top (ascent 0.96, descent 0.24). A free run ends on SAME RUN / NEW RUN /
+POST IT (head unit on POST: SCORE, PRIZE 1/2/5/10 GC on the arrows, COURSE, STATION; then SHARE ON X, COPY LINK); a shot
+settles itself on the results screen (TRY AGAIN, DRIVE AGAIN while the shot is open, MENU). `?record=<id>` opens the
+head unit on that record's review. Also from the kit: the song's car paint (stations.ts CAR, the hero sheets multiplied
+once per song), the painted gantry (frame 26 m wide, plates at the mounts, trims, name fitted, badge with the count),
+32 street props (`art.ts DECOR`, every 55 m, clear of bays and forks), the loading screen with the 14-segment bed, the
+icons, manifest and the share template as the link preview. Vitest runs in jsdom with the Miden Vite plugin left out
+(the plugin points the SDK at its browser build, whose wasm loads by fetch; node reads it from disk). `web/vercel.json`
+is GQ's (isolation headers). End to end on testnet with the two local wallets: DKQ posted 2028 points (1 GC prize),
+LFH shot it and settled. Skipped: the kit's share card as a downloadable image (the template is the link preview),
+other boards than best records, a code paste box (links work), SYSTEM settings beyond version and network.

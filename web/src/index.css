@@ -45,14 +45,14 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .overlay h1 { color: #ffe564; font-weight: normal; font-size: calc(44 * var(--u)); } .overlay .big { font-size: calc(72 * var(--u)); color: #ffe564; line-height: 1; }
 .overlay .best { color: #63e7ff; }
 .overlay button { font: inherit; font-size: calc(26 * var(--u)); padding: calc(16 * var(--u)) 0; width: calc(460 * var(--u)); color: #fff3f4; background: rgba(11,16,45,.9); border: calc(2 * var(--u)) solid; }
-.overlay button.cyan { border-color: #63e7ff; } .overlay button.pink { border-color: #ff40bd; }
+.overlay button.cyan { border-color: #63e7ff; } .overlay button.pink { border-color: #ff40bd; } .overlay button.yellow { border-color: #ffe564; }
+.results .verdict { color: #63e7ff; font-size: calc(26 * var(--u)); max-width: 90%; }
 .actions { display: flex; gap: calc(50 * var(--u)); }
 .splash { background: #080c24 url("/art/title-scene.webp") center / cover no-repeat; }
 .attract { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 /* the designer's chrome CLICK TO START (Boomer GT), centred in the title-to-car gap, 1.6 s blink */
 .start-prompt { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: calc(860 * var(--u)); animation: pub-blink 1.6s steps(1, end) infinite; filter: drop-shadow(0 0 calc(5 * var(--u)) #bd41b955); }
 .start-prompt img { display: block; width: 100%; }
-.loading { position: absolute; left: 50%; top: 43.5417%; transform: translate(-50%, -50%); font-size: calc(40 * var(--u)); color: #fff3f4; }
 @keyframes pub-blink { 0%, 72.5% { opacity: 1; } 72.6%, 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .start-prompt { animation: none; } }
 .results { justify-content: flex-start; padding-top: calc(36 * var(--u)); gap: calc(14 * var(--u)); }
@@ -63,15 +63,22 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .box .rider { gap: calc(16 * var(--u)); } .box .rider > span:first-child { position: relative; display: flex; } .box .rider .face { width: calc(72 * var(--u)); height: calc(72 * var(--u)); }
 .box .rider .icon { position: static; width: calc(24 * var(--u)); height: calc(24 * var(--u)); margin-left: calc(12 * var(--u)); align-self: center; }
 .box .rider > span:nth-child(2) { flex: 1; color: #fff3f4; }
-/* the car radio: the designer's face scaled from its reference screen; layers are placed in reference pixels inside */
-.radio { padding: 0; display: block; overflow: hidden; }
-.radio-screen { position: absolute; left: 0; top: 0; transform-origin: top left; }
-.overlay .radio-title { position: absolute; left: 0; right: 0; top: 7%; text-align: center; font-size: 48px; color: #fff3f4; font-weight: normal; }
-.radio-face { position: absolute; }
-.radio-face img { pointer-events: none; user-select: none; }
-.lcd-text { position: absolute; overflow: hidden; }
-.lcd-text span { position: absolute; white-space: nowrap; font-family: "Boomer LCD", monospace; color: #aeffda; line-height: 1; }
-.lcd-no { position: absolute; font-family: "Boomer LCD", monospace; color: #aeffda; opacity: .7; }
+/* the head unit (menu kit): the designer's face scaled from its canvas; layers and fields placed in canvas pixels inside */
+.menu { padding: 0; display: block; overflow: hidden; background: #080c24; }
+.hu-screen { position: absolute; left: 0; top: 0; transform-origin: top left; }
+.hu-unit { position: absolute; }
+.hu-unit > img, .hu-unit > span > img, .hu-row > img { position: absolute; pointer-events: none; user-select: none; }
+.hu-field { position: absolute; overflow: hidden; }
+.hu-field span { position: absolute; white-space: nowrap; line-height: 1; }
+.hu-field .lcd { font-family: "Boomer LCD", monospace; font-variant-numeric: tabular-nums; }
+.hu-field .gt { font-family: "Boomer GT", monospace; }
+.hu-row { position: absolute; cursor: pointer; }
+.hu-status { position: absolute; display: flex; flex-direction: column; justify-content: center; gap: .4em; text-align: center; line-height: 1.15; overflow: hidden; padding: 0 .5em; }
+.hu-status p { font-family: "Boomer GT", monospace; }
+.loading-screen { position: absolute; left: 0; top: 0; transform-origin: top left; background: #080c24; }
+.loading-screen img { position: absolute; pointer-events: none; }
+.loading-screen span { position: absolute; text-align: center; font-family: "Boomer LCD", monospace; color: #ffe564; line-height: 1; }
+.hu-dot { position: absolute; width: 14px; height: 14px; border: 2px solid; border-radius: 50%; animation: pub-blink 1.2s steps(1, end) infinite; }
 .hit { position: absolute; background: none; border: none; padding: 0; cursor: pointer; }
 .hit:focus-visible { outline: 2px solid #ffe564; }
 /* portrait phones: the scene on top, then the seat strip and the radar side by side, then the pad */
@@ -90,5 +97,4 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
   .fork { font-size: calc(30 * var(--u)); } .callout { font-size: calc(56 * var(--u)); }
   .pad { margin-top: calc(300 * var(--u)); }
   .box { width: 94%; font-size: calc(32 * var(--u)); } .overlay button { width: 40%; font-size: calc(36 * var(--u)); }
-  .radio-title { font-size: 30px; top: 4%; }
-}
+  }

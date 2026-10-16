@@ -1,14 +1,22 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { KMH, NAME, PLACE, RATE, RUN, TOP, agePoints, candidate, newSim, step, tick, type District, type Input, type Rider, type Sim } from "./game/sim";
 import { CHARACTERS, extend } from "./game/course";
 import { COLOR, draw, setBeat, setSong } from "./game/render";
 import { ICON, loadArt } from "./game/art";
 import { MENU_TRACK, RESULTS_TRACK, STATIONS } from "./game/stations";
 import { audio, sound as soundNow, volume as volumeNow } from "./audio";
-import Radio from "./Radio";
+import HeadUnit, { type LastRun } from "./HeadUnit";
 import { startAttract } from "./attract";
+import Loading from "./Loading";
+import type { ChainApi, ChallengeNote } from "./chain/ChainHost";
 
-type Mode = "ready" | "radio" | "play" | "paused" | "over";
+// the chain (Miden SDK, Bread) loads beside the game: its wasm must never hold the splash
+const ChainHost = lazy(() => import("./chain/ChainHost"));
+const randomSeed = () => crypto.getRandomValues(new Uint32Array(1))[0];
+/** A shot being driven: the shot notes on the table and the record they are at. */
+type Shot = { shots: ChallengeNote[]; record: ChallengeNote };
+
+type Mode = "ready" | "menu" | "play" | "paused" | "over";
 const STEP = 1 / 120;
 const KEYS: Record<string, keyof Input> = { ArrowUp: "gas", w: "gas", ArrowDown: "brake", s: "brake", ArrowLeft: "left", a: "left", ArrowRight: "right", d: "right" };
 const ART = `${import.meta.env.BASE_URL}art/`;
@@ -31,9 +39,16 @@ export default function App() {
   const modeRef = useRef(mode);
   modeRef.current = mode;
   const loadedRef = useRef(false);
-  const [seed, setSeed] = useState(1);
+  const [seed, setSeed] = useState(randomSeed);
   const [loaded, setLoaded] = useState(false);
-  useEffect(() => { loadArt().then(() => { loadedRef.current = true; setLoaded(true); }, (e) => console.error(e)); }, []);
+  const [chain, setChain] = useState<ChainApi | null>(null);
+  const [lastRun, setLastRun] = useState<LastRun | null>(null);
+  const shot = useRef<Shot | null>(null); // the run on the road is a shot at a record
+  const [settled, setSettled] = useState<{ text: string; again: boolean; claimed: boolean } | null>(null);
+  const [openRecord, setOpenRecord] = useState<ChallengeNote | null>(null);
+  const sharedId = useRef(new URLSearchParams(location.search).get("record"));
+  const [progress, setProgress] = useState(0);
+  useEffect(() => { loadArt((d, t) => setProgress(d / t)).then(() => { loadedRef.current = true; setLoaded(true); }, (e) => console.error(e)); }, []);
   useEffect(() => { if (mode === "ready" && loaded && attract.current) return startAttract(attract.current); }, [mode, loaded]);
   const [station, setStation] = useState(0);
   const stationRef = useRef(0);
@@ -42,36 +57,55 @@ export default function App() {
   const [soundOn, setSoundOn] = useState(soundNow);
   const [volume, setVolumeState] = useState(volumeNow);
   const setVolume = (v: number) => { audio.volume(v); setVolumeState(v); };
-  // music follows the screen: menus loop Boomers, the run plays the station from its first second, results loop Wireline Cosmos
+  // a record opened by link: the head unit starts on its review once the chain can read it
+  useEffect(() => {
+    const id = sharedId.current;
+    if (!id || !chain?.ready) return;
+    sharedId.current = null;
+    void chain.loadRecord(id).then((r) => r && setOpenRecord(r));
+  }, [chain]);
+  // music follows the screen: menus loop Omotesando, the run plays the station from its first second, results loop Wireline Cosmos
   useEffect(() => {
     if (mode === "ready") audio.menu(MENU_TRACK); // silent until the browser allows sound: a click, or a site it trusts
-    else if (mode === "radio") { if (preview) audio.run(STATIONS[station].id); else audio.menu(MENU_TRACK); }
+    else if (mode === "menu") { if (preview) audio.run(STATIONS[station].id); else audio.menu(MENU_TRACK); }
     else if (mode === "play") { if (sim.current.t === 0) { setSong(STATIONS[station].id); audio.run(STATIONS[station].id); } else audio.resume(); }
     else if (mode === "paused") audio.pause();
     else if (mode === "over") audio.results(RESULTS_TRACK);
     if (mode !== "play") { audio.engine(0, false); audio.skid(false); }
   }, [mode, preview, station]);
 
-  const start = (sd: number) => { setPreview(false); sim.current = newSim(sd); setSeed(sd); setMode("play"); };
+  const start = (sd: number) => { setPreview(false); setSettled(null); sim.current = newSim(sd); setSeed(sd); setMode("play"); };
+  /** A free drive on the station's song. */
+  const drive = (sd: number) => { shot.current = null; start(sd); };
+  /** A shot: the record's course and song, the stake on the table. */
+  const driveShot = (shots: ChallengeNote[], record: ChallengeNote) => {
+    shot.current = { shots, record };
+    setStation(Number(record.storage.game[4]));
+    start(Number(record.storage.game[0]));
+  };
+  const [menuMode, setMenuMode] = useState<"RADIO" | "POST">("RADIO");
+  const toMenu = (m: "RADIO" | "POST" = "RADIO") => { setMenuMode(m); setPreview(false); setMode("menu"); };
+  // the run just driven: a free one goes to POST, a shot settles itself
+  useEffect(() => {
+    if (mode !== "over") return;
+    const s = sim.current, at = shot.current;
+    if (!at) { setLastRun({ seed: s.seed, song: station, score: s.score, log: s.log, dist: s.dist }); return; }
+    if (settled || !chain) return;
+    void chain.settle(at.shots, at.record, s.seed, s.log, s.dist, s.score).then((r) => r && setSettled(r));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, chain]);
+  const onOpened = useCallback(() => setOpenRecord(null), []);
   // dev hook: drive the sim from the console (window.pub.run({gas:true}, 5))
   if (import.meta.env.DEV) Object.assign(window, { pub: { sim, run: (inp: Partial<Input>, secs: number) => { for (let t = 0; t < secs; t += STEP) step(sim.current, { gas: false, brake: false, left: false, right: false, ...inp }, STEP, extend); } } });
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
+      if (modeRef.current === "menu") return; // the head unit has its own keys
       if (e.key === "m") setSoundOn(audio.toggle());
-      if (modeRef.current === "radio") setTimeout(() => setSoundOn(soundNow), 0);
-      if (modeRef.current === "radio") {
-        if (e.key === "ArrowLeft") { setStation((i) => (i + STATIONS.length - 1) % STATIONS.length); setPreview(true); }
-        if (e.key === "ArrowRight") { setStation((i) => (i + 1) % STATIONS.length); setPreview(true); }
-        if (e.key === "ArrowUp" || e.key === "ArrowDown") setVolume(Math.max(0, Math.min(1, volumeNow + (e.key === "ArrowUp" ? 0.1 : -0.1))));
-        if (e.key === "Enter") { setPreview(false); sim.current = newSim(sim.current.seed); setMode("play"); }
-        e.preventDefault();
-        return;
-      }
       const k = KEYS[e.key];
       if (k) { input.current[k] = true; e.preventDefault(); }
       if (e.key === "p" || e.key === "Escape") setMode((m) => (m === "play" ? "paused" : m === "paused" ? "play" : m));
-      if (e.key === "Enter") { if (modeRef.current === "ready" && loadedRef.current) audio.unlock(); setMode((m) => (m === "paused" ? "play" : m === "ready" && loadedRef.current ? "radio" : m)); }
+      if (e.key === "Enter") { if (modeRef.current === "ready" && loadedRef.current) audio.unlock(); setMode((m) => (m === "paused" ? "play" : m === "ready" && loadedRef.current ? "menu" : m)); }
     };
     const up = (e: KeyboardEvent) => { const k = KEYS[e.key]; if (k) input.current[k] = false; };
     const blur = () => { input.current = { gas: false, brake: false, left: false, right: false }; setMode((m) => (m === "play" ? "paused" : m)); };
@@ -157,14 +191,15 @@ export default function App() {
         <div className="callout" id="callout" />
       </div>
       {mode === "ready" && (
-        <div className="overlay splash" onClick={() => { if (loaded) { audio.unlock(); setMode("radio"); } }}>
+        <div className="overlay splash" onClick={() => { if (loaded) { audio.unlock(); setMode("menu"); } }}>
           <canvas className="attract" ref={attract} />
-          {loaded ? <div className="start-prompt"><img src={`${ART}click-to-start-chrome.png`} alt="CLICK TO START" /></div> : <p className="loading">LOADING</p>}
+          {loaded ? <div className="start-prompt"><img src={`${ART}click-to-start-chrome.png`} alt="CLICK TO START" /></div> : <Loading progress={progress} />}
         </div>
       )}
-      {mode === "radio" && (
-        <div className="overlay radio">
-          <Radio station={station} setStation={(i) => { setStation(i); setPreview(true); }} volume={volume} setVolume={setVolume} muted={!soundOn} onDrive={() => start(seed)} />
+      {mode === "menu" && (
+        <div className="overlay menu">
+          <HeadUnit chain={chain} station={station} setStation={(i) => { setStation(i); setPreview(true); }} volume={volume} setVolume={setVolume} muted={!soundOn} toggleMute={() => setSoundOn(audio.toggle())}
+            lastRun={lastRun} initialMode={menuMode} onDrive={() => drive(seed)} onShot={driveShot} openRecord={openRecord} onOpened={onOpened} />
         </div>
       )}
       {mode === "paused" && <div className="overlay" onClick={() => setMode("play")}><h1>PAUSED</h1><p>CLOCK STOPPED</p></div>}
@@ -182,10 +217,24 @@ export default function App() {
             <div><span>STILL ON BOARD</span><b>{s.lost.length ? `LOST ${fmt(s.lost.reduce((a, r) => a + agePoints(r.age), 0))}` : "NO RIDERS LEFT"}</b></div>
             {s.lost.map((r, i) => <div key={i} className="rider"><span dangerouslySetInnerHTML={{ __html: face(r) + icon(r.dest) }} /><span>{r.name} / AGE {r.age}</span><b>{fmt(agePoints(r.age))} LOST</b></div>)}
           </div>
-          <p className="actions"><button className="cyan" onClick={() => start(seed)}>SAME RUN</button><button className="pink" onClick={() => { sim.current = newSim(seed + 1); setSeed(seed + 1); setMode("radio"); }}>NEW RUN</button></p>
+          {shot.current ? (
+            <>
+              <p className="verdict" style={{ color: settled ? (settled.claimed || /WIN|BEAT/.test(settled.text) ? "#78ffcb" : "#ff40bd") : "#63e7ff" }}>
+                {settled ? settled.text : chain?.trouble ? chain.trouble.t.title.toUpperCase() : chain?.busy ? `${chain.busy.text}${chain.busy.stage === "wallet" ? ". APPROVE IN YOUR WALLET" : chain.busy.stage === "network" ? ". SENDING TO THE NETWORK" : ""}` : `BEAT ${shot.current.record.storage.target}`}
+              </p>
+              <p className="actions">
+                {chain?.trouble?.retry && <button className="cyan" onClick={() => { const r = chain.trouble!.retry!; chain.dismiss(); setSettled(null); r(); }}>TRY AGAIN</button>}
+                {settled?.again && <button className="cyan" onClick={() => driveShot(shot.current!.shots, shot.current!.record)}>DRIVE AGAIN</button>}
+                {(settled || chain?.trouble) && !chain?.busy && <button className="pink" onClick={() => { chain?.dismiss(); shot.current = null; setSeed(randomSeed()); toMenu(); }}>MENU</button>}
+              </p>
+            </>
+          ) : (
+            <p className="actions"><button className="cyan" onClick={() => start(seed)}>SAME RUN</button><button className="pink" onClick={() => { setSeed(randomSeed()); toMenu(); }}>NEW RUN</button><button className="yellow" onClick={() => toMenu("POST")}>POST IT</button></p>
+          )}
         </div>
       )}
       </div>
+      <Suspense fallback={null}><ChainHost onApi={setChain} autoConnect={mode !== "ready"} /></Suspense>
       <div className="pad">
         <button {...hold("left")}>LEFT</button>
         <button {...hold("right")}>RIGHT</button>

@@ -67,12 +67,24 @@ export const TITLE = "title-scene.webp";
 const images = new Map<string, HTMLImageElement>();
 export const img = (file: string) => images.get(file);
 
-export function loadArt(): Promise<void> {
-  const files = new Set<string>([...Object.values(SHEETS).map((s) => s.file), ...Object.values(ICON), ...Object.values(PANO), ...Object.values(FILLERS).flat().map((s) => s.file), ...Object.values(FORK_STRUCT).flatMap((st) => [`fork-${st}.webp`, `fork-${st}-left.png`, `fork-${st}-right.png`]), ...Object.values(TUNNEL), LIGHT_RED.file, LIGHT_GREEN.file, TITLE]);
+// the painted gantry (menu kit): one frame across the road, a plate per branch with the district's trim, a rider badge
+export const GANTRY = { frame: "gantry/frame.webp", hangers: "gantry/hangers.png", plate: "gantry/sign-plate.webp", badge: "gantry/badge-plate.png", trim: { waterfront: "gantry/trim-waterfront.png", downtown: "gantry/trim-downtown.png", casino: "gantry/trim-casino-strip.png", golf: "gantry/trim-golf-hills.png" } as Record<District, string> };
+// street furniture (menu kit): eight props per district in one 4 x 2 sheet, ground anchor 256,460, each with its own scale
+const DC = (file: string, ppm: number[]) => ({ sheet: SH(file, 512, 512, 4, 256, 460, 1), ppm });
+export const DECOR: Record<District, { sheet: Sheet; ppm: number[] }> = {
+  waterfront: DC("props-waterfront.webp", [221, 141, 177, 209, 236, 224, 176, 118]), // bench, map kiosk, lifebuoy cabinet, bins, deckchair cart, winch, estate car, shelter
+  downtown: DC("props-downtown.webp", [115, 386, 283, 170, 118, 192, 157, 132]), // shelter, hydrant, newspaper boxes, phone booth, clock, planter, coupe, billboard
+  casino: DC("props-casino-strip.webp", [260, 202, 141, 212, 326, 133, 207, 125]), // bench, vending, parasol, flamingo, bollard, limousine, planter, pylon
+  golf: DC("props-golf-hills.webp", [237, 151, 303, 249, 223, 249, 172, 159]), // bench, timber shelter, ball washer, urn, heron, bin, estate car, fence
+};
+
+export function loadArt(onProgress?: (done: number, total: number) => void): Promise<void> {
+  const files = new Set<string>([...Object.values(SHEETS).map((s) => s.file), ...Object.values(ICON), ...Object.values(PANO), ...Object.values(FILLERS).flat().map((s) => s.file), ...Object.values(FORK_STRUCT).flatMap((st) => [`fork-${st}.webp`, `fork-${st}-left.png`, `fork-${st}-right.png`]), ...Object.values(TUNNEL), LIGHT_RED.file, LIGHT_GREEN.file, TITLE, GANTRY.frame, GANTRY.hangers, GANTRY.plate, GANTRY.badge, ...Object.values(GANTRY.trim), ...Object.values(DECOR).map((d) => d.sheet.file)]);
+  let done = 0;
   return Promise.all([...files].map((file) => new Promise<void>((ok, bad) => {
     const im = new Image();
     im.src = `${import.meta.env.BASE_URL}art/${file}`;
     // decode now: a 2048 px sheet decoded on its first draw costs a frame of half a second
-    im.decode().then(() => { images.set(file, im); ok(); }, () => bad(new Error(`art: ${file}`)));
+    im.decode().then(() => { images.set(file, im); onProgress?.(++done, files.size); ok(); }, () => bad(new Error(`art: ${file}`)));
   }))).then(() => undefined);
 }

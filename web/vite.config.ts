@@ -1,4 +1,5 @@
 import path from "node:path";
+import { execSync } from "node:child_process";
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import { midenVitePlugin } from "@miden-sdk/vite-plugin";
@@ -9,7 +10,10 @@ import { midenVitePlugin } from "@miden-sdk/vite-plugin";
 const assetFileNames = (a: { names?: string[] }) =>
   (a.names?.[0] ?? "").endsWith(".wasm") ? "assets/assets/miden_client_web.wasm" : "assets/[name]-[hash][extname]";
 
+const version = (() => { try { return execSync("git rev-parse --short HEAD").toString().trim(); } catch { return "dev"; } })();
+
 export default defineConfig({
+  define: { __PUB_VERSION__: JSON.stringify(version) },
   build: { rollupOptions: { output: { assetFileNames } } },
   worker: { rollupOptions: { output: { assetFileNames } } },
   // the SDK plugin points the SDK at its browser build; tests run on node, where the SDK reads its wasm from disk

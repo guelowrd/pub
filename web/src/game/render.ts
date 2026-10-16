@@ -1,8 +1,8 @@
 // Pseudo-3D view: road segments projected from a low chase camera, sprites sorted by segment and drawn at their anchors.
 import { BAY, CAR_W, LANE, NAME, SEG, TOP, W, WALK, isRed, leftEdge, rightEdge, seg, stopAt, type District, type Sim } from "./sim";
 import { CHARACTERS, FORK_OUT, sidewalkX } from "./course";
-import { BUILDING, DPROP, DPROPS, DROP, FILLERS, FORK_STRUCT, ICON, LIGHT_GREEN, LIGHT_RED, PANO, PANO_HORIZON, PEOPLE, PROP, ROAD_TINT, SHEETS, TRAFFIC, TREES, TUNNEL, VENUE_CELL, img, type Sheet } from "./art";
-import { DEFAULT_SKY, SKY } from "./stations";
+import { BUILDING, DECOR, DPROP, DPROPS, DROP, FILLERS, FORK_STRUCT, GANTRY, ICON, LIGHT_GREEN, LIGHT_RED, PANO, PANO_HORIZON, PEOPLE, PROP, ROAD_TINT, SHEETS, TRAFFIC, TREES, TUNNEL, VENUE_CELL, img, type Sheet } from "./art";
+import { CAR, DEFAULT_SKY, SKY } from "./stations";
 
 const N = 140; // segments drawn ahead
 const CAM_H = 2.2, CAM_BACK = 5;
@@ -13,7 +13,24 @@ const SMOKE_MS = [50, 100, 170, 260, 370, 500], SMOKE_A = [1, 1, 1, 0.85, 0.35, 
 const puffs: { z: number; x: number; t: number }[] = [], bursts: { z: number; x: number; t: number }[] = [];
 let lastT = 0, lastPuff = 0, lastSpin = 0;
 let sky = DEFAULT_SKY, beat = 0;
-export const setSong = (id: string) => { sky = SKY[id] ?? DEFAULT_SKY; };
+export const setSong = (id: string) => { sky = SKY[id] ?? DEFAULT_SKY; heroTint = tintHero(CAR[id]); };
+// the hero in the song's paint: the body multiplied by the colour once per song, the sheets' alpha kept
+let heroTint = new Map<string, HTMLCanvasElement>();
+function tintHero(color?: string): Map<string, HTMLCanvasElement> {
+  const out = new Map<string, HTMLCanvasElement>();
+  if (!color || color === "#ffffff") return out;
+  for (const sh of [SHEETS.hero, SHEETS.heroBrake, SHEETS.heroSpin]) {
+    const im = img(sh.file);
+    if (!im) continue;
+    const c = document.createElement("canvas"); c.width = im.width; c.height = im.height;
+    const g = c.getContext("2d")!;
+    g.drawImage(im, 0, 0);
+    g.globalCompositeOperation = "multiply"; g.globalAlpha = 0.85; g.fillStyle = color; g.fillRect(0, 0, c.width, c.height);
+    g.globalAlpha = 1; g.globalCompositeOperation = "destination-in"; g.drawImage(im, 0, 0);
+    out.set(sh.file, c);
+  }
+  return out;
+}
 export const setBeat = (b: number) => { beat = b; };
 // tunnel light: when we went in (headlights click on 0.8 s later) and when we came out (the exit bloom)
 let wasIn = false, inT = -1, exitT = -1;
@@ -161,7 +178,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   };
   // a whole cell of a sheet at its anchor; ppm overrides the sheet's scale, flip mirrors it for the left side
   const cell = (ctx2: CanvasRenderingContext2D, sh: Sheet, i: number, px: number, py: number, k: number, ppm = sh.ppm, flip = false, alpha = 1, light = 1) => {
-    const im = img(sh.file);
+    const im = heroTint.get(sh.file) ?? img(sh.file);
     if (!im) return;
     const f = k / ppm, sx = (i % sh.cols) * sh.cw, sy0 = Math.floor(i / sh.cols) * sh.ch, dw = sh.cw * f, dh = sh.ch * f;
     if (dw < 1 || dh < 1) return;
@@ -206,6 +223,14 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     const fl = FILLERS[st.district], side = (i >> 4) % 2 ? 1 : -1;
     if (s.stops.some((o) => o.rider && o.side === side && Math.abs(o.z + 15 - z) < 45)) continue;
     spr(z, side * (W + BAY + WALK + 7 + ((i >> 5) % 3) * 4), fl[(i >> 3) % 3], 0, fl[(i >> 3) % 3].ppm, side < 0, 1, 0, 0.65);
+  }
+  // street furniture every 55 m, between the lamps and the fillers, on one side or the other (mirrored on the left),
+  // clear of the bays and the forks
+  for (let i = Math.ceil((i0 - 5) / 11) * 11 + 5; i <= i0 + N; i += 11) {
+    const z = i * SEG, st = s.streets.find((o) => z >= o.z0 + 120 && z < o.z1 - 60);
+    if (!st || s.forks.some((o) => z >= o.z && z < o.zEnd + FORK_OUT) || s.stops.some((o) => Math.abs(o.z + 15 - z) < 40)) continue;
+    const side = (i >> 3) % 2 ? 1 : -1, d = DECOR[st.district], j = (i >> 1) % 8;
+    spr(z, side > 0 ? W + BAY + WALK * 0.6 : -(W + WALK * 0.6), d.sheet, j, d.ppm[j], side < 0);
   }
   for (const c of s.traffic) {
     const yaw = c.tx - c.x < -0.3 ? 0 : c.tx - c.x > 0.3 ? 2 : 1;
@@ -254,33 +279,37 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
       });
     }
   }
+  // the painted gantry (menu kit) 150 m before the fork: the frame spans 26 m of road, a plate per branch at its mount
+  // (plate cell 1024 x 512 at 0.76, top mount 512,74), the district's trim, the name fitted to its slot, the destination
+  // icon, and a badge with how many aboard want that side (hidden at zero)
   for (const f of s.forks) at(f.z - 150, () => {
     const { px, py, k } = place(f.z - 150, 0);
-    // a motorway gantry: one green plate per branch, white border, arrow at the outer end, the name sized to fit
-    const bh = 2.4 * k, top = py - 7 * k, half = (W + 3) * k;
-    ctx.fillStyle = "#d8d8e0"; ctx.fillRect(px - half - 0.35 * k, top, 0.35 * k, 7 * k); ctx.fillRect(px + half, top, 0.35 * k, 7 * k);
-    ctx.textBaseline = "middle";
-    for (const [side, d] of [[-1, f.left], [1, f.right]] as const) {
-      const x0 = side < 0 ? px - half : px + 0.1 * k, pw = half - 0.1 * k, out = side < 0 ? x0 : x0 + pw, inn = side < 0 ? x0 + pw : x0;
-      ctx.fillStyle = "#f4f4f4"; ctx.fillRect(x0, top, pw, bh);
-      ctx.fillStyle = "#1b6b3a"; ctx.fillRect(x0 + 0.12 * k, top + 0.12 * k, pw - 0.24 * k, bh - 0.24 * k);
-      ctx.fillStyle = COLOR[d]; ctx.fillRect(x0 + 0.12 * k, top + bh - 0.4 * k, pw - 0.24 * k, 0.28 * k); // the district's colour, as on its tunnel
-      const ax = out - side * 0.4 * k, ay = top + 1.05 * k; // the arrow
-      ctx.fillStyle = "#f4f4f4"; ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax - side * 1.2 * k, ay - 0.65 * k); ctx.lineTo(ax - side * 1.2 * k, ay + 0.65 * k); ctx.fill();
-      const ic = img(ICON[d]);
-      if (ic) ctx.drawImage(ic, inn - (side < 0 ? 1.9 : 0.4) * k, top + 0.3 * k, 1.5 * k, 1.5 * k);
-      const room = pw - 4.6 * k, name = NAME[d];
-      ctx.font = `${k}px "Boomer GT", monospace`;
-      const fs = Math.max(4, Math.min(k, k * room / ctx.measureText(name).width));
-      ctx.font = `${fs}px "Boomer GT", monospace`; ctx.textAlign = side < 0 ? "left" : "right";
-      ctx.fillText(name, ax - side * 1.6 * k, ay);
-      // badge under the plate: how many aboard want that side
+    const frame = img(GANTRY.frame), hangers = img(GANTRY.hangers), plate = img(GANTRY.plate), badge = img(GANTRY.badge);
+    if (!frame || !plate) return;
+    const g = (26 * k) / 2048, left = px - 1024 * g, top = py - 960 * g;
+    ctx.drawImage(frame, left, top, 2048 * g, 1024 * g);
+    if (hangers) ctx.drawImage(hangers, left, top, 2048 * g, 1024 * g);
+    ctx.textBaseline = "alphabetic";
+    for (const [mx, d] of [[582, f.left], [1470, f.right]] as const) {
+      const ps = 0.76 * g, ox = left + (mx - 512 * 0.76) * g, oy = top + (389 - 74 * 0.76) * g;
+      ctx.drawImage(plate, ox, oy, 1024 * ps, 512 * ps);
+      const trim = img(GANTRY.trim[d]), ic = img(ICON[d]);
+      if (trim) ctx.drawImage(trim, ox, oy, 1024 * ps, 512 * ps);
+      if (ic) ctx.drawImage(ic, ox + 74 * ps, oy + 185 * ps, 130 * ps, 130 * ps);
+      let fs = 93 * ps;
+      if (fs >= 3) {
+        ctx.font = `${fs}px "Boomer GT"`;
+        const tw = ctx.measureText(NAME[d]).width;
+        if (tw > 692 * ps) { fs *= (692 * ps) / tw; ctx.font = `${fs}px "Boomer GT"`; }
+        ctx.fillStyle = "#fff3f4"; ctx.textAlign = "left"; ctx.fillText(NAME[d], ox + 236 * ps, oy + 277 * ps);
+      }
       const n = s.seats.filter((r) => r && r.dest === d).length;
-      if (!n) continue;
-      const bx = x0 + pw / 2, by = top + bh;
-      ctx.font = `${k}px "Boomer GT", monospace`;
-      ctx.fillStyle = COLOR[d]; ctx.fillRect(bx - 1.2 * k, by, 2.4 * k, 1.3 * k);
-      ctx.fillStyle = "#080c24"; ctx.textAlign = "center"; ctx.fillText(`x${n}`, bx, by + 0.65 * k);
+      if (n && badge) {
+        const bs = 0.66 * ps, bx = ox + (864 - 128 * 0.66) * ps, by = oy + (375 - 37 * 0.66) * ps;
+        ctx.drawImage(badge, bx, by, 256 * bs, 256 * bs);
+        if (ic) ctx.drawImage(ic, bx + 40 * bs, by + 87 * bs, 58 * bs, 58 * bs);
+        if (bs * 88 >= 3) { ctx.font = `${88 * bs}px "Boomer LCD"`; ctx.fillStyle = "#ffe564"; ctx.textAlign = "right"; ctx.fillText(String(n), bx + 210 * bs, by + 141 * bs); }
+      }
     }
   });
   for (const p of puffs) {
