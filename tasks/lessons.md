@@ -30,3 +30,10 @@
 - A font family swap at the same pixel size reads as a size change: Share Tech Mono's x-height is far under the pixel
   LCD font's, so the HUD "shrank" with no size edit (Gaylord: "the font is now minuscule"). When swapping families on a
   screen the player reads at a glance, compare the two on that screen before calling it done, and keep the old family where it lost.
+
+## 2026-10-16 tunnel mouth ring
+- A fix checked at the distance where the bug showed (40 m) broke at the distance the player passes through (5 m):
+  the even-odd ring box was fine far away and blacked the frame close up. A screen-space fix is checked along the
+  whole approach, with frames captured at the moment of passing, not at one freeze.
+- Vite HMR does not always reach the render loop's closure; a "toggle has no effect" result after an edit means
+  reload the page before concluding anything.

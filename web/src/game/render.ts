@@ -46,7 +46,7 @@ function tintHero(color?: string): Map<string, HTMLCanvasElement> {
 }
 
 export const setBeat = (b: number) => { beat = b; };
-// tunnel light: when we went in (headlights click on 0.8 s later) and when we came out (the exit bloom)
+// tunnel light: when we went in (the headlights come up over the next half second) and when we came out (the exit bloom)
 let wasIn = false, inT = -1, exitT = -1;
 // masks tinted with a district colour, cached: the fork trims
 const tinted = new Map<string, HTMLCanvasElement>();
@@ -128,20 +128,20 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     ctx.fill();
   };
   // tunnels join the areas: from where the branches run straight to the first metres of the next street. Inside it is
-  // dark; the headlights click on a beat after the mouth; the wall strips glow; the exit blooms
+  // dark; the headlights come up a beat after the mouth; the wall strips glow; the exit blooms
   const TUN_H = 12, TUN_TEX = 6, TUN_IN = FORK_OUT / 2, TUN_OUT = 100; // 200 m of tunnel
   const tunnelAt = (z: number) => s.forks.find((o) => z >= o.zDecide + TUN_IN && z < o.zEnd + TUN_OUT);
   const inside = tunnelAt(s.z);
   if (inside && !wasIn) inT = s.t;
   if (!inside && wasIn) exitT = s.t;
   wasIn = !!inside;
-  const headlights = !!inside && s.t - inT > 0.35;
+  const hl = inside ? Math.min(1, Math.max(0, (s.t - inT - 0.15) / 0.5)) : 0; // the headlights ramp, 0 to 1 (a step here went black then bright)
   const lightAt = (z: number) => {
     const f = tunnelAt(z);
     if (!f) return 1;
     const mouthZ = f.zDecide + TUN_IN, exitZ = f.zEnd + TUN_OUT;
-    let l = 0.1 + 0.6 * Math.max(0, 1 - (z - mouthZ) / 18) + 0.6 * Math.max(0, 1 - (exitZ - z) / 22);
-    if (headlights) l += 0.9 * Math.max(0, 1 - (z - s.z) / 70);
+    let l = 0.1 + 0.6 * Math.max(0, 1 - (z - mouthZ) / 40) + 0.6 * Math.max(0, 1 - (exitZ - z) / 22);
+    l += 0.9 * hl * Math.max(0, 1 - (z - s.z) / 70);
     return Math.min(1, l);
   };
   const pattern = (im: CanvasImageSource) => { let p = patterns.get(im); if (!p) { p = ctx.createPattern(im, "repeat")!; patterns.set(im, p); } return p; };
@@ -154,14 +154,16 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     const wall = img(TUNNEL.wall), ceiling = img(TUNNEL.ceiling);
     const shade = SHADE(light);
     const tf = tunnelAt(z1);
-    if (tf && z1 < tf.zDecide + TUN_IN + SEG) {
+    if (tf && z1 < tf.zDecide + TUN_IN + SEG && z1 - camZ > 20) {
       // the mouth: the arch opening is wider than the tunnel section, so the ring between them is filled dark before the
-      // walls go on (the sky and skyline showed through it); the portal's stone covers the ring's outer edge
+      // walls go on (the sky and skyline showed through it); the portal's stone covers the ring's outer edge. Three
+      // strips around the section (an even-odd box failed once the mouth came close and the box reached the bottom of
+      // the screen); under 20 m the arch is out of view and the gap with it
+      const xa = X(n, l1), xb = X(n, r1), yt = top1 - 10 * sc[n], m = 12 * sc[n];
       ctx.fillStyle = "#0b0a1a";
-      ctx.beginPath();
-      ctx.rect(X(n, l1 - 12), top1 - 10 * sc[n], X(n, r1 + 12) - X(n, l1 - 12), sy[n] + 2 - (top1 - 10 * sc[n]));
-      poly([[X(n, l1), sy[n]], [X(n, l1), top1], [X(n, r1), top1], [X(n, r1), sy[n]]]);
-      ctx.fill("evenodd");
+      ctx.fillRect(xa - m, yt, m, sy[n] + 2 - yt);
+      ctx.fillRect(xb, yt, m, sy[n] + 2 - yt);
+      ctx.fillRect(xa - m, yt, xb - xa + 2 * m, top1 - yt);
     }
     for (const [xa, xb] of [[X(n, l1), X(n + 1, l2)], [X(n, r1), X(n + 1, r2)]]) {
       // the textured band over the lower metres of the wall, plain dark above it, then the darkness laid over both.
@@ -455,13 +457,13 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     sprites.get(n)?.forEach((fn) => fn());
   }
 
-  // headlights on the road ahead once they click on; a white bloom as we come out
+  // headlights on the road ahead as they come up; a white bloom as we come out
   const glow = img(TUNNEL.headlight);
-  if (headlights && glow) {
+  if (hl > 0 && glow) {
     ctx.save(); ctx.globalCompositeOperation = "lighter";
     for (const [dz, wm, al] of [[12, 9, 0.45], [26, 14, 0.3], [45, 18, 0.15]]) {
       const p = place(s.z + dz, s.x);
-      ctx.globalAlpha = al; ctx.drawImage(glow, p.px - wm / 2 * p.k, p.py - wm / 6 * p.k, wm * p.k, wm / 3 * p.k);
+      ctx.globalAlpha = al * hl; ctx.drawImage(glow, p.px - wm / 2 * p.k, p.py - wm / 6 * p.k, wm * p.k, wm / 3 * p.k);
     }
     ctx.restore();
   }

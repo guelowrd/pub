@@ -422,3 +422,8 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
   tunnel() fills that ring dark (evenodd) at the mouth segment before the walls; the portal's stone covers its outer edge.
 - Passenger order on the results screen: pickup order (s.stops order), ON BOARD / BAILED ones stay where they were
   picked up. Gaylord asked; answered, not changed.
+- Tunnel entry "black then light" (Gaylord, 19:50): two causes. The headlights were a step 0.35 s after the mouth and
+  the mouth fade ran over 18 m; now a 0.15 to 0.65 s ramp (hl) on both the light and the glow, and a 40 m fade. And my
+  mouth ring (17b0a2d): the even-odd box reached the bottom of the screen once the mouth was close and the cut-out
+  stopped holding, so the whole view went the ring's colour for a few frames. Now three strips around the section,
+  skipped under 20 m. Measured under the car at 90 km/h: 55 -> 38 -> 53 over 9 m, largest frame-to-frame step 16 (was 39).
