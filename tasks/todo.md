@@ -214,3 +214,12 @@ the TypeScript replay and MASM agree on the vectors. One bug on the way: a u32gt
 every second event; the error-code lookup (MasmError::from_static_str(msg).code()) found it in one run.
 Left: M5 (the four transactions in the web app, GQ's bread.ts/notes.ts/flow.ts, Gamecoin from gq/gamecoin.json, own tag
 0x50420001), wired to the designer's head unit when it lands.
+
+### Playtest 4 fixes (2026-10-16, night)
+Gantry = two green plates per fork (arrow out, icon in, name sized to fit, district colour band); tunnel strip is geometry
+(the textured one stepped at every segment seam), wall texture pinned along the road edge, darkness filled behind the
+painted arches (they are wider than the tunnel box). Wrecks knock 15 km/h off the run's top speed, floor 220. Menu music
+on the splash (plays once the browser allows sound). Invisible tunnel traffic, root cause: a sprite within 0.3 m of the
+camera draws ~10,000 px wide and grew the darkening scratch canvas past Chrome's 32,767 px limit, after which every dark
+sprite (tunnel traffic, dimmed fillers) drew nothing for the rest of the session; sprites closer than 1.5 m to the camera
+are now culled, and traffic keeps a 0.6 light floor in tunnels so its lights show before the headlights reach it.

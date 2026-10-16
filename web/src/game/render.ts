@@ -148,7 +148,9 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   const sprites = new Map<number, (() => void)[]>();
   const at = (z: number, fn: () => void) => {
     const n = seg(z) - i0;
-    if (n < 0 || n > N) return;
+    // nothing closer than 1.5 m to the camera: it would be hidden by the hero anyway, and a sprite that near blows up
+    // to thousands of pixels, which once grew the scratch canvas past the browser's limit and blanked every dark sprite
+    if (n < 0 || n > N || z < camZ + 1.5) return;
     if (!sprites.has(n)) sprites.set(n, []);
     sprites.get(n)!.push(fn);
   };
@@ -180,9 +182,9 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     } else ctx2.drawImage(im, sx, sy0, sh.cw, sh.ch, -sh.ax * f, -sh.ay * f, dw, dh);
     ctx2.restore();
   };
-  const spr = (z: number, x: number, sh: Sheet, i: number, ppm = sh.ppm, flip = false, alpha = 1, lift = 0, light = 1) => at(z, () => {
+  const spr = (z: number, x: number, sh: Sheet, i: number, ppm = sh.ppm, flip = false, alpha = 1, lift = 0, light = 1, floor = 0) => at(z, () => {
     const { px, py, k } = place(z, x);
-    cell(ctx, sh, i, px, py - lift * k, k, ppm, flip, alpha, light * lightAt(z));
+    cell(ctx, sh, i, px, py - lift * k, k, ppm, flip, alpha, Math.max(floor, light * lightAt(z)));
   });
   const prop = (z: number, x: number, p: keyof typeof PROP, flip = false) => spr(z, x, SHEETS.props, PROP[p][0], PROP[p][1], flip);
 
@@ -207,7 +209,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   }
   for (const c of s.traffic) {
     const yaw = c.tx - c.x < -0.3 ? 0 : c.tx - c.x > 0.3 ? 2 : 1;
-    spr(c.z, c.x, TRAFFIC[c.kind], yaw + (c.braking ? 3 : 0));
+    spr(c.z, c.x, TRAFFIC[c.kind], yaw + (c.braking ? 3 : 0), undefined, false, 1, 0, 1, 0.6); // its own lights keep it visible down a tunnel
   }
   // traffic lights: a head on each curb, a stop line across the road
   for (const l of s.lights) {
