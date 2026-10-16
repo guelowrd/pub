@@ -58,7 +58,7 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .pad button { flex: 1; height: 72px; font: inherit; font-size: 16px; color: #63e7ff; background: rgba(11,16,45,.8); border: 2px solid #63e7ff; touch-action: none; user-select: none; -webkit-user-select: none; }
 .pad button:nth-child(3) { color: #ff40bd; border-color: #ff40bd; } .pad button:nth-child(4) { color: #ffe564; border-color: #ffe564; }
 @media (pointer: coarse) { .pad { display: flex; } .app { height: min(100vh - 96px, calc(100vw * 3 / 4)); width: min(100vw, calc((100vh - 96px) * 4 / 3)); } .fork { display: flex; } }
-.overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(8,12,36,.85); text-transform: uppercase; }
+.overlay { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(8,12,36,.85); text-transform: uppercase; }
 .overlay.dim { background: #060b16e6; }
 .pause { width: calc(390 * var(--u)); }
 .splash { background: #080c24 url("/art/title-scene.webp") center / cover no-repeat; }
@@ -77,7 +77,7 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .menu, .screen { padding: 0; display: block; overflow: hidden; }
 .screen { text-transform: none; } /* its copy is set in capitals already; the metres keep their small m */
 .menu { background: radial-gradient(ellipse at 50% 40%, #29213f, #111421 55%, #070b10); }
-.hu-screen { position: absolute; left: 0; top: 0; transform-origin: top left; }
+.hu-screen { position: absolute; transform-origin: top left; }
 .hu-unit { position: absolute; }
 .hu-unit > img, .hu-unit > span > img { position: absolute; pointer-events: none; user-select: none; }
 .hu-text { position: absolute; white-space: nowrap; line-height: 1; overflow: hidden; }
@@ -108,7 +108,6 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 /* portrait phones: the scene on top, then the seat strip and the radar side by side, then the pad */
 @media (max-aspect-ratio: 1/1) {
   #root { justify-content: flex-start; }
-  .overlay { position: fixed; }
   .app { width: 100vw; height: calc(100vw * 3 / 4); --u: calc(100vw / 1280); font-size: calc(36 * var(--u)); }
   .panel small { font-size: calc(30 * var(--u)); } .panel > b { font-size: calc(64 * var(--u)); }
   .rail { top: 100%; left: 0; right: 0; width: auto; display: flex; gap: calc(16 * var(--u)); padding: calc(16 * var(--u)); pointer-events: none; }

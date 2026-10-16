@@ -9,7 +9,7 @@ export function pickLayout(w: number, h: number): Layout {
   return h > w ? "portrait" : h < 460 ? "landscape" : "desktop";
 }
 
-/** The layout for the window and the scale that fits its canvas in it. */
+/** The layout for the window, the scale that fits its canvas in it, and where the canvas sits (centred) */
 export function useFit(canvas: Record<Layout, { canvas: number[] }>) {
   const [fit, setFit] = useState(() => measure(canvas));
   useEffect(() => {
@@ -20,8 +20,8 @@ export function useFit(canvas: Record<Layout, { canvas: number[] }>) {
   return fit;
 }
 function measure(canvas: Record<Layout, { canvas: number[] }>) {
-  const layout = pickLayout(innerWidth, innerHeight), [w, h] = canvas[layout].canvas;
-  return { layout, scale: Math.min(innerWidth / w, innerHeight / h) };
+  const layout = pickLayout(innerWidth, innerHeight), [w, h] = canvas[layout].canvas, scale = Math.min(innerWidth / w, innerHeight / h);
+  return { layout, scale, left: (innerWidth - w * scale) / 2, top: (innerHeight - h * scale) / 2 };
 }
 
 /** Where a font's baseline sits under the top of a line-height-1 span, in em: half-leading plus ascent. */

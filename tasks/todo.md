@@ -450,3 +450,11 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
   (Traffic.branch, lane slides with off), spawns past the split land on a branch, and the mouth shift carries the cars
   along and drops the other bore's. A jump past the mouth (tests, console) counts as already shifted. Fork.k gone.
   Checked: frames at -30, -0.5, +0.5 (line), mouth-45, mouth-0.5, mouth+0.5; 763 car-frames in the sweep, 0 in the median.
+
+### Audit while the designer works (2026-10-16, 21:30)
+- Phone pass (no device, 390 x 844 and 740 x 340 iframes): the overlays were `absolute` inside the 4:3 scene box,
+  so on landscape phones the results screen and the menu were clipped to 448 of 740 px. Overlays are `fixed` on
+  every layout and board.ts centres each screen in the window (left/top from useFit). Portrait results: YOUR BEST sat
+  on the score line and collided with POINTS (now under the score, left), the terms' third line hid under POST IT
+  (key down 14 px), the score line clipped POINTS (wider). Landscape results: one line of terms with the key over the
+  rest (key now beside the terms, as on desktop; score 56 px so five digits + POINTS fit).

@@ -48,7 +48,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   openRecord: ChallengeNote | null;
   onOpened: () => void;
 }) {
-  const { layout, scale } = useFit(geometry);
+  const { layout, scale, left, top } = useFit(geometry);
   const [mode, setMode] = useState<Mode>("RADIO");
   const [back, setBack] = useState<Mode>("RADIO"); // where AUDIO returns to
   const [cursor, setCursor] = useState<Record<string, number>>({});
@@ -216,7 +216,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const labelTop = G.label.centre[1] + G.label.size * 0.35 - baselineEm("Chakra Petch") * G.label.size + (pressed === "action" ? 2 : 0);
 
   return (
-    <div className="hu-screen" style={{ width: px(G.canvas[0]), height: px(G.canvas[1]), transform: `scale(${scale})` }}>
+    <div className="hu-screen" style={{ left: px(left), top: px(top), width: px(G.canvas[0]), height: px(G.canvas[1]), transform: `scale(${scale})` }}>
       {/* the TV: the painting in the tube, the bezel and glass over it, the captions on top of the glass */}
       <div className="tv" style={{ left: px(TV.origin[0]), top: px(TV.origin[1]), width: px(TV.size[0]), height: px(TV.size[1]) }} onWheel={(e) => { wheel.current += e.deltaY; if (Math.abs(wheel.current) >= 80) { move(Math.sign(wheel.current)); wheel.current = 0; } }}>
         <div className="tv-screen" style={{ left: px(sx), top: px(sy), width: px(sw), height: px(sh), borderRadius: px(TV.radius) }}>

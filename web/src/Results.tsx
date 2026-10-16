@@ -43,7 +43,7 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
   shot: { target: number } | null; settled: Settled | null;
   onSame: () => void; onNew: () => void; onAgain: () => void; onMenu: () => void; onRetry: (retry: () => void) => void;
 }) {
-  const { layout, scale } = useFit(geometry);
+  const { layout, scale, left, top } = useFit(geometry);
   const G = geometry[layout] as Geometry;
   const [note, setNote] = useState<string | null>(null);
   const text = (t: string, x: number, baseline: number, size: number, color: string, mono = false, align: "left" | "right" | "center" = "left", width?: number, key?: string | number) => (
@@ -92,11 +92,12 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
   const lines = status ? status.split("\n") : [], [, sb, size0, sw, room] = G.post.status;
   const statusSize = Math.max(7, Math.min(size0, sw / (Math.max(1, ...lines.map((l) => l.length)) * 0.54), room / (Math.max(1, lines.length) * 1.25)));
   const statusTop = sb - baselineEm("Share Tech Mono") * statusSize;
-  if (layout === "desktop") for (const k of keys) if (k.kind === "post") { const [top, h] = (G.post as { well?: number[] }).well!; k.rect = [k.rect[0], top + 12, k.rect[2], h - 24]; } // the key fills the well beside the text
+  const well = (G.post as { well?: number[] }).well; // desktop and landscape: the key stands beside the terms and fills the well
+  if (well) for (const k of keys) if (k.kind === "post") k.rect = [k.rect[0], well[0] + (layout === "desktop" ? 12 : 0), k.rect[2], well[1] - (layout === "desktop" ? 24 : 0)];
   const stats: [string, string][] = [["PASSENGERS DELIVERED", String(s.delivered)], ["DELIVERY POINTS", fmt(s.banked)], ["DISTANCE POINTS", fmt(Math.floor(s.dist * RATE))]];
   const { labels, labelSize, labelAlign, split, values, valueSize, valueAlign } = G.stats as Geometry["stats"] & { labelAlign: "left" | "center"; valueAlign: "right" | "center" };
   return (
-    <div className="hu-screen" style={{ width: px(G.canvas[0]), height: px(G.canvas[1]), transform: `scale(${scale})` }}>
+    <div className="hu-screen" style={{ left: px(left), top: px(top), width: px(G.canvas[0]), height: px(G.canvas[1]), transform: `scale(${scale})` }}>
       <div className="hu-unit" style={{ left: px(G.origin[0]), top: px(G.origin[1]), width: px(G.size[0]), height: px(G.size[1]) }}>
         <img src={`${ART}results/${layout}/frame.png`} alt="" style={{ left: 0, top: 0, width: px(G.size[0]), height: px(G.size[1]) }} />
         <img src={`${ART}results/${layout}/wells.png`} alt="" style={{ left: 0, top: 0, width: px(G.size[0]), height: px(G.size[1]) }} />
