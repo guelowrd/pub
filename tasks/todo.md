@@ -330,3 +330,21 @@ was points all along, the "m" was wrong), "YOUR BEST: 14,236", riders still aboa
 (the player never scored them) with ON BOARD after, the right-hand note is gone, POST IT stands as tall as the three
 lines beside it (the key follows the status height on desktop).
 Ribbon copy is Gaylord's (fd80084). TO BANK is now BOOMER METER (seats header; the radar reveal says "+80 ON THE METER").
+
+### High-speed visual test (2026-10-16, afternoon)
+Gaylord: "weird bugs while driving higher speed", mostly the road. Driven with a dev-console autopilot (v pinned to the
+cap, x to the centre, hazards hit, traffic nudged out of the lane) and a per-frame recorder on the canvas: curb edges by
+colour on three rows, the pixel under the car, the camera's road height, the render's own near geometry re-derived.
+Two root causes, both fixed in render.ts:
+- Hills: the near plane used the camera's absolute height, so on every hill the nearest slice started too far out and
+  the ground colour showed under the car (the road "ended" in a flat line halfway up the screen on an 8 m top; below a
+  2.2 m dip the plane went negative and the first slice projected to nonsense). Now the plane is 2.2 m under the camera,
+  found on a slope by three fixed-point rounds (roadY helper). 1,142 frames incl. 118 on hills: no bare ground.
+- Curves: the OutRun shortcut (x = 0, dx = -c0 * frac) shifts the whole road by one segment's curvature at every segment
+  start. At 299 km/h that is a 16 Hz sawtooth: at the 0.9 h row the near curb slid 3 to 5 px for three frames then
+  jumped back 11 px (8 px at 0.75 h). Now the centre line integrates curvature into heading and heading into offset,
+  exact at the segment starts, with the camera's own offset and heading inside its segment taken out; the branch offsets
+  in course.ts integrate the same way. Residual: about 2 px of chord wobble at the nearest row (5 m slices drawn straight).
+Looked clean at top speed after: flat, hill top (+2.7 m), dip (-1.3 m), tunnel exit, fork arch, stop bay. Unchanged and
+worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat faster than the frame rate at speed
+(1.4 m per frame at 299), so they strobe; a speed fade on the material alpha would calm it.

@@ -18,3 +18,10 @@
   add a cache-busting query to get the file as it is on disk.
 - A projection clamp (`max(0.3, dz)`) is a bug wearing a safety belt: the nearest road slice drew from a bogus distance for
   hours (blurred tile, lane lines cut at a hard edge) because the clamp hid the division by zero. Clip to the near plane instead.
+
+## 2026-10-16 high-speed road test
+- A projection fix verified on flat ground only (the near plane took the camera's absolute height) broke every hill. A
+  geometry change in render.ts is checked on a hill top, a dip, a curve and a tunnel exit at top speed, with the
+  console autopilot (pin v and x per frame) and a canvas recorder, before it is called done.
+- "Weird at speed" means a per-frame artefact: measure frame-to-frame deltas of a road edge and split them by whether
+  the camera crossed a segment start; a sawtooth shows up as crossings that move differently from the frames between.

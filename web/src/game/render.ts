@@ -81,21 +81,28 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   // road centre offset and projection per segment start. OutRun's trick: the road is a parabola from the camera out,
   // the curvature accumulates into the shift, the shift into the offset, so a curve keeps bending as you drive it.
   const yAt = (i: number) => s.y[i] ?? 0;
-  const camY = CAM_H + yAt(i0) * (1 - frac) + yAt(i0 + 1) * frac;
-  // a segment start behind the near plane (the ground the bottom row of the screen looks at) is pinned to that plane:
-  // the nearest slice then projects true instead of from a clamped distance, which blew its tile up into a blur
-  const near = camY * focal / (h - hy);
+  const roadY = (z: number) => { const j = Math.floor(z / SEG), t = z / SEG - j; return yAt(j) * (1 - t) + yAt(j + 1) * t; };
+  const camY = CAM_H + roadY(camZ);
+  // the near plane: the ground the bottom row of the screen looks at, 2.2 m under the camera on the flat, found on a
+  // slope by a few fixed-point rounds (the camera's absolute height here pushed the plane out on every hill and left
+  // the ground bare under the car). A segment start behind it is pinned to it: the nearest slice then projects true
+  // instead of from a clamped distance, which blew its tile up into a blur
+  let near = CAM_H * focal / (h - hy);
+  for (let k = 0; k < 3; k++) near = (camY - roadY(camZ + near)) * focal / (h - hy);
   const xo: number[] = [], sy: number[] = [], sc: number[] = [], zAt: number[] = [];
-  for (let n = 0, x = 0, dx = -dxAt(i0) * frac; n <= N + 1; n++) {
-    xo[n] = x;
-    x += dx;
-    dx += dxAt(i0 + n);
+  // the road's centre line as the camera sees it: curvature integrates into heading, heading into offset, exact at
+  // the segment starts, and the camera's own offset and heading inside its segment taken out, so the picture is the
+  // same across a segment start (the OutRun shortcut shifted the whole road by one segment's curvature there, a
+  // sawtooth at speed in every curve)
+  const c0 = dxAt(i0);
+  for (let n = 0, x = 0, dx = 0; n <= N + 1; n++) {
+    const c = dxAt(i0 + n);
+    xo[n] = x - c0 * frac * (n - frac / 2);
+    x += dx + c / 2;
+    dx += c;
     zAt[n] = Math.max((i0 + n) * SEG, camZ + near);
     sc[n] = focal / (zAt[n] - camZ);
-    // the road height where the slice starts: on a hill, a pinned start behind the camera must take the near plane's
-    // height, or its slice lands as a band in front of the car
-    const j = Math.floor(zAt[n] / SEG), t = zAt[n] / SEG - j;
-    sy[n] = hy + (camY - yAt(j) * (1 - t) - yAt(j + 1) * t) * sc[n];
+    sy[n] = hy + (camY - roadY(zAt[n])) * sc[n];
   }
 
   // the song's sky, then the district's skyline, which slides a little against the curves. The district swaps inside the tunnel

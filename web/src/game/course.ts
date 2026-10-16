@@ -104,12 +104,13 @@ function place(s: Sim, leg: number, k: number, z0: number) {
   for (const h of n.hazards) s.hazards.push({ ...h, z: z0 + h.z });
   for (const [z, offset] of n.lights) s.lights.push({ z: z0 + z, offset });
   if (leg + 1 >= LEGS) return; // past the last street the road runs on empty
-  // the branches bend away over the first half of FORK_OUT, then run straight; off[] integrates that twice
+  // the branches bend away over the first half of FORK_OUT, then run straight; off[] integrates that twice, the way
+  // the renderer integrates the road's own curvature
   const segs = FORK_OUT / SEG, kk: number[] = [], off = [W];
   for (let i = 0, bdx = 0; i < segs * 2; i++) {
     kk.push(i < segs / 2 ? 0.05 : 0);
+    off.push(off[i] + bdx + kk[i] / 2);
     bdx += kk[i];
-    off.push(off[i] + bdx);
   }
   s.forks.push({ z: z1, zDecide: z1 + FORK_IN, zEnd: z1 + FORK_IN + FORK_OUT, left: s.course[leg + 1][k].district, right: s.course[leg + 1][k + 1].district, side: 0, k: kk, off });
 }
