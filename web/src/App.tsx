@@ -186,7 +186,7 @@ export default function App() {
       const cur = s.streets[s.streets.length - 1];
       const just = e?.k === "pick" && tick(s) - e.t < 200 ? s.stops.find((o) => o.taken && o.i === e.stop && o.z >= cur.z0 && o.z < cur.z1)?.rider : undefined;
       // the radar's POSITION map: the blip sits on the curb's side and climbs with the distance (centre = here, top = 250 m out)
-      const blip = (st: { z: number; side: number }) => `<i class="blip" style="left:${73.5 + st.side * 6.75}%;top:${44.4 - 21.8 * Math.min(1, Math.max(0, (st.z - s.z) / 250))}%"></i>`;
+      const blip = (st: { z: number; side: number }) => `<i class="blip" style="left:${73.5 + st.side * 6.75}%;top:${38.4 - 21.8 * Math.min(1, Math.max(0, (st.z - s.z) / 250))}%"></i>`;
       // in a tunnel the radar scans: the next street's stop is not a target yet
       const tunnel = s.forks.some((o) => s.z >= o.mouth && s.z < o.zEnd + 100);
       const radar = node("radar").parentElement!;

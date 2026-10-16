@@ -41,9 +41,9 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .radar-box.search { background-image: url("/art/radar/radar-B-search.png"); } .radar-box.full { background-image: url("/art/radar/radar-B-full.png"); }
 #radar { position: absolute; inset: 0; }
 #radar .dither { position: absolute; left: 5.5%; top: 21.8%; width: 42%; height: 67.7%; image-rendering: pixelated; }
-#radar .reticle { position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: .9; }
+#radar .reticle { position: absolute; left: 0; top: -6%; width: 100%; height: 100%; opacity: .9; } /* the map sits up with its POSITION label, air under it for the range */
 #radar .blip { position: absolute; width: 3cqw; height: 3cqw; margin: -1.5cqw 0 0 -1.5cqw; border-radius: 50%; background: #85e64b; box-shadow: 0 0 2cqw #85e64b; }
-#radar .pos { position: absolute; left: 73.5%; top: 9%; transform: translateX(-50%); font-family: "Chakra Petch", sans-serif; font-size: 4.4cqw; color: #7fb3af; white-space: nowrap; }
+#radar .pos { position: absolute; left: 73.5%; top: 5%; transform: translateX(-50%); font-family: "Chakra Petch", sans-serif; font-size: 4.4cqw; color: #7fb3af; white-space: nowrap; }
 #radar .lab { position: absolute; left: 73.5%; top: 68%; transform: translateX(-50%); font-family: "Chakra Petch", sans-serif; font-size: 4.4cqw; color: #7fb3af; white-space: nowrap; }
 #radar .range { position: absolute; left: 73.5%; top: 79%; transform: translateX(-50%); font-size: 7.4cqw; color: #85e64b; white-space: nowrap; }
 #radar .range.drop { top: 74%; font-family: "Chakra Petch", sans-serif; font-size: 6.2cqw; }
