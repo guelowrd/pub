@@ -52,3 +52,10 @@ the splash's visible symptom (the cropped picture) and declared it fixed while t
 still drawing off the picture. Rule: when a container changes shape, list every child that assumes its old shape (CSS
 backgrounds, canvases with reference frames, absolutely placed keys) and look at each in the browser before saying done.
 A symptom fix that leaves a sibling layer wrong is a second bug.
+
+## 2026-10-16, "the fork is still not symmetrical" (third time)
+Gaylord pointed at a screenshot by name and I theorised from code before opening it, then built a camera change for the
+wrong asymmetry (the lane's perspective) while the real one was the gore's hatching leaning one way. Rule: when a remark
+names a screenshot, crop and read that region first, list the asymmetric elements in it (lines, hatching, edges), and
+match each to the code that draws it before touching anything. A perspective effect is never the answer to "symmetric"
+when the complaint is about markings.

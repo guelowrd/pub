@@ -179,7 +179,8 @@ export default function App() {
       const full = !s.seats.includes(null);
       html("bank", `<span>BOOMER METER <span class="num">${fmt(s.seats.reduce((a, r) => a + (r ? agePoints(r.age) : 0), 0))}</span></span>${full ? "<em>FULL</em>" : ""}`);
       s.seats.forEach((r, i) => html(`seat${i}`, r ? `${face(r)}${icon(r.dest)}<small>AGE</small><b>${r.age}</b><em>${fmt(agePoints(r.age))}<small>PTS</small></em>` : `<span>EMPTY</span>`));
-      // radar: the next stop's face and honest range; the reveal for 2 s after boarding; nothing at a fork
+      // radar: the next stop's face and honest range; the reveal for 2 s after boarding; scanning when there is no stop
+      // ahead (it used to go dark 400 m before a fork, which hid the street's last stops; Gaylord: always on)
       const c = candidate(s), e = s.log[s.log.length - 1];
       const f = s.forks.find((o) => o.side === 0 && o.z - 400 < s.z && s.z < o.zDecide);
       const cur = s.streets[s.streets.length - 1];
@@ -189,11 +190,10 @@ export default function App() {
       // in a tunnel the radar scans: the next street's stop is not a target yet
       const tunnel = s.forks.some((o) => s.z >= o.mouth && s.z < o.zEnd + 100);
       const radar = node("radar").parentElement!;
-      radar.className = `radar-box ${just ? "" : f || tunnel ? "search" : c?.rider && full ? "full" : c?.rider || c?.drop ? "" : "search"}`;
+      radar.className = `radar-box ${just ? "" : tunnel ? "search" : c?.rider && full ? "full" : c?.rider || c?.drop ? "" : "search"}`;
       html("radar", just ? `${face(just)}<div class="reveal"><b>AGE ${just.age}</b><br>+${fmt(agePoints(just.age))} ON THE METER</div>${icon(just.dest)}`
-        : f || tunnel ? "" : c?.rider ? (full ? "" : `<img class="dither" src="${dithered(c.rider)}" alt=""><small class="pos">POSITION</small><img class="reticle" src="${ART}radar/reticle-B.png" alt="">${blip(c)}<small class="lab">AGE RANGE</small><b class="range">${c.rider.lo} TO ${c.rider.hi}</b>`)
+        : tunnel ? "" : c?.rider ? (full ? "" : `<img class="dither" src="${dithered(c.rider)}" alt=""><small class="pos">POSITION</small><img class="reticle" src="${ART}radar/reticle-B.png" alt="">${blip(c)}<small class="lab">AGE RANGE</small><b class="range">${c.rider.lo} TO ${c.rider.hi}</b>`)
         : c?.drop ? `<small class="pos">POSITION</small><img class="reticle" src="${ART}radar/reticle-B.png" alt="">${blip(c)}<b class="range drop">DROP OFF</b>${icon(c.drop)}` : "");
-      radar.style.display = f ? "none" : "";
       const badge = (d: District) => { const n = s.seats.filter((r) => r && r.dest === d).length; return n ? ` x${n}` : ""; };
       html("fork", f ? `<span style="color:${COLOR[f.left]}">&lt; ${NAME[f.left]}${badge(f.left)}</span><span style="color:${COLOR[f.right]}">${NAME[f.right]}${badge(f.right)} &gt;</span>` : "");
       const text = s.callout?.text ?? "";

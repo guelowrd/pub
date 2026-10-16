@@ -233,13 +233,21 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     const z1 = (i0 + n) * SEG, z2 = z1 + SEG, t = (z: number) => W * Math.min(1, Math.max(0, (z - f.z) / (f.zDecide - f.z)));
     road(n, c, c, W + t(z1), W + t(z2), W + t(z1), W + t(z2), alt);
   };
-  // the gore at the split: the pavement stays continuous between the two inner edges and carries hatching until the
-  // branches are GORE apart; past that the ground between them shows
+  // the gore at the split: the pavement stays continuous between the two inner edges until the branches are GORE apart;
+  // past that the ground between them shows. Its markings mirror about the axis: a white line along each edge (its
+  // pavement covers the lines the bores drew) and a chevron every other slice, point away. One diagonal stroke per slice
+  // leaned one way and its ends piled into a line on the right edge only (Gaylord: "gore on the left, white line only on
+  // its right")
   const gore = (n: number, el1: number, er1: number, el2: number, er2: number, alt: boolean) => {
     if (er1 - el1 >= GORE) return;
-    const lt = lightAt((i0 + n) * SEG), shade = (c: string) => (lt < 1 ? mix(c, "#050410", 1 - lt) : c);
+    const lt = lightAt((i0 + n) * SEG), shade = (c: string) => (lt < 1 ? mix(c, "#050410", 1 - lt) : c), line = shade("#e0e0f0");
     quad(n, el1, er1, el2, er2, shade(alt ? asphalt[0] : asphalt[1]));
-    quad(n, el1, Math.min(er1, el1 + 0.35), Math.max(el2, er2 - 0.35), er2, shade("#e0e0f0")); // one diagonal stroke per slice
+    quad(n, el1, Math.min(el1 + 0.35, er1), el2, Math.min(el2 + 0.35, er2), line);
+    quad(n, Math.max(er1 - 0.35, el1), er1, Math.max(er2 - 0.35, el2), er2, line);
+    if (alt && er1 - el1 > 2) {
+      const cm = (el2 + er2) / 2;
+      quad(n, el1 + 0.6, el1 + 0.95, cm - 0.18, cm + 0.18, line); quad(n, er1 - 0.95, er1 - 0.6, cm - 0.18, cm + 0.18, line);
+    }
   };
 
   // sprites bucketed by segment, drawn right after their segment's ground

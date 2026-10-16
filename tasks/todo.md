@@ -518,3 +518,16 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
   150 to 350 m stretches, strength up to 0.05 per segment) and the renderer bends the road (seen at z 1670 on the casino
   street). The first street of this seed had one weak curve (0.0023); strengths are uniform in ±0.05, so weak first streets
   happen. Nothing changed in course.ts or sim.ts since the fork commits. Gaylord's call whether curves get a floor.
+
+## 2026-10-16, 22:50, Gaylord's three remarks (screenshots in ~/Code/pub, 22.08 and 22.10)
+- Radar: it went `display: none` from 400 m before a fork to the decision line, which hid the street's last stops (stops
+  sit up to 950 m, the fork at 1200). The box stays on now: a target when there is one, SCAN otherwise (and in tunnels).
+  The phones' fork line (`.fork`, coarse pointers only) is unchanged.
+- BOOMER METER under the score: the rail moved from 158 to 190 design px (gap under the score box about 70 px instead
+  of 40). Radar now 422 to 601.
+- Fork "not symmetrical": the ground, not the arch. The gore's hatching was one diagonal stroke per slice from the left
+  inner edge to the right, so the stroke ends piled into a white line on the gore's right edge only, and the gore's
+  pavement covered the inner lines the two bores had drawn. Now the gore draws a white line along both edges and a chevron
+  (point away) every other slice. I first chased the camera (a car in a lane makes the Y lopsided in perspective) and
+  tried holding the camera on the axis through the fork; reverted, Gaylord did not ask for it. Checked at the line from
+  the centre lane and the left lane.

@@ -20,8 +20,8 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .tl { top: calc(24 * var(--u)); left: calc(26 * var(--u)); } .tr { top: calc(24 * var(--u)); right: calc(26 * var(--u)); text-align: right; }
 .bl { bottom: calc(24 * var(--u)); left: calc(26 * var(--u)); border-color: #ff40bd; } .bl small:last-child { color: #aca5d1; font-size: calc(14 * var(--u)); }
 #time.late { color: #ff40bd; }
-/* right rail: 228 px at x 1026, seats 158-372, radar 390-569 */
-.rail { position: absolute; top: calc(158 * var(--u)); right: calc(26 * var(--u)); width: calc(228 * var(--u)); }
+/* right rail: 228 px at x 1026, seats 190-404, radar 422-601 (a clear gap under the score, Gaylord's ask) */
+.rail { position: absolute; top: calc(190 * var(--u)); right: calc(26 * var(--u)); width: calc(228 * var(--u)); }
 .rail .panel { position: relative; width: 100%; padding: calc(8 * var(--u)); margin-bottom: calc(18 * var(--u)); }
 #bank { display: flex; flex-wrap: wrap; align-items: baseline; row-gap: calc(4 * var(--u)); color: #ffe564; font-size: calc(14 * var(--u)); white-space: pre; margin-bottom: calc(6 * var(--u)); }
 #bank em { margin-left: auto; font-style: normal; color: #ff40bd; animation: pub-blink 1s steps(1, end) infinite; } /* FULL takes the right, or its own line when the meter is wide */
