@@ -600,3 +600,12 @@ Not verified: a real SHOT / COLLECT round through the new screens (needs a walle
 unchanged), the pack's faces on a real phone.
 - Gaylord (00:40): "put back the tv effect". The Stage TV glass's scanlines (a 64 px tile cut from the old glass.png, art/gp/scanlines.png) lie over the new tube's content, inside the clip, under the bezel and the pack's glass.
 - Gaylord (00:50): the roadside buildings read "flat like paperboard". A second rank of the same frontage band stands 30 m behind the first, 1.6x taller, its columns shifted a third of a tile and hazed per hour (night dark, sunset mauve, midday sky blue), so roofs rise behind the near fronts and slide slower; the near rank throws a 3 m shadow on the ground at its foot. One hazed copy per band image (source-atop veil, cached). Checked downtown sunset, waterfront night, golf night; frame time median 8.3 ms, unchanged.
+
+## 2026-10-17, one look per song (Gaylord's moods, "push the knobs one notch", "design elements per track")
+- Stage table checked against the moods: fits, two debatable (OUTRUN PULSE sad under midday, NEON PURSUIT playful in
+  rain), both kept on purpose (the name, the thrill).
+- `docs/designer-brief-9.md`: lamp per district (+ the factory bulkhead), 3 to 4 signature pieces per song, what the
+  engine does itself, formats, the cuts for performance (heat shimmer, long shadows, full frontage reflection, big
+  murmurations). `docs/set-dressing-plan.md`: the per-song knobs (pushed), the dressing table, how each engine piece is
+  drawn with its budget, the low tier guard (20 ms median for 2 s -> particles off, 1 strip, no decal pass, 70 segments).
+- Not started: the knobs can go in before the art; the rest waits for the pack.
