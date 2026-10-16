@@ -173,13 +173,6 @@ export function fmtGamecoin(v: bigint): string {
 /** "1 GC", "2.5 GC": what fits a head-unit row. */
 export const fmtGc = (v: bigint) => `${toGc(v).toLocaleString(undefined, { maximumFractionDigits: GC_DECIMALS })} GC`;
 
-/** The page's address without the record it was opened for (other parameters, like ?local=, stay). */
-export function withoutRecord(href: string): string {
-  const url = new URL(href);
-  url.searchParams.delete("record");
-  return url.toString();
-}
-
 /** A moment in UTC, for readers anywhere: 13 Oct 14:05 UTC. */
 function utcLabel(ms: number): string {
   const d = new Date(ms);
@@ -200,19 +193,4 @@ export function recordLinks(recordId: string, score: number, expiresAt: number, 
   const pick = [...recordId].reduce((sum, c) => sum + c.charCodeAt(0), 0);
   const text = POSTS[pick % POSTS.length](score, utcLabel(expiresAt), song);
   return { url, x: `https://x.com/intent/post?text=${encodeURIComponent(`${text}\n${url}`)}` };
-}
-
-/** What a pasted code means: a record id from a Pick Up Boomers link, from our X share link, or typed as is. */
-export function parseCode(text: string): { id: string } | { hint: string } {
-  const decoded = (() => {
-    try {
-      return decodeURIComponent(text);
-    } catch {
-      return text;
-    }
-  })();
-  const id = /0x[0-9a-f]{64}/i.exec(decoded)?.[0];
-  if (id) return { id: id.toLowerCase() };
-  if (/x\.com\/[^/]+\/status\/|twitter\.com\/[^/]+\/status\//i.test(text)) return { hint: "Open the post and copy the Pick Up Boomers link." };
-  return { hint: "That is not a Pick Up Boomers code." };
 }

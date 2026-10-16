@@ -7,15 +7,17 @@ import geometry from "./game/data/headunit.json";
 import { STATIONS } from "./game/stations";
 import type { ChainApi, ChallengeNote, Posted } from "./chain/ChainHost";
 import type { Event } from "./game/sim";
+import { PRIZES } from "./chain/config";
+import { blocksToClock as clock, fmtGc as gc, recordLinks, sameAccount as same, sameWord } from "./chain/flow";
+import { boards, history, owed as owedNotes } from "./chain/hub";
+import { noteDeadline } from "./chain/notes";
 
 type Layout = "desktop" | "portrait" | "landscape";
 export type Mode = "RADIO" | "RECORDS" | "POST" | "HISTORY" | "SCORES" | "WALLET" | "AUDIO" | "SYSTEM";
 const PRIMARY: Mode[] = ["RADIO", "RECORDS", "POST", "HISTORY", "SCORES", "WALLET"];
-const PRIZES = [1n, 2n, 5n, 10n].map((n) => n * 1_000_000n);
 const ART = `${import.meta.env.BASE_URL}art/headunit/`;
 const px = (n: number) => `${n}px`;
 const CYAN = "#63e7ff", PINK = "#ff40bd", YELLOW = "#ffe564", MINT = "#78ffcb", CREAM = "#fff3f4", GREY = "#8fadb7", DIM = "#8bb6bb", EXPIRED = "#8a9baa";
-const BLOCK_SECONDS = 3;
 
 type Rect = number[];
 type Spec = { clip: Rect; baseline: Rect; size: number; align?: string; font?: string };
@@ -27,11 +29,6 @@ type Row = { cells: { spec: Spec; text: string; color?: string; font?: "GT" | "L
 export function pickLayout(w: number, h: number): Layout {
   return h > w ? "portrait" : h < 460 ? "landscape" : "desktop";
 }
-const clock = (blocks: number) => {
-  const s = Math.max(0, blocks) * BLOCK_SECONDS, h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
-  return `${h ? `${h}:${String(m).padStart(2, "0")}` : m}:${String(sec).padStart(2, "0")}`;
-};
-const gc = (v: bigint) => `${(Number(v) / 1e6).toLocaleString("en-US", { maximumFractionDigits: 6 })} GC`;
 const courseLabel = (seed: number) => `C${seed.toString(36).toUpperCase()}`;
 const songOf = (i: number) => STATIONS[i]?.title ?? `SONG ${i}`;
 
@@ -83,18 +80,14 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const notes = chain?.notes ?? [];
   const busy = chain?.busy ?? null;
   const trouble = chain?.trouble ?? null;
-  const same = (a: { suffix: bigint; prefix: bigint } | null | undefined, b: { suffix: bigint; prefix: bigint } | null | undefined) => !!a && !!b && a.suffix === b.suffix && a.prefix === b.prefix;
-  const sameWord = (a: bigint[], b: bigint[]) => a.every((f, i) => f === b[i]);
-  const noteDeadline = (n: ChallengeNote) => (n.kind === "shot" ? Math.min(n.storage.shotDeadline, n.storage.expiryBlock) : n.storage.expiryBlock);
-  const CLAIM_FUZZ = 64;
 
   // the lists behind the modes
   const open = notes.filter((n) => n.kind === "record" && !n.consumed && n.amount > 0n && height < n.storage.expiryBlock - 140 && !same(me, n.storage.champion)).sort((a, b) => a.storage.target - b.storage.target);
-  const owed = me ? notes.filter((n) => !n.consumed && same(me, n.storage.champion) && !(n.kind === "shot" && same(me, n.storage.rival)) && height >= noteDeadline(n) + CLAIM_FUZZ) : [];
+  const owed = owedNotes(notes, height, me);
   const myRecords = me ? notes.filter((n) => n.kind === "record" && !n.consumed && same(me, n.storage.champion) && !owed.includes(n)) : [];
   const myShots = me ? notes.filter((n) => n.kind === "shot" && !n.consumed && same(me, n.storage.rival) && height < noteDeadline(n)) : [];
   const atMine = me ? notes.filter((n) => n.kind === "shot" && !n.consumed && same(me, n.storage.champion) && !same(me, n.storage.rival) && !owed.includes(n)) : [];
-  const records = notes.filter((n) => n.kind === "record").sort((a, b) => b.storage.target - a.storage.target || (a.createdAt ?? 0) - (b.createdAt ?? 0));
+  const best = boards(notes, height, me).records;
   const champion = (n: ChallengeNote) => chain?.nameOf(n.storage.champion) ?? "???";
   const rival = (n: ChallengeNote) => (n.storage.rival && chain?.nameOf(n.storage.rival)) ?? "???";
   const game = (n: ChallengeNote) => ({ seed: Number(n.storage.game[0] ?? 0n), song: Number(n.storage.game[4] ?? 0n) });
@@ -130,10 +123,9 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     else if (posted) {
       rows = [lv("POSTED", String(posted.score)), lv("PRIZE", gc(PRIZES[prize])), lv("SHARE ON X", "SELECT", CYAN), lv("COPY LINK", "SELECT", CYAN)];
       detail = String(posted.score); secondary = "RECORD POSTED";
-      const url = `${location.origin}${location.pathname}?record=${posted.recordId}`;
-      const until = new Date(posted.expiresAt).toUTCString().slice(5, 22);
+      const { url, x } = recordLinks(posted.recordId, posted.score, posted.expiresAt, songOf(posted.song));
       onSelect = (i) => {
-        if (i === 2) open_(`https://x.com/intent/post?text=${encodeURIComponent(`${posted.score} points on Pick Up Boomers, driving to ${songOf(posted.song)} 🚗\nInstall @joinbread & beat my record before ${until} UTC.\n${url}`)}`);
+        if (i === 2) window.open(x, "_blank", "noopener");
         if (i === 3) void navigator.clipboard?.writeText(url).then(() => setNote("LINK COPIED"), () => setNote(url));
       };
     } else {
@@ -145,7 +137,8 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   } else if (mode === "HISTORY") {
     if (!me) status = chain?.connecting ? chain.walletStatus || "CONNECTING" : "CONNECT YOUR WALLET TO SEE YOUR GAMES.";
     else {
-      const past = pastRows(notes, me, height, (a) => chain!.nameOf(a));
+      // the finished games (hub.ts history): the result and, for a shot, whose record it was; the money that moved
+      const past = history(notes, me, height, (a) => chain!.nameOf(a)).map((h) => ({ key: h.id, kind: h.kind, title: `${h.result}${h.kind === "shot" ? ` VS ${h.context.split("'")[0]}` : ""}`.toUpperCase(), score: h.score, state: h.money.toUpperCase(), color: h.tone === "mint" ? MINT : h.tone === "pink" ? PINK : EXPIRED }));
       const items: { key: string; kind: "record" | "shot"; title: string; score: number; state: string; color: string; shots?: ChallengeNote[]; record?: ChallengeNote }[] = [
         ...owed.map((n) => ({ key: n.id, kind: n.kind, title: n.kind === "record" ? "MY RECORD" : `${rival(n)} LOST`, score: n.storage.target, state: `COLLECT ${gc(n.amount)}`, color: MINT })),
         ...myRecords.map((n) => ({ key: n.id, kind: n.kind, title: "MY RECORD", score: n.storage.target, state: `OPEN ${clock(n.storage.expiryBlock - height)}`, color: CYAN })),
@@ -161,12 +154,11 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       else if (sel?.shots) { action = "SHOT"; onAuto = () => onShot(sel.shots!, sel.record!); }
     }
   } else if (mode === "SCORES") {
-    status = notReady ?? (records.length ? null : "NO RECORDS YET.");
-    const top = records.slice(0, 100), mineAt = records.findIndex((n) => same(me, n.storage.champion));
-    const list = mineAt >= 100 ? [...top, records[mineAt]] : top;
-    rows = list.map((n) => { const s = R0.score_fields, mine = same(me, n.storage.champion), rank = records.indexOf(n) + 1; return { key: n.id, mine, cells: [F(s.rank, String(rank).padStart(2, "0"), CYAN, "LCD"), F(s.nickname, champion(n), mine ? YELLOW : CREAM, "GT"), F(s.score, String(n.storage.target), YELLOW, "LCD")] }; });
-    const sel = list[cur];
-    if (sel) { const g = game(sel); detail = String(sel.storage.target); secondary = `${champion(sel)} / ${songOf(g.song)}`; }
+    status = notReady ?? (best.top.length ? null : "NO RECORDS YET.");
+    const list = best.mine ? [...best.top, best.mine] : best.top;
+    rows = list.map((r) => { const s = R0.score_fields, mine = same(me, r.who); return { key: r.key, mine, cells: [F(s.rank, String(r.rank).padStart(2, "0"), CYAN, "LCD"), F(s.nickname, chain?.nameOf(r.who) ?? "???", mine ? YELLOW : CREAM, "GT"), F(s.score, String(r.value), YELLOW, "LCD")] }; });
+    const sel = list[cur], note_ = sel && notes.find((n) => n.id === sel.key);
+    if (sel) { detail = String(sel.value); secondary = `${chain?.nameOf(sel.who) ?? "???"}${note_ ? ` / ${songOf(game(note_).song)}` : ""}`; }
   } else if (mode === "WALLET") {
     const name = me ? chain!.nameOf(me) : chain?.connecting ? chain.walletStatus || "CONNECTING" : "NOT CONNECTED";
     rows = [lv("WALLET", name, me ? MINT : chain?.connecting ? CYAN : PINK), lv("BALANCE", chain?.balance != null ? gc(chain.balance) : "--"), lv("NETWORK", "TESTNET", CREAM), lv("STATUS", busy ? busy.text : trouble ? "ERROR" : "IDLE", busy ? CYAN : trouble ? PINK : CREAM)];
@@ -289,32 +281,4 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       </div>
     </div>
   );
-}
-
-const open_ = (url: string) => window.open(url, "_blank", "noopener");
-
-/** My finished games as head-unit rows, newest first: the result, the score, the money that moved. */
-function pastRows(notes: ChallengeNote[], me: { suffix: bigint; prefix: bigint }, height: number, name: (a: { suffix: bigint; prefix: bigint }) => string) {
-  const same = (a: { suffix: bigint; prefix: bigint } | null, b: { suffix: bigint; prefix: bigint } | null) => !!a && !!b && a.suffix === b.suffix && a.prefix === b.prefix;
-  const CLAIM_FUZZ = 64;
-  const deadline = (s: ChallengeNote) => Math.min(s.storage.shotDeadline, s.storage.expiryBlock);
-  const outcome = (s: ChallengeNote) => (!s.consumed ? (height >= deadline(s) ? "lost" : "open") : s.consumedAt === undefined ? undefined : s.consumedAt <= deadline(s) + CLAIM_FUZZ ? "won" : "lost");
-  const shotsAt = (r: ChallengeNote) => notes.filter((n) => n.kind === "shot" && n.storage.recordId.every((f, i) => f === r.idWord[i]) && n.storage.target === r.storage.target);
-  const items: { key: string; kind: "record" | "shot"; title: string; score: number; state: string; color: string; at: number }[] = [];
-  for (const n of notes) {
-    if (n.kind === "shot" && same(n.storage.rival, me)) {
-      const o = outcome(n);
-      if (o === "open" || o === undefined) continue;
-      const won = o === "won";
-      const record = notes.find((r) => r.kind === "record" && r.idWord.every((f, i) => f === n.storage.recordId[i]));
-      const prize = won && record && record.consumedAt === n.consumedAt ? ` + ${gc(record.amount)}` : "";
-      items.push({ key: n.id, kind: "shot", title: `${won ? "BEAT" : "LOST TO"} ${name(n.storage.champion)}`, score: n.storage.target, state: won ? `${gc(n.amount)} BACK${prize}` : `${gc(n.amount)} LOST`, color: won ? MINT : PINK, at: n.consumedAt ?? deadline(n) });
-    } else if (n.kind === "record" && same(n.storage.champion, me) && n.consumedAt !== undefined) {
-      const smashed = n.consumedAt < n.storage.expiryBlock + CLAIM_FUZZ + 1;
-      const lost = shotsAt(n).filter((s) => outcome(s) === "lost").length;
-      const winner = smashed ? shotsAt(n).find((s) => s.consumedAt === n.consumedAt)?.storage.rival : null;
-      items.push({ key: n.id, kind: "record", title: smashed ? `BEATEN BY ${winner ? name(winner) : "SOMEONE"}` : lost ? "DEFENDED" : "TAKEN BACK", score: n.storage.target, state: smashed ? `${gc(n.amount)} LOST` : lost ? `${gc(BigInt(lost) * n.storage.minStake)} WON` : `${gc(n.amount)} BACK`, color: smashed ? PINK : lost ? MINT : EXPIRED, at: n.consumedAt });
-    }
-  }
-  return items.sort((a, b) => b.at - a.at);
 }

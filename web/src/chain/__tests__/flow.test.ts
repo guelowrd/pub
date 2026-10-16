@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { ChallengeNote } from "../chain";
 import type { ChallengeStorage, Word4 } from "../notes";
 import { GC_FAUCET, MIN_SHOT_WINDOW_BLOCKS, SCORE_MAX } from "../config";
-import { acceptNote, blocksToClock, claimVerdict, explain, fmtGamecoin, fmtGc, isChainBehind, myOpenShotsOn, NOT_FINISHED, noteKind, outcomeText, parseCode, recordLinks, settlePlan, shotRefusal, submitWithRetry, withoutRecord, withTimeout } from "../flow";
+import { acceptNote, blocksToClock, claimVerdict, explain, fmtGamecoin, fmtGc, isChainBehind, myOpenShotsOn, NOT_FINISHED, noteKind, outcomeText, recordLinks, settlePlan, shotRefusal, submitWithRetry, withTimeout } from "../flow";
 
 const champion = { suffix: 1n, prefix: 2n };
 const me = { suffix: 3n, prefix: 4n };
@@ -175,19 +175,6 @@ describe("submitting through Bread", () => {
   });
 });
 
-describe("a pasted code", () => {
-  const id = "0x" + "ab".repeat(32);
-  it("finds the record id in a link, in our X share link, or bare", () => {
-    expect(parseCode(`http://localhost:5180/?record=${id}`)).toEqual({ id });
-    expect(parseCode(`https://x.com/intent/post?text=hi&url=${encodeURIComponent(`http://pub/?record=${id}`)}`)).toEqual({ id });
-    expect(parseCode(id.toUpperCase())).toEqual({ id });
-  });
-  it("cannot read a posted X status and says what to do", () => {
-    expect(parseCode("https://x.com/someone/status/1234567890")).toEqual({ hint: "Open the post and copy the Pick Up Boomers link." });
-    expect(parseCode("hello")).toEqual({ hint: "That is not a Pick Up Boomers code." });
-  });
-});
-
 describe("Gamecoin in words", () => {
   it("spells the token out, singular and plural, and short for the head unit", () => {
     expect(fmtGamecoin(1_000_000n)).toBe("1 Gamecoin");
@@ -203,7 +190,6 @@ describe("Gamecoin in words", () => {
     expect(text).toContain("13 Oct 14:05 UTC");
     expect(text).toContain("NEON PURSUIT");
     expect(text).toMatch(new RegExp(`\\.\n${url.replace(/[?.]/g, "\\$&")}$`));
-    expect(withoutRecord("http://pub/?local=1&record=0xabc")).toBe("http://pub/?local=1");
     vi.unstubAllGlobals();
   });
   it("shows blocks as a clock at 3 s a block", () => {
