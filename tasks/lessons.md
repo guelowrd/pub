@@ -39,3 +39,9 @@
   reload the page before concluding anything.
 - Test runs in Chrome play the game's sound on Gaylord's machine (2026-10-16, "can you turn the sound off"). The mute
   is not persisted, so every test run presses `m` (or clicks SOUND OFF) right after the splash click, before DRIVE.
+
+## 2026-10-16 fork frame switch
+- When the same scene is drawn by two code paths before and after a state change (here the frame re-centring on the
+  chosen branch), the seam shows no matter how the maths is reconciled. Keep one path and move the unavoidable switch
+  to where it is a pure translation of identical geometry (the straight bore at the mouth). Three patches on the two-path
+  version (trunk-behind slice, fan, gore order) each fixed one symptom and left the jump.

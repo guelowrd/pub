@@ -35,11 +35,13 @@ export interface Node { district: District; stops: { z: number; venue: string; r
 // the decision log: what the chain replays. t in 10 ms ticks
 export type Event = { k: "fork"; side: -1 | 1; t: number } | { k: "pick"; stop: number; t: number } | { k: "drop"; t: number } | { k: "wreck"; t: number };
 // tx: the lane it's moving to; cruise: its own speed when the lane is clear
-export interface Traffic { z: number; x: number; tx: number; v: number; cruise: number; kind: number; braking: boolean }
+export interface Traffic { z: number; x: number; tx: number; v: number; cruise: number; kind: number; braking: boolean; branch?: -1 | 1 } // branch: the fork side a car follows through a split
 export type HazardKind = "cone" | "oil" | "pothole" | "barrier";
 export interface Hazard { z: number; x: number; kind: HazardKind; hit: boolean }
-// k: curvature of the right branch per segment from the decision line; off: that branch's offset from the trunk
-export interface Fork { z: number; zDecide: number; zEnd: number; left: District; right: District; side: -1 | 0 | 1; k: number[]; off: number[] }
+// off: the right branch's offset from the trunk axis per segment from the decision line (the left branch mirrors it).
+// The axis stays the trunk's through the split; at the mouth of the chosen bore the frame shifts onto it (shifted), a pure
+// translation inside the tunnel, so nothing on screen moves at the decision line
+export interface Fork { z: number; zDecide: number; mouth: number; zEnd: number; left: District; right: District; side: -1 | 0 | 1; shifted: boolean; off: number[] }
 export interface Street { z0: number; z1: number; district: District; leg: number; k: number }
 export interface Light { z: number; offset: number } // red when (t + offset) % (RED + GREEN) < RED
 export interface Input { gas: boolean; brake: boolean; left: boolean; right: boolean }
@@ -113,19 +115,26 @@ export function activeFork(s: Sim, z: number): Fork | undefined {
 export function stopAt(s: Sim, z: number): Stop | undefined {
   return s.stops.find((st) => z >= st.z && z < st.z + st.len);
 }
-// right road edge; left is always -halfWidth(z)
-export function halfWidth(s: Sim, z: number): number {
+/** The centre of fork branch `side` (0 = the trunk) at z, in the current frame */
+export function branchX(f: Fork, z: number, side: number): number {
+  const at = (zz: number) => f.off[Math.max(0, Math.min(f.off.length - 1, seg(zz) - seg(f.zDecide)))];
+  return side * at(z) - (f.shifted ? f.side * at(f.mouth) : 0);
+}
+/** The road's left and right edge at z (bays aside): the trunk widening to the split, then the branch you are in */
+export function edges(s: Sim, z: number): [number, number] {
   const f = activeFork(s, z);
-  if (f && f.side === 0 && z < f.zDecide) return W + (W * (z - f.z)) / (f.zDecide - f.z); // the trunk widens to two roads
-  return W;
+  if (!f) return [-W, W];
+  if (z < f.zDecide) { const hw = W + (W * (z - f.z)) / (f.zDecide - f.z), c = branchX(f, z, 0); return [c - hw, c + hw]; } // the trunk widens to two roads
+  const c = branchX(f, z, f.side || (s.x < 0 ? -1 : 1));
+  return [c - W, c + W];
 }
 export function rightEdge(s: Sim, z: number): number {
   const st = stopAt(s, z);
-  return halfWidth(s, z) + (st && st.side > 0 ? BAY : 0);
+  return edges(s, z)[1] + (st && st.side > 0 ? BAY : 0);
 }
 export function leftEdge(s: Sim, z: number): number {
   const st = stopAt(s, z);
-  return halfWidth(s, z) + (st && st.side < 0 ? BAY : 0);
+  return -edges(s, z)[0] + (st && st.side < 0 ? BAY : 0);
 }
 
 function say(s: Sim, text: string, t = 1.2) {
@@ -188,23 +197,22 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
   s.z += s.v * dt;
   s.dist += Math.max(0, s.v) * dt;
 
-  // fork: crossing the decision line picks the side you're on, then you ride that branch
+  // fork: crossing the decision line picks the side you're on; the axis stays the trunk's and you steer into your branch.
+  // At the mouth of your bore the frame shifts onto it: the bore is straight there, so the shift moves nothing on screen
   for (const f of s.forks) {
     if (f.side === 0 && s.z >= f.zDecide) {
       f.side = s.x < 0 ? -1 : 1;
-      s.x -= f.side * W;
-      // the traffic ahead moves into the branch's frame with us: a car on the far side of the widened trunk went the other
-      // way and is gone, the rest settle into the nearest lane (left in trunk coordinates they jumped half a road sideways
-      // at the tunnel mouth, into the lane you were in)
-      s.traffic = s.traffic.filter((c) => {
-        if (c.z <= s.z) return true;
-        c.x -= f.side * W; c.tx = Math.round((c.tx - f.side * W) / LANE) * LANE;
-        return Math.abs(c.tx) <= LANE + 0.1;
-      });
-      const d = seg(f.zDecide);
-      f.k.forEach((k, i) => { s.dx[d + i] = f.side * k; });
       s.log.push({ k: "fork", side: f.side, t: tick(s) });
       extend(s); // the chosen street is built now
+    }
+    if (f.side !== 0 && !f.shifted && s.z >= f.mouth) {
+      const d = branchX(f, f.mouth, f.side);
+      f.shifted = true;
+      if (s.z < f.mouth + 50) { // crossed the mouth (a jump further on, as tests and the dev console do, is already in the bore's frame)
+        s.x -= d;
+        // the traffic comes along; a car in the other bore is gone
+        s.traffic = s.traffic.filter((c) => { c.x -= d; c.tx -= d; delete c.branch; return Math.abs(c.tx) <= LANE + 0.1; });
+      }
     }
   }
 
@@ -216,8 +224,12 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
   ];
   for (const c of s.traffic) {
     const inLane = (x: number, o: { x: number }) => Math.abs(o.x - x) < LANE * 0.8;
+    // through a split a car follows the branch it is on: its lane slides with the branch until the mouth
+    const bf = s.forks.find((o) => c.z >= o.zDecide && c.z < o.mouth);
+    if (bf && !c.branch) { c.branch = c.x >= branchX(bf, c.z, 0) ? 1 : -1; const bc = branchX(bf, c.z, c.branch); c.tx = bc + Math.max(-LANE, Math.min(LANE, Math.round((c.tx - bc) / LANE) * LANE)); }
+    const bx0 = bf && c.branch ? branchX(bf, c.z, c.branch) : 0;
     const ahead = blockers.find((o) => o !== c && o.z > c.z && o.z - c.z < 90 && inLane(c.tx, o));
-    if (ahead) {
+    if (ahead && !c.branch) {
       const free = [c.tx - LANE, c.tx + LANE].filter((x) => Math.abs(x) <= LANE + 0.1 && !blockers.some((o) => o !== c && inLane(x, o) && o.z - c.z > -30 && o.z - c.z < 90));
       if (free.length) c.tx = free[Math.floor(s.rng() * free.length)];
     }
@@ -226,6 +238,7 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
     c.v = c.braking ? Math.max(c.v - 10 * dt, Math.min(ahead!.v, c.v)) : Math.min(c.v + 3 * dt, c.cruise);
     c.x += Math.max(-3 * dt, Math.min(3 * dt, c.tx - c.x));
     c.z += c.v * dt;
+    if (bf && c.branch) { const slide = branchX(bf, c.z, c.branch) - bx0; c.x += slide; c.tx += slide; }
     if (s.bumpCd === 0 && Math.abs(c.x - s.x) < CAR_W && Math.abs(c.z - s.z) < CAR_LEN) {
       if (c.z < s.z) { // it ran into us: it stops. We backed into it: we stop
         if (s.v < 0) { s.v = 0; s.z = c.z + CAR_LEN; } else { c.v = s.v; c.z = s.z - CAR_LEN; }

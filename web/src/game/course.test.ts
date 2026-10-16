@@ -15,8 +15,9 @@ describe("course", () => {
     const f = s.forks[0], mouth = (FORK_OUT / 2) / 5;
     expect(f.off[mouth] * 2).toBeCloseTo(MOUTHS, 3);
     expect(f.off[mouth + 20] - f.off[mouth + 10]).toBeCloseTo(0, 6); // no heading left after the mouth
-    expect(Math.max(...f.k.slice(0, mouth / 2))).toBeGreaterThan(0);
-    expect(Math.min(...f.k.slice(mouth / 2, mouth))).toBeLessThan(0);
+    const curv = (i: number) => f.off[i + 1] - 2 * f.off[i] + f.off[i - 1];
+    expect(curv(3)).toBeGreaterThan(0); // out...
+    expect(curv(mouth - 3)).toBeLessThan(0); // ...then back to straight
   });
   it("forks offer two other districts, riders are authored characters who want another district", () => {
     for (let seed = 1; seed <= 20; seed++) {

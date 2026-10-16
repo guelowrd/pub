@@ -4,7 +4,7 @@
 import characters from "./data/characters.json";
 import venuesFile from "./data/venues.json";
 import { STATIONS } from "./stations";
-import { DISTRICTS, GREEN, KMH, LANE, LIGHTS, RED, SEG, TRAFFIC, W, WALK, rngFrom, seg, type District, type Hazard, type Node, type RadarClass, type Rider, type Sim } from "./sim";
+import { DISTRICTS, GREEN, KMH, LANE, LIGHTS, RED, SEG, TRAFFIC, W, WALK, branchX, rngFrom, seg, type District, type Hazard, type Node, type RadarClass, type Rider, type Sim } from "./sim";
 
 export const STREET = 1200;
 export const FORK_IN = 120; // the trunk widens over this before the decision line
@@ -109,7 +109,7 @@ function place(s: Sim, leg: number, k: number, z0: number) {
   if (leg + 1 >= LEGS) return; // past the last street the road runs on empty
   // the branches sweep apart in an S over the first half of FORK_OUT (out, then back to straight), so each bore is
   // reached head-on and the two run parallel from the mouths; the sweep is scaled to put the mouths MOUTHS apart.
-  // off[] integrates the curvature twice, the way the renderer integrates the road's own curvature
+  // off[] integrates a curvature twice (the renderer's own road integration), one entry per segment from the line
   const segs = FORK_OUT / SEG, sweep = segs / 2, kk: number[] = [], off = [W];
   const shape = (i: number) => (i < sweep ? Math.sin((2 * Math.PI * (i + 0.5)) / sweep) : 0);
   let reach = 0;
@@ -120,7 +120,7 @@ function place(s: Sim, leg: number, k: number, z0: number) {
     off.push(off[i] + bdx + kk[i] / 2);
     bdx += kk[i];
   }
-  s.forks.push({ z: z1, zDecide: z1 + FORK_IN, zEnd: z1 + FORK_IN + FORK_OUT, left: s.course[leg + 1][k].district, right: s.course[leg + 1][k + 1].district, side: 0, k: kk, off });
+  s.forks.push({ z: z1, zDecide: z1 + FORK_IN, mouth: z1 + FORK_IN + FORK_OUT / 2, zEnd: z1 + FORK_IN + FORK_OUT, left: s.course[leg + 1][k].district, right: s.course[leg + 1][k + 1].district, side: 0, shifted: false, off });
 }
 
 export function extend(s: Sim) {
@@ -133,10 +133,13 @@ export function extend(s: Sim) {
   const want = 4 + (here ? TRAFFIC[here] : 0) + Math.min(4, Math.floor(s.t / 30));
   if (ahead < want && s.rng() < 0.5) {
     const z = s.z + 760 + s.rng() * 400; // beyond the draw distance, so cars come into view instead of popping in
-    const x = (Math.floor(s.rng() * 3) - 1) * LANE;
+    let x = (Math.floor(s.rng() * 3) - 1) * LANE, branch: -1 | 1 | undefined;
+    // past a split the road is a branch at ± off from the axis: a car spawned there rides one (ours once we chose)
+    const fz = s.forks.find((o) => z >= o.zDecide && z < o.zEnd + FORK_OUT && !(o.shifted && z >= o.mouth));
+    if (fz) { const side = fz.side || (s.rng() < 0.5 ? -1 : 1); x += branchX(fz, z, side); if (z < fz.mouth) branch = side; }
     const kind = Math.floor(s.rng() * 6), cruise = (kind === 2 || kind === 5 ? 70 + s.rng() * 30 : 90 + s.rng() * 50) / KMH;
     if (!s.traffic.some((c) => Math.abs(c.z - z) < 30 && c.tx === x))
-      s.traffic.push({ z, x, tx: x, v: cruise, cruise, kind, braking: false });
+      s.traffic.push({ z, x, tx: x, v: cruise, cruise, kind, braking: false, branch });
   }
 }
 

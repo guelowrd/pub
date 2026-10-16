@@ -441,3 +441,12 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
   of gap, the branches' inner edges are plain white lines, pink stays on the outer curbs; (2) the branches sweep in an
   S over the first 100 m (course.ts, MOUTHS = 31.5 keeps the portal scale) and run parallel into the bores instead of
   kinking at the line and diverging forever. Option 3 (a stone median in the wedge) not built.
+- Fork, third pass (Gaylord, 21:00, "symmetrical, nothing that changes from one frame to the other"): the jump was the
+  frame switch at the decision line (the sim re-centred the world on the chosen branch and bent the axis with f.k; the
+  before and after pictures were drawn by different code and never matched). Now the axis stays the trunk's through the
+  split: both branches are always drawn at ± off from it (branchX), the gore between, both bores until you are in
+  yours; you steer into your branch (edges() follow it); the frame shifts onto the bore at its MOUTH, where the bore is
+  straight, a pure translation (two frames either side are identical). Traffic through the sweep follows its branch
+  (Traffic.branch, lane slides with off), spawns past the split land on a branch, and the mouth shift carries the cars
+  along and drops the other bore's. A jump past the mouth (tests, console) counts as already shifted. Fork.k gone.
+  Checked: frames at -30, -0.5, +0.5 (line), mouth-45, mouth-0.5, mouth+0.5; 763 car-frames in the sweep, 0 in the median.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { FAST, GREEN, KMH, LANE, RED, REV, RUN, TOP, W, WRECK, agePoints, newSim, step, type District, type Input, type Rider, type Sim } from "./sim";
-import { extend } from "./course";
+import { FAST, GREEN, KMH, LANE, RED, REV, RUN, TOP, W, WRECK, agePoints, branchX, edges, newSim, step, type District, type Input, type Rider, type Sim } from "./sim";
+import { MOUTHS, extend } from "./course";
 
 const idle: Input = { gas: false, brake: false, left: false, right: false };
 const run = (s: Sim, inp: Partial<Input>, secs: number) => { for (let t = 0; t < secs; t += 1 / 120) step(s, { ...idle, ...inp }, 1 / 120, extend); };
@@ -167,30 +167,49 @@ describe("stops", () => {
 });
 
 describe("fork", () => {
-  it("locks the side you're on at the decision line and bends the road that way", () => {
+  it("locks the side you're on at the decision line; the frame shifts onto your bore at its mouth, not before", () => {
     const s = newSim(1);
     extend(s);
     const f = s.forks[0];
     s.z = f.zDecide + 1; s.x = -3;
     step(s, idle, 1 / 120, extend);
     expect(f.side).toBe(-1);
-    expect(s.x).toBeCloseTo(-3 + W);
-    expect(s.dx[Math.floor(f.zDecide / 5) + 4]).toBeLessThan(0); // the outward half of the S
+    expect(s.x).toBeCloseTo(-3); // nothing moves at the line
+    expect(f.shifted).toBe(false);
     expect(s.streets[1].district).toBe(f.left);
+    // the edges are the left branch's as it sweeps away
+    const z = f.zDecide + 50, c = branchX(f, z, -1);
+    expect(c).toBeLessThan(-W);
+    expect(edges(s, z)).toEqual([c - W, c + W]);
+    s.z = f.mouth - 0.5; s.x = branchX(f, f.mouth, -1); s.v = 0; // on the bore's centre line
+    expect(s.x).toBeCloseTo(-MOUTHS / 2, 3);
+    step(s, idle, 1 / 120, extend);
+    expect(f.shifted).toBe(false);
+    s.z = f.mouth + 0.5;
+    step(s, idle, 1 / 120, extend);
+    expect(f.shifted).toBe(true);
+    expect(s.x).toBeCloseTo(0, 1); // the bore is now the axis
+    expect(edges(s, f.mouth + 20)).toEqual([-W, W]);
   });
-  it("takes the traffic ahead into the branch's frame: the far-side car is gone, the others settle into lanes", () => {
+  it("traffic through the split follows its branch, and comes along when the frame shifts at the mouth", () => {
     const s = newSim(1);
     extend(s);
     const f = s.forks[0], car = (x: number, z: number) => ({ z, x, tx: x, v: 20, cruise: 20, kind: 0, braking: false });
-    s.z = f.zDecide + 1; s.x = 3; s.hazards = []; s.lights = []; // going right, nothing else to swerve for
-    s.traffic = [car(LANE, f.zDecide + 150), car(0, f.zDecide + 200), car(-LANE, f.zDecide + 250), car(0, f.zDecide - 50)];
+    s.z = f.zDecide + 1; s.x = 3; s.hazards = []; s.lights = []; // going right
+    s.traffic = [car(LANE, f.zDecide + 10), car(-LANE, f.zDecide + 10)];
+    run(s, {}, 1);
+    const [r, l] = s.traffic;
+    expect(r.branch).toBe(1); expect(l.branch).toBe(-1);
+    expect(Math.abs(r.x - branchX(f, r.z, 1))).toBeCloseTo(LANE, 0); // each rides a lane of its branch (the trunk's outer lanes snap to the branches' inner ones)
+    expect(Math.abs(l.x - branchX(f, l.z, -1))).toBeCloseTo(LANE, 0);
+    // at the mouth the frame shifts onto the right bore: the right car is at x ~ 0 there, the left one is gone
+    s.z = f.mouth + 0.5; s.x = branchX(f, f.mouth, 1); s.v = 0;
+    r.z = f.mouth + 60; l.z = f.mouth + 60; r.x = r.tx = branchX(f, r.z, 1); l.x = l.tx = branchX(f, l.z, -1);
+    s.hazards = []; s.lights = []; // the new street's hazards would make it change lane
     step(s, idle, 1 / 120, extend);
-    expect(f.side).toBe(1);
-    const want = [[150, LANE - W, 0], [200, -W, -LANE]]; // no sideways jump in our frame; the -LANE car went left
-    const mine = s.traffic.filter((c) => c.z > s.z && c.z < f.zDecide + 300); // extend() may have spawned one far ahead
-    expect(mine.length).toBe(2);
-    mine.forEach((c, i) => { expect(Math.round(c.z - f.zDecide)).toBe(want[i][0]); expect(c.x).toBeCloseTo(want[i][1], 1); expect(c.tx).toBeCloseTo(want[i][2]); });
-    expect(s.traffic.find((c) => c.z < s.z)!.x).toBeCloseTo(0, 1); // the car behind us stays put (it may change lane to pass)
+    expect(f.shifted).toBe(true);
+    expect(s.traffic.length).toBe(1);
+    expect(s.traffic[0].x).toBeCloseTo(0, 1);
   });
 });
 

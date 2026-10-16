@@ -1,5 +1,5 @@
 // Pseudo-3D view: road segments projected from a low chase camera, sprites sorted by segment and drawn at their anchors.
-import { BAY, CAR_W, LANE, NAME, SEG, TOP, W, WALK, isRed, leftEdge, rightEdge, seg, stopAt, type District, type Sim } from "./sim";
+import { BAY, CAR_W, LANE, NAME, SEG, TOP, W, WALK, branchX, isRed, leftEdge, rightEdge, seg, stopAt, type District, type Sim } from "./sim";
 import { CHARACTERS, FORK_OUT, sidewalkX } from "./course";
 import { BUILDING, DECOR, DPROP, DPROPS, DROP, FILLERS, FORK_STRUCT, GANTRY, ICON, MATERIALS, SHADOW, LIGHT_GREEN, LIGHT_RED, PANO, PANO_HORIZON, PEOPLE, PROP, ROAD_TINT, SHEETS, TRAFFIC, TREES, TUNNEL, VENUE_CELL, img, type Sheet } from "./art";
 import { CAR, DEFAULT_SKY, SKY } from "./stations";
@@ -401,7 +401,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
 
   // the shared fork structure's place on screen: its two mouths (664 and 1384 of the 2048 sheet) on the two branches
   const frame = (n: number, f: Sim["forks"][number]) => {
-    const d = i0 + n - seg(f.zDecide), xL = X(n, (-1 - f.side) * f.off[d]), xR = X(n, (1 - f.side) * f.off[d]), k = (xR - xL) / 720;
+    const z = (i0 + n) * SEG, xL = X(n, branchX(f, z, -1)), xR = X(n, branchX(f, z, 1)), k = (xR - xL) / 720;
     // solid until the camera is through the plane: the arch is driven through, not faded away (a fade let the outside show)
     return { k, left: xL - 664 * k, top: sy[n] - 928 * k, a: (i0 + n) * SEG - s.z > 2 ? 1 : 0 };
   };
@@ -426,26 +426,23 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
       ctx.fillStyle = lt < 1 ? mix(g, "#050410", 1 - lt) : g;
       ctx.fillRect(0, sy[n + 1], w, sy[n] - sy[n + 1] + 0.5);
     }
-    // past a decision line the road is two branches at trunk ± off. The main road is the chosen branch (or the
-    // trunk before choosing), so branch σ sits at xo + (σ - side) * off.
-    const f = s.forks.find((o) => z1 >= o.z && z1 < o.zEnd + FORK_OUT), past = !!f && z1 >= f.zDecide;
+    // a fork is drawn the same way whatever you chose: the trunk widening to the line, then both branches at ± off
+    // from the trunk axis (branchX), the gore between them, both bores until you are in yours. Once the frame has shifted
+    // onto your bore (at its mouth) the slices from the mouth on are the main road again
+    const f = s.forks.find((o) => z1 >= o.z && z1 < o.zEnd + FORK_OUT && !(o.shifted && z1 >= o.mouth)), past = !!f && z1 >= f.zDecide;
     const tun = tunnelAt(z1), mouth = !!tun && z1 < tun.zDecide + TUN_IN + SEG;
     if (f && past) {
-      const d = i - seg(f.zDecide), at = (side: -1 | 1, k: number) => (side - f.side) * f.off[k]; // branch σ's centre in our frame
+      const at = (side: -1 | 1, z: number) => branchX(f, z, side);
       for (const side of [-1, 1] as const) {
-        if (side === f.side) continue;
-        const c1 = at(side, d), c2 = at(side, d + 1);
+        const c1 = at(side, z1), c2 = at(side, z2);
         road(n, c1, c2, W, W, W, W, alt, (-side) as -1 | 1);
-        if (tun && s.z < tun.zDecide + TUN_IN) tunnel(n, c1, c2, W, side < 0 ? f.left : f.right); // the other mouth only matters until we are in ours
+        if (tun && (f.side === 0 || side === f.side || s.z < f.mouth)) tunnel(n, c1, c2, W, side < 0 ? f.left : f.right); // the other bore only matters until we are in ours
       }
-      gore(n, at(-1, d) + W, at(1, d) - W, at(-1, d + 1) + W, at(1, d + 1) - W, alt);
-    }
-    if (f && !past) {
-      // the trunk widening to the line. Just after we chose, the camera still sees it behind us: in the branch's frame
-      // it sits a road width to the other side (drawn as the main road it cut across both branches for a few frames)
-      widening(n, f, -f.side * W, alt);
-    } else if (!f || f.side !== 0) {
-      road(n, 0, 0, leftEdge(s, z1), leftEdge(s, z2), rightEdge(s, z1), rightEdge(s, z2), alt, f && past ? (-f.side) as -1 | 1 : 0);
+      gore(n, at(-1, z1) + W, at(1, z1) - W, at(-1, z2) + W, at(1, z2) - W, alt);
+    } else if (f) {
+      widening(n, f, branchX(f, z1, 0), alt); // the trunk widening to the line
+    } else {
+      road(n, 0, 0, leftEdge(s, z1), leftEdge(s, z2), rightEdge(s, z1), rightEdge(s, z2), alt);
       if (tun) tunnel(n, 0, 0, W, tun.side < 0 ? tun.left : tun.right);
       const st = stopAt(s, z1);
       if (st && !st.taken) quad(n, st.side * (W + 0.3), st.side * (W + BAY - 0.2), st.side * (W + 0.3), st.side * (W + BAY - 0.2), st.drop ? COLOR[st.drop] + "66" : alt ? "#8a7a20" : "#a08a20");
