@@ -1,0 +1,36 @@
+// Pick Up Boomers on Miden testnet v0.17: the same challenge mechanic as GeoQuizz (records and shots), its own note tag.
+
+export const APP_NAME = "Pick Up Boomers";
+
+// Gamecoin (GC): the fungible faucet GeoQuizz deployed on testnet, anyone may mint from it (gq/gamecoin.json).
+export const GC_FAUCET = import.meta.env.VITE_GC_FAUCET ?? "0x6a8e2ccb2090bcd1071cea18da2cce";
+export const GC_DECIMALS = 6;
+export const GC = 10n ** BigInt(GC_DECIMALS);
+
+// A shot stakes this; the champion picks the prize from PRIZES when posting. The contracts only know `min_stake`.
+export const STAKE: bigint = BigInt(import.meta.env.VITE_GC_STAKE ?? "1000000"); // 1 GC
+export const PRIZES = [1n, 2n, 5n, 10n].map((n) => n * GC);
+// Testnet makes a block about every 3 s.
+export const BLOCK_SECONDS = 3;
+// A record stays open about a day.
+export const RECORD_LIFETIME_BLOCKS = Math.round((24 * 3600) / BLOCK_SECONDS); // 28 800
+// A shot must be settled within one drive (3 min) plus the radio, proving and the wallet: 6 min.
+export const SHOT_WINDOW_BLOCKS = Math.round((6 * 60) / BLOCK_SECONDS); // 120
+// Refuse a shot at a record that will expire before the shot window ends.
+export const MIN_SHOT_WINDOW_BLOCKS = SHOT_WINDOW_BLOCKS + 20;
+// A score no drive can reach: a record above it is rigged (a 3-minute drive banks under 30 000).
+export const SCORE_MAX = 50_000;
+
+// Where the assembled note scripts live (written by `cargo run --bin build_scripts`).
+export const RECORD_SCRIPT_URL = "/scripts/record.bin";
+export const SHOT_SCRIPT_URL = "/scripts/shot.bin";
+// masm/challenge/challenge_core.masm CLAIM_FUZZ: how late a claim proved before a deadline may land.
+export const CLAIM_FUZZ = 64;
+
+export const NETWORK_POLL_INTERVAL_MS = 2_500;
+export const NETWORK_POLL_TIMEOUT_MS = 120_000;
+
+// Miden SDK configuration, overridable through environment variables
+export const MIDEN_RPC_URL = import.meta.env.VITE_MIDEN_RPC_URL ?? "testnet";
+export const MIDEN_FAUCET_URL = import.meta.env.VITE_MIDEN_FAUCET_URL ?? (MIDEN_RPC_URL === "testnet" ? "https://faucet-api.testnet.miden.io" : "");
+export const MIDEN_PROVER = (import.meta.env.VITE_MIDEN_PROVER as "devnet" | "testnet" | "local") ?? "testnet";

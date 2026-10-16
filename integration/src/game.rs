@@ -87,3 +87,17 @@ pub struct Vectors {
 pub fn vectors() -> Vectors {
     serde_json::from_str(include_str!("../../rules/vectors.json")).expect("rules/vectors.json parses")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Prints the commitments the web app must compute for the first vector (game.test.ts pins them).
+    #[test]
+    fn print_vector_commitments() {
+        let v = vectors();
+        let run = &v.runs[0];
+        println!("COURSE_COMMIT {}", commitment(&run.course).to_hex());
+        println!("LOG_COMMIT {}", log_advice(&run.events, run.dist).0.to_hex());
+    }
+}
