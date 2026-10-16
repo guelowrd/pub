@@ -545,3 +545,4 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
   end flush with the panel's inner edge.
 - Radar type (Gaylord, 22:50, "unreadable"): POSITION and AGE RANGE labels 2.8/2.6 to 4.4 cqw (about 6 to 9 px at 1280),
   the range 5.6 to 7.4 cqw, DROP OFF 4.6 to 6.2, a lighter label colour; labels moved up a little to keep clear of the range.
+- Radar spacing (Gaylord, 22:55): POSITION up to 9 %, AGE RANGE at 68 %, the range at 79 %, so the reticle has air above and below.
