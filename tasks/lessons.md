@@ -45,3 +45,10 @@
   chosen branch), the seam shows no matter how the maths is reconciled. Keep one path and move the unavoidable switch
   to where it is a pure translation of identical geometry (the straight bore at the mouth). Three patches on the two-path
   version (trunk-behind slice, fan, gore order) each fixed one symptom and left the jump.
+
+## 2026-10-16: a layout fix gets the whole screen checked, every layer of it
+The phone pass made overlays window-sized and I checked the results screen and the menu, never the splash. Then I patched
+the splash's visible symptom (the cropped picture) and declared it fixed while the attract canvas on the same overlay was
+still drawing off the picture. Rule: when a container changes shape, list every child that assumes its old shape (CSS
+backgrounds, canvases with reference frames, absolutely placed keys) and look at each in the browser before saying done.
+A symptom fix that leaves a sibling layer wrong is a second bug.

@@ -61,9 +61,9 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .overlay { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(8,12,36,.85); text-transform: uppercase; }
 .overlay.dim { background: #060b16e6; }
 .pause { width: calc(390 * var(--u)); }
-.splash { background: #080c24 url("/art/title-scene.webp") center / cover no-repeat; }
-/* the scene is 4:3; a wider window shows it whole (the overlay covers the window since the phone pass, so cover cropped it) */
-@media (min-aspect-ratio: 4/3) { .splash { background-size: contain; } }
+/* the splash is the 4:3 scene itself, centred: the attract canvas, the riders' path, the ribbon and the mute key all live in its
+   1280x960 frame (the phone pass made every overlay the window, which cropped the scene and drew the riders off it) */
+.splash { inset: 0; margin: auto; width: min(100vw, calc(100vh * 4 / 3)); height: min(100vh, calc(100vw * 3 / 4)); background: #080c24 url("/art/title-scene.webp") center / contain no-repeat; }
 .attract { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .splash-mute { position: absolute; top: calc(22 * var(--u)); right: calc(26 * var(--u)); font: inherit; font-size: calc(16 * var(--u)); letter-spacing: .06em; color: #94e6dc; background: rgba(8,12,36,.7); border: calc(1.5 * var(--u)) solid #3a4652; border-radius: calc(6 * var(--u)); padding: calc(6 * var(--u)) calc(14 * var(--u)); cursor: pointer; }
 /* the designer's first start prompt (components/start-prompt.css), back by Gaylord's choice: chrome lettering with a pink

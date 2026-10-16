@@ -485,5 +485,8 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
 
 ## 2026-10-16, splash cropped (Gaylord: "zoomed in, very weird")
 - The phone pass fixed every overlay to the window, so on a 16:9 desktop the 4:3 title scene was cropped by `cover` and
-  BOOMERS lost its top. Fix: windows wider than 4:3 show the scene with `contain` (the page colour matches the scene's
-  margins). Phones keep cover. Lesson: a layout change for one layout gets a look at the others before it ships.
+  BOOMERS lost its top, and the attract canvas (which maps 1280x960 onto its width) drew the riders and the ribbon off the
+  picture. First patch (`contain` on wide windows) fixed the crop only; Gaylord: "the characters are coming from outside
+  the screen". Fix: the splash is a centred 4:3 box again (canvas, riders, ribbon, mute key all in the scene), the attract
+  fits its frame into any canvas shape (`frameOf`), `attract.test.ts` holds the geometry (frame 4:3 and centred for five
+  window shapes, every rider inside the frame, mirrored on odd periods).
