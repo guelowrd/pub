@@ -104,14 +104,15 @@ export default function App() {
     if (mode !== "play") { audio.engine(0, false); audio.skid(false); }
   }, [mode, preview, station]);
 
-  const start = (sd: number) => { setPreview(false); setSettled(null); setPosted(null); botRun.current = false; sim.current = newSim(sd); setSeed(sd); setMode("play"); };
+  const start = (sd: number, song: number) => { setPreview(false); setSettled(null); setPosted(null); botRun.current = false; sim.current = newSim(sd, song); setSeed(sd); setMode("play"); };
   /** A free drive on the station's song. */
-  const drive = (sd: number) => { shot.current = null; start(sd); };
+  const drive = (sd: number) => { shot.current = null; start(sd, station); };
   /** A shot: the record's course and song, the stake on the table. */
   const driveShot = (shots: ChallengeNote[], record: ChallengeNote) => {
     shot.current = { shots, record };
-    setStation(Number(record.storage.game[4]));
-    start(Number(record.storage.game[0]));
+    const song = Number(record.storage.game[4]);
+    setStation(song);
+    start(Number(record.storage.game[0]), song);
   };
   const toMenu = () => { setPreview(false); setMode("menu"); };
   // the run just driven: a shot settles itself
@@ -119,7 +120,7 @@ export default function App() {
     if (mode !== "over") return;
     const s = sim.current, at = shot.current;
     if (!at || settled || !chain) return;
-    void chain.settle(at.shots, at.record, s.seed, s.log, s.dist, s.score).then((r) => r && setSettled(r));
+    void chain.settle(at.shots, at.record, s.seed, s.song, s.log, s.dist, s.score).then((r) => r && setSettled(r));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, chain]);
   const onOpened = useCallback(() => setOpenRecord(null), []);
@@ -241,7 +242,7 @@ export default function App() {
       {mode === "over" && (
         <div className="overlay dim screen">
           <Results s={s} station={station} chain={chain} posted={posted} setPosted={setPosted} shot={shot.current ? { target: shot.current.record.storage.target } : null} settled={settled}
-            onSame={() => start(seed)} onNew={() => { setSeed(randomSeed()); toMenu(); }} onAgain={() => driveShot(shot.current!.shots, shot.current!.record)}
+            onSame={() => start(seed, station)} onNew={() => { setSeed(randomSeed()); toMenu(); }} onAgain={() => driveShot(shot.current!.shots, shot.current!.record)}
             onMenu={() => { chain?.dismiss(); shot.current = null; setSeed(randomSeed()); toMenu(); }} onRetry={(r) => { chain?.dismiss(); setSettled(null); r(); }} />
         </div>
       )}

@@ -52,7 +52,7 @@ export type ChainApi = {
   /** Rival: the shot note at `record` (or the open ones already there); the drive starts with what comes back. */
   shoot: (record: ChallengeNote) => Promise<{ shots: ChallengeNote[]; record: ChallengeNote } | null>;
   /** Rival, after the drive: the win claims the prize, the loss waits for the champion. */
-  settle: (shots: ChallengeNote[], record: ChallengeNote | undefined, seed: number, log: Event[], dist: number, score: number) => Promise<Settled | null>;
+  settle: (shots: ChallengeNote[], record: ChallengeNote | undefined, seed: number, song: number, log: Event[], dist: number, score: number) => Promise<Settled | null>;
   /** Champion: expired records and lost shots, all in one transaction. */
   collect: (notes: ChallengeNote[]) => Promise<boolean>;
   /** Ten Gamecoins from the faucet; what the player should know. */
@@ -229,7 +229,7 @@ export function useChain(): ChainApi {
     }
   };
 
-  const settle: ChainApi["settle"] = async (shots, record, seed, log, dist, score) => {
+  const settle: ChainApi["settle"] = async (shots, record, seed, song, log, dist, score) => {
     const plan = settlePlan(shots, record, score, heightRef.current), { won, claimPrize, again } = plan, text = plan.text.toUpperCase();
     // nothing to sign on a loss: the Gamecoin waits for the champion at the deadline; until then the shot can be driven again
     if (!won) return { won, claimed: false, again, text };
@@ -239,7 +239,7 @@ export function useChain(): ChainApi {
       const verdict = claimVerdict(now.map((s) => ({ consumedAt: s.consumedAt, deadline: shotDeadline(s.storage) })));
       if (verdict === "claimed") return { txId: "", noteIds: shots.map((s) => s.id) };
       if (verdict === "lost") throw new Error(SHOT_LOST);
-      return client ? settleNotes(client, walletRef.current, shots, claimPrize ? record : undefined, pubAnswer(seed, log, dist)) : Promise.reject(new Error("client not ready"));
+      return client ? settleNotes(client, walletRef.current, shots, claimPrize ? record : undefined, pubAnswer(seed, song, log, dist)) : Promise.reject(new Error("client not ready"));
     });
     return submitted ? { won, claimed: true, again: false, text: outcomeText(text, true) } : null;
   };

@@ -25,3 +25,8 @@
   console autopilot (pin v and x per frame) and a canvas recorder, before it is called done.
 - "Weird at speed" means a per-frame artefact: measure frame-to-frame deltas of a road edge and split them by whether
   the camera crossed a segment start; a sawtooth shows up as crossings that move differently from the frames between.
+
+## 2026-10-16 HUD fonts
+- A font family swap at the same pixel size reads as a size change: Share Tech Mono's x-height is far under the pixel
+  LCD font's, so the HUD "shrank" with no size edit (Gaylord: "the font is now minuscule"). When swapping families on a
+  screen the player reads at a glance, compare the two on that screen before calling it done, and keep the old family where it lost.

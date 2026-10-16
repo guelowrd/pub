@@ -1,11 +1,13 @@
-// The head unit (visual update, skin B "Night Shift"): one fascia, an upper list display, a lower LCD with the station
-// index, the 13-slot band and the volume, and the Grand Prix control vocabulary. It picks the song (RADIO) or a record to
-// shoot at (RECORDS), shows SCORES and HISTORY, and holds the WALLET and SYSTEM settings; posting a run happens on the
-// results screen. The action key is DRIVE in RADIO and SHOT / COLLECT / CONNECT elsewhere. Geometry from game/data/menu.json (the kit's metadata.json, trimmed), one face per layout.
+// The head unit (Stage TV pack): a colour car TV above the Grand Prix radio. The TV shows the stage before you drive (the
+// song is the stage: its painting, its district, light and weather) and lists the other modes; the radio's lower LCD
+// holds the station index, the 13-slot band and the volume. RADIO picks the song, RECORDS a record to shoot at, SCORES
+// and HISTORY show the boards, WALLET and SYSTEM hold the settings; posting a run happens on the results screen. The
+// action key is DRIVE in RADIO and SHOT / COLLECT / CONNECT elsewhere. Geometry from game/data/menu.json (the pack's
+// component-contracts.json, trimmed, plus the TV's list and caption geometry), one fascia per layout.
 import { useEffect, useRef, useState } from "react";
 import { baselineEm, px, useFit } from "./board";
 import geometry from "./game/data/menu.json";
-import { STATIONS } from "./game/stations";
+import { DISTRICT_NAME, STATIONS, type Station } from "./game/stations";
 import type { ChainApi, ChallengeNote } from "./chain/ChainHost";
 import { blocksToClock as clock, fmtGc as gc, sameAccount as same, sameWord } from "./chain/flow";
 import { boards, history, owed as owedNotes } from "./chain/hub";
@@ -13,9 +15,10 @@ import { noteDeadline } from "./chain/notes";
 
 export type Mode = "RADIO" | "RECORDS" | "SCORES" | "HISTORY" | "WALLET" | "SYSTEM" | "AUDIO";
 const PRIMARY: Mode[] = ["RADIO", "RECORDS", "SCORES", "HISTORY", "WALLET", "SYSTEM"];
-const ART = `${import.meta.env.BASE_URL}art/menu/`;
-// profile B
+const ART = `${import.meta.env.BASE_URL}art/`;
+// the pack's palette
 const DISPLAY = "#94e6dc", DIM = "#61928f", ACCENT = "#ff6a57", CREAM = "#fff3f4", YELLOW = "#ffe564", MINT = "#78ffcb", PINK = "#ff40bd", EXPIRED = "#8a9baa";
+const TAG = "#aff7e8", COUNT = "#effae5", TITLE = "#fff2d9", PLACE = "#b2e8e2", LIGHT = "#eec7e8", WEATHER = "#f1d896", LCD = "#98e7dc", LCD_DIM = "#71b7b2", TICK = "#58938f";
 
 type Geometry = (typeof geometry)["desktop"];
 type Control = Geometry["controls"][number];
@@ -25,8 +28,11 @@ type Row = { key: string; cells: Cell[] };
 
 const courseLabel = (seed: number) => `C${seed.toString(36).toUpperCase()}`;
 const songOf = (i: number) => STATIONS[i]?.title ?? `SONG ${i}`;
+// the TV's painting of a stage: the district at its hour, rain or not
+// ponytail: night with clear sky is not painted yet (asked in designer brief 5); those stages show the district's rainy night
+const previewOf = (st: Station) => `${ART}stage/${st.district}-${st.time}${st.rain || st.time === "night" ? (st.time === "night" ? "-rain" : "") : ""}.png`;
 // history (results kit): the kind's icon, the state word in its colour
-const ICON = `${import.meta.env.BASE_URL}art/icons/`;
+const ICON = `${ART}icons/`;
 const STATE: Record<string, string> = { OPEN: "#70d4e7", "IN PLAY": "#f5bd62", COLLECT: "#91efbc", BEATEN: "#fa79a6", DEFENDED: "#f1d36f", "TAKEN BACK": "#a0acb5", WON: "#91efbc", LOST: "#fa79a6" };
 const stateColor = (state: string) => STATE[Object.keys(STATE).find((k) => state.startsWith(k)) ?? ""] ?? EXPIRED;
 
@@ -49,21 +55,21 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const [review, setReview] = useState<ChallengeNote | null>(null);
   const [note, setNote] = useState<string | null>(null); // a line of our own in the display (copied link, gamecoins)
   const [pressed, setPressed] = useState<string | null>(null);
+  const [hover, setHover] = useState(false); // the action key has a hover face
+  const [loaded, setLoaded] = useState<Set<string>>(() => new Set()); // the paintings the TV can show
   const [, setTick] = useState(0);
   const wheel = useRef(0); // scroll distance pooled until a step
-  const G = geometry[layout] as Geometry;
-  // the action key grows over back and select when they sit right above it (desktop, portrait): Enter, Esc and the rows
-  // do their job; landscape keeps them, its keys are elsewhere
-  const act0 = G.controls.find((c) => c.id === "action")!, bk = G.controls.find((c) => c.id === "back")!, sl = G.controls.find((c) => c.id === "select")!;
-  const merged = bk.rect[0] >= act0.rect[0] && sl.rect[0] + sl.rect[2] <= act0.rect[0] + act0.rect[2] && bk.rect[1] < act0.rect[1];
-  const actionRect = merged ? [act0.rect[0], bk.rect[1], act0.rect[2], act0.rect[1] + act0.rect[3] - bk.rect[1]] : act0.rect;
-  const controls = merged ? G.controls.filter((c) => c.id !== "back" && c.id !== "select") : G.controls;
+  const G = geometry[layout] as Geometry, TV = G.tv;
+  const act0 = G.controls.find((c) => c.id === "action")!;
 
   useEffect(() => { const t = setInterval(() => setTick((n) => n + 1), 1000); return () => clearInterval(t); }, []); // the waiting counter and the clocks
   useEffect(() => {
     if (!openRecord) return;
     setMode("RECORDS"); setReview(openRecord); onOpened();
   }, [openRecord, onOpened]);
+  useEffect(() => { // every stage's painting warms up at once; TUNING shows until the current one is in
+    for (const st of STATIONS) { const src = previewOf(st), img = new Image(); img.onload = () => setLoaded((s) => new Set(s).add(src)); img.src = src; }
+  }, []);
 
   const me = chain?.me ?? null;
   const height = chain?.height ?? 0;
@@ -89,13 +95,12 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const cur = cursor[mode] ?? 0;
   const notReady = !chain?.ready ? "LOADING THE CHAIN" : !chain.notesRead ? "READING THE CHAIN" : null;
   if (mode === "RADIO") {
-    rows = STATIONS.map((st, i) => ({ key: st.id, cells: [{ t: String(i + 1).padStart(2, "0"), at: 0, c: DIM, mono: true }, { t: st.title, at: 0.05, c: i === station ? DISPLAY : CREAM, mono: true }] }));
     action = "DRIVE";
     onAction = onDrive; onSelect = (i) => setStation(i); onArrow = (d) => setStation((station + d + STATIONS.length) % STATIONS.length);
   } else if (mode === "RECORDS") {
     if (review) {
       const g = game(review), mine = same(me, review.storage.champion), over = review.consumed || height >= review.storage.expiryBlock - 140;
-      rows = [lv("CHAMPION", champion(review), CREAM), lv("SCORE", score5(review.storage.target)), lv("PRIZE", gc(review.amount)), lv("STAKE", gc(review.storage.minStake)), lv("COURSE", courseLabel(g.seed), CREAM), lv("STATION", songOf(g.song), CREAM)];
+      rows = [lv("CHAMPION", champion(review), CREAM), lv("SCORE", score5(review.storage.target)), lv("PRIZE", gc(review.amount)), lv("STAKE", gc(review.storage.minStake)), lv("COURSE", courseLabel(g.seed), CREAM), lv("STAGE", songOf(g.song), CREAM)];
       if (over) status = "THIS ONE IS OVER.";
       else if (mine) status = "THIS ONE IS YOURS.";
       else { action = "SHOT"; onAction = () => void chain?.shoot(review).then((r) => r && onShot(r.shots, r.record)); }
@@ -147,7 +152,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   }
   if (busy) { action = null; onAction = null; onSelect = null; }
   if (trouble?.retry) { action = "TRY AGAIN"; onAction = () => { const r = trouble.retry!; chain?.dismiss(); r(); }; }
-  const total = rows.length, at = mode === "RADIO" ? station : Math.min(cur, Math.max(0, total - 1)), rowsN = G.rows;
+  const total = rows.length, at = mode === "RADIO" ? station : Math.min(cur, Math.max(0, total - 1)), rowsN = TV.list.rows;
   const start = Math.min(Math.max(0, at - rowsN + 1), Math.max(0, total - rowsN));
   // up/down walk the list; left/right go to the mode's own arrow rule (tuning, the volume) or walk the list too
   const move = (d: number) => { if (mode === "RADIO") return onArrow?.(d); if (total) setCursor({ ...cursor, [mode]: (at + d + total) % total }); };
@@ -191,64 +196,85 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     return () => removeEventListener("keydown", down);
   });
 
-  // the face: the kit's states are rest, hover, pressed, disabled; "hover" also marks the lit key (the mode's preset)
+  // the faces: rest, pressed, lit (the mode's preset, AUDIO, SYSTEM, MUTE on), disabled; the action key alone has a hover face
   const lit = (c: Control) => (c.id.startsWith("preset-") ? PRIMARY[Number(c.id.slice(7)) - 1] === mode : c.id === "audio" ? mode === "AUDIO" : c.id === "system" ? mode === "SYSTEM" : c.id === "mute" ? muted : false);
   const disabled = (c: Control) => (c.id === "action" ? !action || !onAction || !!busy : c.id === "select" ? !!busy : false);
-  const state = (c: Control) => (pressed === c.id ? "pressed" : disabled(c) ? "disabled" : lit(c) ? "hover" : "rest");
-  const text = (t: string, x: number, baseline: number, size: number, color: string, mono = false, right = false, key?: string | number, width?: number) => (
-    <span key={key} className={`hu-text ${mono ? "hu-mono" : "hu-gt"}`} style={{ [right ? "right" : "left"]: px(right ? G.size[0] - x : x), top: px(baseline - baselineEm(mono ? "Share Tech Mono" : "Chakra Petch") * size), fontSize: px(size), color, maxWidth: width ? px(width) : undefined }}>{t}</span>
+  const state = (c: Control) => (pressed === c.id ? "pressed" : disabled(c) ? "disabled" : lit(c) ? "lit" : c.id === "action" && hover ? "hover" : "rest");
+  /** Text on its baseline inside a box `W` wide (the radio by default, the TV for its captions) */
+  const text = (t: string, x: number, baseline: number, size: number, color: string, mono = false, right = false, key?: string | number, width?: number, W = G.size[0]) => (
+    <span key={key} className={`hu-text ${mono ? "hu-mono" : "hu-gt"}`} style={{ [right ? "right" : "left"]: px(right ? W - x : x), top: px(baseline - baselineEm(mono ? "Share Tech Mono" : "Chakra Petch") * size), fontSize: px(size), color, maxWidth: width ? px(width) : undefined }}>{t}</span>
   );
   const since = busy ? Math.round((Date.now() - busy.since) / 1000) : 0;
   const stageText = busy ? (busy.stage === "connect" ? chain?.walletStatus || "OPENING YOUR WALLET" : busy.stage === "prepare" ? "GETTING READY" : busy.stage === "wallet" ? "APPROVE IN YOUR WALLET" : `SENDING TO THE NETWORK  ${since} S`) : "";
-  const statusLines = trouble ? [trouble.t.title.toUpperCase(), trouble.retry ? "ACTION KEY: TRY AGAIN.  BACK: OK." : "BACK: OK."] : busy ? [busy.text, stageText] : note ? [note] : status ? [status] : null;
+  const stage = STATIONS[station], preview = previewOf(stage), tuning = mode === "RADIO" && !loaded.has(preview);
+  const statusLines = trouble ? [trouble.t.title.toUpperCase(), trouble.retry ? "ACTION KEY: TRY AGAIN.  BACK: OK." : "BACK: OK."] : busy ? [busy.text, stageText] : note ? [note] : status ? [status] : tuning ? ["TUNING"] : null;
   const windowRows = statusLines ? [] : rows.slice(start, start + rowsN);
-  const [gx, gy, gw, gh] = G.glass, inner = [gx + 16, gw - 32] as const; // the rows' content box inside the glass
+  const [sx, sy, sw, sh] = TV.screen, L = TV.list, [tagX, tagY, tagSize] = TV.tag, [countR, countY, countSize] = TV.count;
   const needleX = G.needle.range[0] + station * (G.needle.range[1] - G.needle.range[0]) / 12;
-  const [lx, ly, lw, lh] = G.lcd, big = layout === "desktop" ? 28 : layout === "portrait" ? 22 : 18, small = layout === "landscape" ? 9 : 11;
+  const [lx, , lw] = G.lcd;
+  const conditions: [string, string, string][] = [["location", DISTRICT_NAME[stage.district], PLACE], [stage.time, stage.time.toUpperCase(), LIGHT], [stage.rain ? "rain" : "clear", stage.rain ? "RAIN" : "CLEAR", WEATHER]];
+  const labelTop = G.label.centre[1] + G.label.size * 0.35 - baselineEm("Chakra Petch") * G.label.size + (pressed === "action" ? 2 : 0);
 
   return (
     <div className="hu-screen" style={{ width: px(G.canvas[0]), height: px(G.canvas[1]), transform: `scale(${scale})` }}>
-      <div className="hu-unit" style={{ left: px(G.origin[0]), top: px(G.origin[1]), width: px(G.size[0]), height: px(G.size[1]) }}>
-        <img src={`${ART}${layout}/blank-face.png`} alt="" style={{ left: 0, top: 0, width: px(G.size[0]), height: px(G.size[1]) }} />
-        <div className="hu-glass" style={{ left: px(G.glass[0]), top: px(G.glass[1]), width: px(G.glass[2]), height: px(G.glass[3]) }} onWheel={(e) => { wheel.current += e.deltaY; if (Math.abs(wheel.current) >= 80) { move(Math.sign(wheel.current)); wheel.current = 0; } }} />
-        {/* upper display */}
-        {text(mode, G.title[0], G.title[1], G.title[2], DISPLAY, false, false, "title")}
-        {mode === "RADIO" && text(`${String(station + 1).padStart(2, "0")} / ${STATIONS.length}`, gx + gw - 16, G.title[1], small, DIM, true, true, "count")}
-        {(busy || trouble) && <i className="hu-dot" style={{ left: px(gx + gw - 30), top: px(gy + 12), borderColor: trouble ? ACCENT : DISPLAY }} />}
+      {/* the TV: the painting in the tube, the bezel and glass over it, the captions on top of the glass */}
+      <div className="tv" style={{ left: px(TV.origin[0]), top: px(TV.origin[1]), width: px(TV.size[0]), height: px(TV.size[1]) }} onWheel={(e) => { wheel.current += e.deltaY; if (Math.abs(wheel.current) >= 80) { move(Math.sign(wheel.current)); wheel.current = 0; } }}>
+        <div className="tv-screen" style={{ left: px(sx), top: px(sy), width: px(sw), height: px(sh), borderRadius: px(TV.radius) }}>
+          {mode === "RADIO" && !tuning && <img className="tv-pic" src={preview} alt="" />}
+          {mode === "RADIO" && !tuning && <div className="tv-caption" />}
+        </div>
+        <img src={`${ART}tv/${layout}/bezel.png`} alt="" style={{ left: 0, top: 0, width: px(TV.size[0]), height: px(TV.size[1]) }} />
+        <img src={`${ART}tv/${layout}/glass.png`} alt="" style={{ left: 0, top: 0, width: px(TV.size[0]), height: px(TV.size[1]) }} />
+        <span className="hu-text hu-gt tv-tag" style={{ left: px(tagX - tagSize * 0.45), top: px(tagY - tagSize * 1.25), fontSize: px(tagSize), padding: `${px(tagSize * 0.25)} ${px(tagSize * 0.45)}`, color: TAG }}>{mode}</span>
+        {mode === "RADIO" && text(`${String(station + 1).padStart(2, "0")} / ${STATIONS.length}`, countR, countY, countSize, COUNT, true, true, "count", undefined, TV.size[0])}
+        {(busy || trouble) && <i className="hu-dot" style={{ left: px(countR - 12), top: px(countY + 8), borderColor: trouble ? ACCENT : DISPLAY }} />}
+        {mode === "RADIO" && !tuning && (
+          <>
+            {text(stage.title, TV.title.baseline[0], TV.title.baseline[1], TV.title.size, TITLE, false, false, "stage", TV.title.maxWidth)}
+            {conditions.map(([icon, word, c], k) => (
+              <span key={k}>
+                <img src={`${ICON}${icon}-32.png`} alt="" style={{ left: px(TV.cond.x[k] - TV.cond.icon * 1.33), top: px(TV.condY - TV.cond.icon * 0.85), width: px(TV.cond.icon), height: px(TV.cond.icon) }} />
+                {text(word, TV.cond.x[k], TV.condY, TV.cond.size, c)}
+              </span>
+            ))}
+          </>
+        )}
         {windowRows.map((row, j) => {
-          const i = start + j, sel = G.selection[j], base = G.baselines[j];
+          const i = start + j, base = L.top + j * L.pitch, top = base - L.pitch + (L.pitch - L.size * 1.2) / 2, inner = L.x;
           return (
-            <div key={row.key} className="hu-row" style={{ left: px(sel[0]), top: px(sel[1]), width: px(sel[2]), height: px(sel[3]), borderColor: "transparent" }} onClick={() => (mode === "RADIO" ? setStation(i) : setCursor({ ...cursor, [mode]: i }), i === at && select())}>
-              {i === at && <img src={`${ART}${layout}/selection-selected.png`} alt="" style={{ position: "absolute", left: 0, top: 0, width: px(sel[2]), height: px(sel[3]) }} />}
-              {row.cells.map((c, k) => c.icon ? <img key={k} src={`${ICON}${c.icon}-32.png`} alt={c.icon} style={{ position: "absolute", left: px(inner[0] - sel[0]), top: px(base - sel[1] - G.rowSize * 0.75), width: px(G.rowSize), height: px(G.rowSize) }} />
-                : text(c.t, inner[0] + c.at * inner[1] - sel[0], base - sel[1], G.rowSize, c.c ?? CREAM, c.mono, c.right, k, inner[1] * (c.right ? 0.5 : 1 - c.at)))}
+            <div key={row.key} className={`hu-row${i === at ? " hu-sel" : ""}`} style={{ left: px(inner[0] - 8), top: px(top), width: px(inner[1] + 16), height: px(L.pitch - 2), fontSize: px(L.size) }} onClick={() => (mode === "RADIO" ? setStation(i) : setCursor({ ...cursor, [mode]: i }), i === at && select())}>
+              {row.cells.map((c, k) => c.icon ? <img key={k} src={`${ICON}${c.icon}-32.png`} alt={c.icon} style={{ position: "absolute", left: px(8), top: px(base - top - L.size * 0.9), width: px(L.size), height: px(L.size) }} />
+                : text(c.t, 8 + c.at * inner[1], base - top, L.size, c.c ?? CREAM, c.mono, c.right, k, inner[1] * (c.right ? 0.5 : 1 - c.at), inner[1] + 16))}
             </div>
           );
         })}
         {statusLines && (
-          <div className="hu-status" style={{ left: px(gx + 24), top: px(gy + 40), width: px(gw - 48), height: px(gh - 56), fontSize: px(G.title[2] * 0.85), color: trouble ? ACCENT : DISPLAY }}>
-            {statusLines.map((l, i) => <p key={i} style={i ? { color: DIM, fontSize: px(G.title[2] * 0.6) } : {}}>{l}</p>)}
+          <div className={`hu-status${tuning && !busy && !trouble && !note && !status ? " tv-tuning" : ""}`} style={{ left: px(sx + 24), top: px(sy + 40), width: px(sw - 48), height: px(sh - 56), fontSize: px(TV.title.size * 0.6), color: trouble ? ACCENT : DISPLAY }}>
+            {statusLines.map((l, i) => <p key={i} style={i ? { color: DIM, fontSize: px(TV.title.size * 0.42) } : {}}>{l}</p>)}
           </div>
         )}
+      </div>
+      {/* the radio */}
+      <div className="hu-unit" style={{ left: px(G.origin[0]), top: px(G.origin[1]), width: px(G.size[0]), height: px(G.size[1]) }}>
+        <img src={`${ART}menu/${layout}/fascia.png`} alt="" style={{ left: 0, top: 0, width: px(G.size[0]), height: px(G.size[1]) }} />
         {/* lower LCD: the radio keeps playing while you browse: the station index, the 13-slot band and the volume */}
-        {text(String(station + 1).padStart(2, "0"), G.lcdBaseline[0], G.lcdBaseline[1], big, DISPLAY, true, false, "idx")}
-        {STATIONS.map((_, i) => <i key={i} className="hu-tick" style={{ left: px(G.needle.range[0] + i * (G.needle.range[1] - G.needle.range[0]) / 12), top: px(G.needle.tipY + 6), height: px(layout === "landscape" ? 5 : 8), background: i === station ? DISPLAY : DIM }} />)}
-        <i className="hu-needle" style={{ left: px(needleX - 4), top: px(G.needle.tipY - 2), borderTopColor: DISPLAY }} />
-        {text(`VOL ${Math.round(volume * 100)}%${muted ? "  MUTE" : ""}`, lx + 16, ly + lh - 10, small, DIM, true, false, "vol")}
-        {layout !== "portrait" && text(STATIONS[station].title, lx + lw - 16, ly + lh - 10, small, DIM, true, true, "song")} {/* portrait LCD is 152 wide: VOL and the title collide, the list names it */}
+        {text(String(station + 1).padStart(2, "0"), G.lcdBaseline[0], G.lcdBaseline[1], 25, LCD, true, false, "idx")}
+        {STATIONS.map((_, i) => <i key={i} className="hu-tick" style={{ left: px(G.needle.range[0] + i * (G.needle.range[1] - G.needle.range[0]) / 12), top: px(G.needle.tipY), height: px(layout === "desktop" ? 10 : 7), background: i === station ? DISPLAY : TICK }} />)}
+        <i className="hu-needle" style={{ left: px(needleX - 4), top: px(G.needle.tipY - 9), borderTopColor: DISPLAY }} />
+        {text(`VOL ${Math.round(volume * 100)}%${muted ? "  MUTE" : ""}`, G.volBaseline[0], G.volBaseline[1], 12, LCD_DIM, true, false, "vol", lw - (G.volBaseline[0] - lx) - 8)}
         {/* controls */}
-        {controls.map((c) => {
-          const r = c.id === "action" ? actionRect : c.rect;
+        {G.controls.map((c) => {
+          const r = c.rect;
           return (
           <span key={c.id}>
-            <img src={`${ART}${layout}/${c.id === "action" ? "action-blank" : c.id}-${state(c)}.png`} alt="" style={{ left: px(r[0]), top: px(r[1]), width: px(r[2]), height: px(r[3]) }} />
-            {c.id === "vol" ? G.volumeHits.map((h, k) => <button key={k} className="hit" aria-label={k ? "Volume up" : "Volume down"} style={{ left: px(h[0]), top: px(h[1]), width: px(h[2]), height: px(h[3]) }} onClick={() => press(c.id, () => act(c, k as 0 | 1))} />)
-              : <button className="hit" aria-label={c.id === "action" ? action ?? "" : c.label} disabled={disabled(c)} style={{ left: px(r[0]), top: px(r[1]), width: px(r[2]), height: px(r[3]) }} onClick={() => press(c.id, () => act(c))} />}
+            <img src={`${ART}menu/${layout}/${c.id}-${state(c)}.png`} alt="" style={{ left: px(r[0]), top: px(r[1]), width: px(r[2]), height: px(r[3]) }} />
+            {c.id === "vol" ? c.hits!.map((h, k) => <button key={k} className="hit" aria-label={k ? "Volume up" : "Volume down"} style={{ left: px(h[0]), top: px(h[1]), width: px(h[2]), height: px(h[3]) }} onClick={() => press(c.id, () => act(c, k as 0 | 1))} />)
+              : <button className="hit" aria-label={c.id === "action" ? action ?? "" : c.label} disabled={disabled(c)} style={{ left: px(r[0]), top: px(r[1]), width: px(r[2]), height: px(r[3]) }} onClick={() => press(c.id, () => act(c))} onMouseEnter={c.id === "action" ? () => setHover(true) : undefined} onMouseLeave={c.id === "action" ? () => setHover(false) : undefined} />}
           </span>
           );
         })}
-        {/* the action key's label, drawn once on the kit's baseline: DRIVE, SHOT, POST, COLLECT... */}
-        {action && <span className="hu-text hu-gt hu-label" style={{ left: px(G.label.baseline[0] - G.label.maxWidth / 2), top: px((merged ? actionRect[1] + actionRect[3] / 2 + G.label.size * 0.35 : G.label.baseline[1]) - baselineEm("Chakra Petch") * G.label.size + (pressed === "action" ? 2 : 0)), width: px(G.label.maxWidth), fontSize: px(G.label.size * (merged ? 1.3 : 1)), color: disabled(act0) ? G.label.disabledFill : G.label.fill }}>{action}</span>}
+        {/* the action key's label, centred on the key: DRIVE, SHOT, COLLECT, CONNECT... */}
+        {action && <span className="hu-text hu-gt hu-label" style={{ left: px(G.label.centre[0] - G.label.maxWidth / 2), top: px(labelTop), width: px(G.label.maxWidth), fontSize: px(G.label.size), color: disabled(act0) ? G.label.disabledFill : G.label.fill }}>{action}</span>}
       </div>
     </div>
   );

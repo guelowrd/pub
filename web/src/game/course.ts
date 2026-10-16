@@ -3,6 +3,7 @@
 // as you turn into it. Riders are the designer's characters with their fixed ages, drawn at each venue by its pool weights.
 import characters from "./data/characters.json";
 import venuesFile from "./data/venues.json";
+import { STATIONS } from "./stations";
 import { DISTRICTS, GREEN, KMH, LANE, LIGHTS, RED, SEG, TRAFFIC, W, WALK, rngFrom, seg, type District, type Hazard, type Node, type RadarClass, type Rider, type Sim } from "./sim";
 
 export const STREET = 1200;
@@ -66,14 +67,15 @@ function node(rng: () => number, district: District, leg: number): Node {
   return { district, stops, hazards, lights, curves, hills };
 }
 
-// every street differs from both parents and from its neighbour on the leg, so a fork always offers two other districts
-export function pyramid(seed: number): Node[][] {
+// the first street is the song's district; every later street differs from both parents and from its neighbour on the leg,
+// so a fork always offers two other districts
+export function pyramid(seed: number, song = 0): Node[][] {
   const rng = rngFrom(seed), course: Node[][] = [];
   for (let leg = 0; leg < LEGS; leg++) {
     const row: Node[] = [];
     for (let k = 0; k <= leg; k++) {
       const used = [course[leg - 1]?.[k - 1], course[leg - 1]?.[k], row[k - 1]].map((o) => o?.district);
-      row.push(node(rng, pick(rng, DISTRICTS.filter((d) => !used.includes(d))), leg));
+      row.push(node(rng, leg === 0 ? STATIONS[song].district : pick(rng, DISTRICTS.filter((d) => !used.includes(d))), leg));
     }
     course.push(row);
   }
@@ -116,7 +118,7 @@ function place(s: Sim, leg: number, k: number, z0: number) {
 }
 
 export function extend(s: Sim) {
-  if (s.streets.length === 0) { s.course = pyramid(s.seed); place(s, 0, 0, 0); }
+  if (s.streets.length === 0) { s.course = pyramid(s.seed, s.song); place(s, 0, 0, 0); }
   const f = s.forks[s.forks.length - 1], last = s.streets[s.streets.length - 1];
   if (f && f.side !== 0 && s.streets.length === s.forks.length) place(s, last.leg + 1, last.k + (f.side < 0 ? 0 : 1), f.zEnd);
   // traffic: keep a few cars ahead, in lanes, slower than us

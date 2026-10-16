@@ -1,3 +1,4 @@
+import { STATIONS } from "./stations";
 import { describe, expect, it } from "vitest";
 import { DISTRICTS, agePoints, type District } from "./sim";
 import { CHARACTERS, LEGS, POOLS, VENUES, VENUE_OF, pyramid } from "./course";
@@ -6,6 +7,7 @@ describe("course", () => {
   it("same seed, same course; another seed, another course", () => {
     expect(JSON.stringify(pyramid(1))).toBe(JSON.stringify(pyramid(1)));
     expect(JSON.stringify(pyramid(1))).not.toBe(JSON.stringify(pyramid(2)));
+    STATIONS.forEach((st, song) => expect(pyramid(1, song)[0][0].district).toBe(st.district)); // the song picks the first street
   });
   it("forks offer two other districts, riders are authored characters who want another district", () => {
     for (let seed = 1; seed <= 20; seed++) {

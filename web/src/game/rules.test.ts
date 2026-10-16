@@ -15,7 +15,7 @@ describe("rules vectors", () => {
   });
   it("replays each logged run to its score", () => {
     expect(vectors.runs.length).toBeGreaterThan(0);
-    for (const r of vectors.runs as { seed: number; dist: number; banked: number; score: number; log: Event[] }[]) expect(replay(pyramid(r.seed), r.log as Event[], r.dist)).toEqual({ banked: r.banked, score: r.score });
+    for (const r of vectors.runs as { seed: number; song: number; dist: number; banked: number; score: number; log: Event[] }[]) expect(replay(pyramid(r.seed, r.song), r.log as Event[], r.dist)).toEqual({ banked: r.banked, score: r.score });
   });
   it("rejects broken logs", () => {
     const c = pyramid(1);

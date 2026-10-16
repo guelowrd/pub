@@ -369,3 +369,19 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
 - Traffic: TRAFFIC per district (downtown +3, casino +3) added to the cars kept ahead; the street under the car decides.
 - Stage TV: adopted. The designer's table of 13 assignments is the stage list. Brief 5 (docs/designer-brief-5.md)
   asks for the three missing night/clear previews (downtown, waterfront, golf hills) and a list board inside the TV.
+
+### Stage TV built (2026-10-16, 18:00)
+- Head unit rewritten on PUB-Stage-TV: the TV (bezel + glass over the painting, captions on top) above the recomposed
+  radio, geometry from component-contracts.json -> game/data/menu.json (python one-off, plus my own tag / count / list /
+  conditions geometry under `tv`, to be replaced when the designer's list board lands). Faces: rest / pressed / lit /
+  disabled, the action key alone has hover. No back/select keys on desktop and portrait (Enter, Esc, rows); landscape keeps them.
+- Song = stage: stations.ts holds district, time, rain per song (the designer's table). The TV shows the district's
+  painting at its hour; night + clear is not painted yet, those three stages show the rainy night of the district
+  (previewOf, ponytail note) until the designer delivers. All 13 paintings preload on mount; TUNING until the current one is in.
+- The course starts in the song's district: pyramid(seed, song), newSim(seed, song), Sim.song, courseFelts / pubAnswer /
+  settle carry the song. RULES_VERSION 2: version 1 records grew another course and are no longer listed (testnet only).
+  rules/vectors.json regenerated (GEN_VECTORS=1, traffic change moved the bot's logs too); LOG_COMMIT repinned in
+  game.test.ts; `cargo test -p integration --test pub_test` 4 passed (50 s). vitest 64 passed.
+- Verified on screen: desktop RADIO (three stages), SYSTEM and RECORDS lists in the TV, portrait and landscape in iframes.
+- Not done, by design: the 120 ms scan transition on tune (plain swap), the vignette layer, daylight / rain in the driving
+  scene (engine test first, brief 5 item 3).

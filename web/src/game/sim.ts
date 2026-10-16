@@ -46,6 +46,7 @@ export interface Input { gas: boolean; brake: boolean; left: boolean; right: boo
 
 export interface Sim {
   seed: number;
+  song: number; // the station: its song, its paint, and the district the course starts in
   rng: () => number;
   t: number; // active seconds elapsed
   over: boolean;
@@ -89,9 +90,9 @@ export function rngFrom(seed: number): () => number {
   };
 }
 
-export function newSim(seed: number): Sim {
+export function newSim(seed: number, song = 0): Sim {
   return {
-    seed, rng: rngFrom(seed), t: 0, over: false,
+    seed, song, rng: rngFrom(seed), t: 0, over: false,
     z: 20, x: 0, v: 0, steer: 0, brake: false, skid: false, hot: 99, cap: TOP, spin: 0, oil: 0, boarding: 0, bumpCd: 0,
     seats: [null, null, null], banked: 0, dist: 0, score: 0, delivered: 0,
     dx: [], y: [], course: [], streets: [], stops: [], hazards: [], traffic: [], forks: [], lights: [],

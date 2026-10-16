@@ -9,18 +9,18 @@ import type { Event } from "../../game/sim";
 
 const run = vectors.runs[0];
 const COURSE_COMMIT = "0x2aed01e207c171e00ba89365cc24410a9dd044dcef69d2195bc5057e8ad7a04a";
-const LOG_COMMIT = "0x393c082463bbb702cb72ae0e3e508701faa94d7cbf18638e9f06d2965b6e8bd8";
+const LOG_COMMIT = "0x47d80fa3349b06d799d505bc1e92c575d8d309e67bb77193547b0fec66f6eb26";
 const hex = (w: bigint[]) => wordFromFelts(w as [bigint, bigint, bigint, bigint]).toHex();
 
 describe("Pick Up Boomers game data", () => {
   it("grows the vector's course from its seed and commits to it like the Rust side", () => {
-    expect(courseFelts(run.seed).map(Number)).toEqual(run.course);
+    expect(courseFelts(run.seed, run.song).map(Number)).toEqual(run.course);
     expect(hex(commitment(run.course.map(BigInt)))).toBe(COURSE_COMMIT);
     expect(Word.fromHex(COURSE_COMMIT).toFelts().map((f) => f.asInt())).toEqual(commitment(run.course.map(BigInt)));
   });
 
   it("the claim: the log under its commitment (the note argument) and the course under its own", () => {
-    const answer = pubAnswer(run.seed, run.log as Event[], run.dist);
+    const answer = pubAnswer(run.seed, run.song, run.log as Event[], run.dist);
     expect(hex(answer.arg)).toBe(LOG_COMMIT);
     expect(answer.advice.map(([k, v]) => [hex(k), v.length])).toEqual([[COURSE_COMMIT, 224], [LOG_COMMIT, run.events.length + 2]]);
     expect(answer.advice[1][1].slice(0, 2)).toEqual([BigInt(run.events.length), BigInt(run.dist)]);
@@ -35,7 +35,7 @@ describe("Pick Up Boomers game data", () => {
     expect(genuine(g)).toBe(true);
     expect(genuine({ ...g, seed: run.seed + 1 })).toBe(false);
     expect(() => decodeGame(felts.slice(0, 8))).toThrow(/not Pick Up Boomers/);
-    expect(() => decodeGame([...felts.slice(0, 5), 2n, ...felts.slice(6)])).toThrow(/not Pick Up Boomers/);
+    expect(() => decodeGame([...felts.slice(0, 5), 1n, ...felts.slice(6)])).toThrow(/not Pick Up Boomers/);
     expect(() => decodeGame([...felts.slice(0, 4), 999n, ...felts.slice(5)])).toThrow(/not Pick Up Boomers/);
   });
 });

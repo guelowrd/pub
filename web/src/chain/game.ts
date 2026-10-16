@@ -9,7 +9,7 @@ import { packCourse, packLog } from "../game/chain";
 import { pyramid } from "../game/course";
 import type { Event } from "../game/sim";
 
-export const RULES_VERSION = 1n;
+export const RULES_VERSION = 2n; // 2: the course starts in the song's district (Stage TV); version 1 records grew another course
 export const GAME_FELTS = 12;
 
 export type PubGame = { seed: number; song: number; courseCommit: Word4 };
@@ -19,8 +19,8 @@ export function commitment(felts: bigint[]): Word4 {
   return Poseidon2.hashElements(feltArray(felts)).toFelts().map((f) => f.asInt()) as Word4;
 }
 
-/** The packed course of `seed`, as the chain replays it. */
-export const courseFelts = (seed: number): bigint[] => packCourse(pyramid(seed)).map(BigInt);
+/** The packed course of `seed` and `song`, as the chain replays it. */
+export const courseFelts = (seed: number, song: number): bigint[] => packCourse(pyramid(seed, song)).map(BigInt);
 
 export function encodeGame(g: PubGame): bigint[] {
   return [BigInt(g.seed), 0n, 0n, 0n, BigInt(g.song), RULES_VERSION, 0n, 0n, ...g.courseCommit];
@@ -35,17 +35,17 @@ export function decodeGame(felts: bigint[]): PubGame {
 }
 
 /** The game data of a fresh record: the course grown from `seed`, committed. */
-export const newGame = (seed: number, song: number): PubGame => ({ seed, song, courseCommit: commitment(courseFelts(seed)) });
+export const newGame = (seed: number, song: number): PubGame => ({ seed, song, courseCommit: commitment(courseFelts(seed, song)) });
 
 /** True when `g`'s course commitment is the one this app grows from its seed: a rival can drive it. */
-export const genuine = (g: PubGame): boolean => commitment(courseFelts(g.seed)).every((f, i) => f === g.courseCommit[i]);
+export const genuine = (g: PubGame): boolean => commitment(courseFelts(g.seed, g.song)).every((f, i) => f === g.courseCommit[i]);
 
 /** A random u32 seed for a new drive. */
 export const randomSeed = (): number => crypto.getRandomValues(new Uint32Array(1))[0];
 
 /** The claim: the log's commitment is the note argument; the course and the log sit under their commitments. */
-export function pubAnswer(seed: number, log: Event[], dist: number): GameAnswer {
-  const course = courseFelts(seed), packed = packLog(log, dist).map(BigInt);
+export function pubAnswer(seed: number, song: number, log: Event[], dist: number): GameAnswer {
+  const course = courseFelts(seed, song), packed = packLog(log, dist).map(BigInt);
   const arg = commitment(packed);
   return { arg, advice: [[commitment(course), course], [arg, packed]] };
 }
