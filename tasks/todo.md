@@ -505,10 +505,15 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
   The night fillers are gone (the band replaces them, as the designer's note says); the 12 filler files stay in public/.
 - Checked in Chrome: OUTRUN PULSE (waterfront midday) opens on a blue sky, the promenade rail with water behind, the
   casino street at midday through the tunnel with the pastel frontage and the daylight casino destination.
-- OPEN: in the casino street a trail of small `destination-casino.png` icons shows in the sky, two lines converging above
-  the horizon (seen at z 1604 and 1648 on seed 3696130065, OUTRUN PULSE, right branch). A drawImage tally caught 28 icon
-  draws in 300 ms above the horizon; the call site is not found yet (only the drop pole and the gantry draw ICON).
-  Not yet checked: sunset stages, night + rain stages, the NIGHT frontage, phones, performance of 280 pattern fills a frame.
+- The "trail of icons in the sky" over the casino street was the frontage band's top edge: the pattern repeated
+  vertically, so the band's ground row wrapped onto the top of each slice as a hairline dash (the casino band is 32 m
+  tall, so those dashes hung far above the horizon). Band patterns are `repeat-x` now. And a slice is a trapezoid (top
+  converging, bottom not), so each slice is cut into up to 4 strips pinned on their bottom edges, which keeps the top's
+  step under 3 px (it was 16 px near the camera and broke the spires into floating tips).
+- Checked in Chrome after the fix: golf midday (stone wall, cypresses, daylight golf club), downtown sunset (frontage,
+  warm sky, sunset skyline), downtown night + rain (veil, streaks, sheen; the night downtown frontage), golf night
+  clear (night frontage), the tunnel. Frame time median 8.3 ms on the 120 Hz display. Not yet: phones, performance
+  on a slow machine, the lamps' bulbs still lit by day (tiny), the TV previews untouched.
 - Gaylord (22:40): "there aren't any curves anymore, only straight road". Checked: `node()` still rolls curves (70 % of
   150 to 350 m stretches, strength up to 0.05 per segment) and the renderer bends the road (seen at z 1670 on the casino
   street). The first street of this seed had one weak curve (0.0023); strengths are uniform in ±0.05, so weak first streets

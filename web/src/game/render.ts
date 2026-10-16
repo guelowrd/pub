@@ -155,7 +155,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     l += 0.9 * hl * Math.max(0, 1 - (z - s.z) / 70);
     return Math.min(1, l);
   };
-  const pattern = (im: CanvasImageSource) => { let p = patterns.get(im); if (!p) { p = ctx.createPattern(im, "repeat")!; patterns.set(im, p); } return p; };
+  const pattern = (im: CanvasImageSource, rep = "repeat") => { let p = patterns.get(im); if (!p) { p = ctx.createPattern(im, rep)!; patterns.set(im, p); } return p; };
   const tunnel = (n: number, c1: number, c2: number, hw: number, to: District) => {
     const z1 = (i0 + n) * SEG, light = lightAt(z1), tint = COLOR[to];
     const l1 = c1 - hw - WALK, r1 = c1 + hw + WALK, l2 = c2 - hw - WALK, r2 = c2 + hw + WALK;
@@ -310,14 +310,22 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   const facade = (n: number, z1: number, d: District) => {
     const im = img(frontage(d, hour));
     if (!im || zAt[n + 1] <= zAt[n]) return;
-    const [ppm, back] = FRONTAGE[d], H = 512 / ppm, per = 2048 / ppm, xw = W + BAY + WALK + back, hgt = H * (sc[n] + sc[n + 1]) / 2, pat = pattern(im);
+    const [ppm, back] = FRONTAGE[d], H = 512 / ppm, per = 2048 / ppm, xw = W + BAY + WALK + back, hN = H * sc[n], hF = H * sc[n + 1], pat = pattern(im, "repeat-x"); // along the road only: a wrap drew the ground row as a hairline along the band's top
     const u = (((z1 % per) + per) % per) * ppm; // the band's column at this slice
+    // a slice is a trapezoid (its top converges, its bottom does not), which one affine cannot map: the band is cut into
+    // horizontal strips, each pinned exactly along its bottom edge, enough of them that the top's step stays under 3 px
+    // (a 26 m casino front near the camera stepped 16 px a slice and its spires broke into a trail of floating tips)
+    const strips = Math.min(4, Math.max(1, Math.ceil(Math.abs(hN - hF) / 3)));
     for (const side of [1, -1] as const) {
       if (bare(z1, side)) continue;
       const xa = X(n, side * xw), xb = X(n + 1, side * xw), ya = sy[n], yb = sy[n + 1];
-      const a = side * (xb - xa) / (SEG * ppm), b = side * (yb - ya) / (SEG * ppm), u0 = side > 0 ? u : 2048 - u;
-      pat.setTransform({ a, b, c: 0, d: hgt / 512, e: xa - a * u0, f: ya - b * u0 - hgt });
-      ctx.fillStyle = pat; ctx.beginPath(); ctx.moveTo(xa, ya); ctx.lineTo(xa, ya - H * sc[n]); ctx.lineTo(xb, yb - H * sc[n + 1]); ctx.lineTo(xb, yb); ctx.fill();
+      const a = side * (xb - xa) / (SEG * ppm), u0 = side > 0 ? u : 2048 - u;
+      for (let j = 0; j < strips; j++) {
+        const v1 = 512 * j / strips, v2 = 512 * (j + 1) / strips, lo = 1 - v2 / 512, hi = 1 - v1 / 512;
+        const bn = ya - hN * lo, bf = yb - hF * lo, b = side * (bf - bn) / (SEG * ppm), dv = (hN + hF) / 2 / 512;
+        pat.setTransform({ a, b, c: 0, d: dv, e: xa - a * u0, f: bn - b * u0 - dv * v2 });
+        ctx.fillStyle = pat; ctx.beginPath(); ctx.moveTo(xa, bn); ctx.lineTo(xa, ya - hN * hi); ctx.lineTo(xb, yb - hF * hi); ctx.lineTo(xb, bf); ctx.fill();
+      }
     }
   };
   // street furniture every 55 m, between the lamps and the frontage, on one side or the other (mirrored on the left),
