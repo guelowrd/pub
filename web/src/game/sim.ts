@@ -1,5 +1,6 @@
 // The run: car, road, traffic, stops, clock, score. Pure state + step(), no DOM.
 // Units: metres, seconds, m/s. z runs along the road, x across it (0 = road centre, right positive).
+import { STATIONS } from "./stations";
 
 export const KMH = 3.6;
 export const TOP = 299 / KMH; // top speed; the power tapers, so 220 comes easy and the last 80 are earned
@@ -60,6 +61,7 @@ export interface Sim {
   cap: number; // the car's top speed this run: every wreck knocks some off, down to FAST
   spin: number; // seconds of spin-out left
   oil: number; // seconds of grip loss left
+  rain: boolean; // the stage's weather: a wet road and a crosswind
   boarding: number; // seconds the car stays put while someone gets in or out
   bumpCd: number;
   seats: (Rider | null)[];
@@ -95,7 +97,7 @@ export function rngFrom(seed: number): () => number {
 
 export function newSim(seed: number, song = 0): Sim {
   return {
-    seed, song, rng: rngFrom(seed), t: 0, over: false,
+    seed, song, rain: STATIONS[song]?.rain ?? false, rng: rngFrom(seed), t: 0, over: false,
     z: 20, x: 0, v: 0, steer: 0, brake: false, skid: false, hot: 99, cap: TOP, spin: 0, oil: 0, boarding: 0, bumpCd: 0,
     seats: [null, null, null], banked: 0, dist: 0, score: 0, delivered: 0,
     dx: [], y: [], course: [], streets: [], stops: [], hazards: [], traffic: [], forks: [], lights: [],
@@ -104,6 +106,8 @@ export function newSim(seed: number, song = 0): Sim {
 }
 
 export const seg = (z: number) => Math.floor(z / SEG);
+/** The crosswind on a rainy stage: a side per run from the seed (no rng call, the spawn sequence stays), 0 when dry */
+export const windOf = (s: Sim) => (s.rain ? ((s.seed >>> 3) & 1 ? 1 : -1) : 0);
 export const curvature = (s: Sim, z: number) => s.dx[seg(z)] ?? 0;
 export const districtAt = (s: Sim, z: number) => s.streets.find((st) => z >= st.z0 && z < st.z1)?.district;
 export const isRed = (l: Light, t: number) => (t + l.offset) % (RED + GREEN) < RED;
@@ -179,17 +183,20 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
     s.boarding -= dt;
     s.v = 0;
   } else {
-    // brake through a standstill and you reverse: the reflex when you've overshot a stop
-    if (inp.brake) s.v = Math.max(-REV, s.v - (s.v > 0 ? 28 : 8) * dt);
+    // brake through a standstill and you reverse: the reflex when you've overshot a stop. A wet road brakes and bites
+    // less, skids sooner, and its crosswind leans on the car, more the faster it goes
+    const grip = s.rain ? 0.8 : 1;
+    if (inp.brake) s.v = Math.max(-REV, s.v - (s.v > 0 ? 28 * grip : 8) * dt);
     else if (inp.gas) s.v = Math.min(s.cap, s.v + (13 * (1 - (Math.max(0, s.v) / TOP) ** 3) + 0.5) * dt);
     if (s.v > 0 && dir !== 0) s.v -= Math.abs(s.steer) * (s.v / TOP) ** 3 * 10 * dt; // turning at speed scrubs it off, hard when flat out
     else s.v -= Math.sign(s.v) * Math.min(Math.abs(s.v), 4 * dt);
-    s.skid = inp.brake && dir !== 0 && s.v > 15;
-    const lat = s.steer * (4 + 10 * (s.v / TOP)) * (s.skid ? 1.5 : 1) * (s.oil > 0 ? 0.4 : 1);
+    s.skid = inp.brake && dir !== 0 && s.v > (s.rain ? 10 : 15);
+    const lat = s.steer * (4 + 10 * (s.v / TOP)) * (s.skid ? 1.5 : 1) * (s.oil > 0 ? 0.25 : grip);
     s.x += lat * dt;
-    if (s.oil > 0) s.x += (s.rng() - 0.5) * 12 * dt;
+    if (s.oil > 0) s.x += (s.rng() - 0.5) * 20 * dt; // on oil the car wanders and the wheel barely bites
+    s.x += windOf(s) * 0.9 * (Math.max(0, s.v) / TOP) * dt;
   }
-  s.x -= curvature(s, s.z) * (s.v / FAST) ** 2 * 75 * dt; // the curve throws you outward; hold the wheel against it; past 220 it is dangerous
+  s.x -= curvature(s, s.z) * (s.v / FAST) ** 2 * 75 * (s.rain ? 1.3 : 1) * dt; // the curve throws you outward; hold the wheel against it; past 220 it is dangerous
 
   // curbs are walls: scrape and slow, harder in the city
   const r = rightEdge(s, s.z), l = -leftEdge(s, s.z), curb = CURB[districtAt(s, s.z) ?? "golf"];
@@ -258,8 +265,8 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
     if (h.hit || Math.abs(h.z - s.z) > 3 || Math.abs(h.x - s.x) > 1.8) continue;
     h.hit = true;
     if (h.kind === "cone") s.v *= 0.7;
-    else if (h.kind === "pothole") s.v *= 0.75;
-    else if (h.kind === "oil") { s.oil = 1.2; h.hit = false; }
+    else if (h.kind === "pothole") { s.v *= 0.7; s.x += (s.rng() < 0.5 ? -1 : 1) * 1.0; say(s, "POTHOLE!"); } // a jolt: speed off and the car thrown a metre aside
+    else if (h.kind === "oil") { s.oil = s.rain ? 2.5 : 2; h.hit = false; say(s, "OIL!"); }
     else if (s.v > WRECK) wreck(s);
     else { s.v *= 0.2; say(s, "SPIN OUT!"); }
   }

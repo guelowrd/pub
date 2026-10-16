@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BAY, FAST, GREEN, KMH, LANE, RED, REV, RUN, TOP, W, WRECK, agePoints, branchX, candidate, edges, isRed, leftEdge, newSim, rightEdge, step, type District, type Input, type Rider, type Sim } from "./sim";
+import { BAY, FAST, GREEN, KMH, LANE, RED, REV, RUN, TOP, W, WRECK, agePoints, branchX, candidate, edges, isRed, leftEdge, newSim, rightEdge, step, windOf, type District, type Input, type Rider, type Sim } from "./sim";
 import { MOUTHS, extend } from "./course";
 
 const idle: Input = { gas: false, brake: false, left: false, right: false };
@@ -220,10 +220,22 @@ describe("hazards", () => {
     extend(s);
     s.hazards = [hz("cone", s)]; s.v = 20; step(s, idle, 1 / 120, extend);
     expect(s.v).toBeCloseTo(14, 0); expect(s.hazards[0].hit).toBe(true);
-    s.hazards = [hz("pothole", s)]; s.v = 20; step(s, idle, 1 / 120, extend);
-    expect(s.v).toBeCloseTo(15, 0);
+    s.hazards = [hz("pothole", s)]; s.v = 20; const x0 = s.x; step(s, idle, 1 / 120, extend);
+    expect(s.v).toBeCloseTo(14, 0); expect(Math.abs(s.x - x0)).toBeGreaterThanOrEqual(0.8); // a jolt sideways too
     s.hazards = [hz("oil", s)]; s.v = 20; step(s, idle, 1 / 120, extend);
-    expect(s.oil).toBeGreaterThan(1); expect(s.hazards[0].hit).toBe(false);
+    expect(s.oil).toBeGreaterThanOrEqual(2); expect(s.hazards[0].hit).toBe(false);
+  });
+  it("rain: braking and the wheel's bite drop, a curve throws harder, and the crosswind leans on the car", () => {
+    // SYNTHWAVE ENGINE (1) and ABANDONED FACTORY (2) both start downtown: the same course, dry and wet
+    const mk = (song: number) => { const s = newSim(1, song); extend(s); s.dx.fill(0); s.hazards = []; s.traffic = []; s.lights = []; return s; };
+    const dry = mk(1), wet = mk(2);
+    expect(wet.rain).toBe(true); expect(dry.rain).toBe(false); expect(Math.abs(windOf(wet))).toBe(1); expect(windOf(dry)).toBe(0);
+    for (const s of [dry, wet]) { s.v = 30; } run(dry, { brake: true }, 0.5); run(wet, { brake: true }, 0.5);
+    expect(wet.v).toBeGreaterThan(dry.v + 2);
+    for (const s of [dry, wet]) { s.v = 30; s.x = 0; s.steer = 1; } run(dry, { right: true }, 0.5); run(wet, { right: true }, 0.5);
+    expect(wet.x - windOf(wet) * 0.5).toBeLessThan(dry.x * 0.9); // less bite, the wind's own push taken out
+    for (const s of [dry, wet]) { s.v = 30; s.x = 0; s.steer = 0; } run(dry, {}, 1); run(wet, {}, 1);
+    expect(dry.x).toBe(0); expect(Math.sign(wet.x)).toBe(windOf(wet)); expect(Math.abs(wet.x)).toBeGreaterThan(0.2);
   });
   it("oil cuts the wheel's bite", () => {
     const dry = newSim(1), wet = newSim(1);

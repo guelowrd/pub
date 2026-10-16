@@ -1,5 +1,5 @@
 // Pseudo-3D view: road segments projected from a low chase camera, sprites sorted by segment and drawn at their anchors.
-import { BAY, CAR_W, LANE, NAME, SEG, TOP, W, WALK, branchX, districtAt, isRed, leftEdge, rightEdge, seg, stopAt, type District, type Sim } from "./sim";
+import { BAY, CAR_W, LANE, NAME, SEG, TOP, W, WALK, branchX, districtAt, isRed, leftEdge, rightEdge, seg, stopAt, windOf, type District, type Sim } from "./sim";
 import { CHARACTERS, FORK_OUT, sidewalkX } from "./course";
 import { BUILDING, DECOR, DPROP, DPROPS, DROP, FORK_STRUCT, FRONTAGE, GANTRY, ICON, MATERIALS, SHADOW, LIGHT_GREEN, LIGHT_RED, PANO, PANO_HORIZON, PEOPLE, PROP, ROAD_TINT, SHEETS, TRAFFIC, TREES, TUNNEL, VENUE_CELL, frontage, img, lit, water, type Sheet } from "./art";
 import { CAR, DEFAULT_SKY, SKY, STATIONS, type TimeOfDay } from "./stations";
@@ -11,6 +11,7 @@ const FLAT = new Set<Sheet>([SHEETS.smoke, SHEETS.burst, SHEETS.oil, SHEETS.poth
 const CAM_H = 2.2, CAM_BACK = 5;
 export const COLOR: Record<District, string> = { downtown: "#ffe564", waterfront: "#63e7ff", casino: "#ff40bd", golf: "#78ffcb" };
 const SMOKE_MS = [50, 100, 170, 260, 370, 500], SMOKE_A = [1, 1, 1, 0.85, 0.35, 0.1]; // frame ends and alphas from the metadata
+const DECAL = { oil: [32, 300, 448, 160, 3.6], pothole: [32, 295, 448, 165, 3.2] } as const; // the painted ellipse in the 512 cell, the patch's width in metres
 // the hour's palette (world lighting): the ground, the sidewalk and the asphalt in their two alternating slices, and the
 // water's flat colour where its tile has faded out; night is the game's first palette
 const GROUND: Record<TimeOfDay, [string, string]> = { night: ["#1c1636", "#1f193a"], midday: ["#66705f", "#6b7564"], sunset: ["#5a4258", "#5f465c"] };
@@ -357,9 +358,27 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
       }
     });
   }
+  // ground hazards are decals: the sprite's painted ellipse laid flat as a square patch of road, projected by its own
+  // corners, so it foreshortens with distance like the asphalt (a billboard sat on the road like an object). Cones and
+  // barriers stand up and stay sprites
+  const decal = (z: number, x: number, kind: "oil" | "pothole") => at(z, () => {
+    const im = img(SHEETS[kind].file), [sx, sy0, sw, sh, wm] = DECAL[kind];
+    if (!im || z - wm / 2 < camZ + 1) return;
+    // the patch stretches along the road with distance so it keeps a quarter of its width in height on screen: a flat
+    // 3 m patch is a one-pixel line at 60 m, and a pothole has to be seen in time to dodge. It shrinks back to round as
+    // you reach it, while it grows on screen, so the morph never shows
+    const dm = Math.max(wm, 0.36 * (z - camZ));
+    const fl = place(z + dm / 2, x - wm / 2), fr = place(z + dm / 2, x + wm / 2), nl = place(z - dm / 2, x - wm / 2);
+    ctx.save(); ctx.globalAlpha = 0.3 + 0.7 * lightAt(z);
+    ctx.transform((fr.px - fl.px) / sw, (fr.py - fl.py) / sw, (nl.px - fl.px) / sh, (nl.py - fl.py) / sh, fl.px, fl.py);
+    ctx.drawImage(im, sx, sy0, sw, sh, 0, 0, sw, sh);
+    // a second pass adds the highlights on top, so a dark pothole still reads on dark asphalt from 30 m
+    ctx.globalCompositeOperation = "screen"; ctx.globalAlpha *= 0.6; ctx.drawImage(im, sx, sy0, sw, sh, 0, 0, sw, sh);
+    ctx.restore();
+  });
   for (const hz of s.hazards) {
     if (hz.hit) continue;
-    spr(hz.z, hz.x, SHEETS[hz.kind], 0);
+    if (hz.kind === "oil" || hz.kind === "pothole") decal(hz.z, hz.x, hz.kind); else spr(hz.z, hz.x, SHEETS[hz.kind], 0);
   }
   for (const st of s.stops) {
     const zc = st.z + st.len / 2;
@@ -537,12 +556,14 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     cell(ctx, s.brake ? SHEETS.heroBrake : SHEETS.hero, pose < -0.3 ? 0 : pose > 0.3 ? 2 : 1, cx, py + bob, k);
   }
   if (!img(SHEETS.hero.file)) { ctx.fillStyle = "#d0d0dc"; ctx.fillRect(cx - (CAR_W / 2) * k, py - 1.1 * k, CAR_W * k, 1.1 * k); }
-  // rain streaks over the whole picture, three speeds, a fixed set of threads scrolling with time
+  // rain streaks over the whole picture, three speeds, a fixed set of threads scrolling with time and leaning with the
+  // run's crosswind (the same wind that leans on the car)
   if (rain) {
+    const wind = windOf(s);
     ctx.strokeStyle = "rgba(190,205,255,0.3)"; ctx.lineWidth = Math.max(1, w / 1400); ctx.beginPath();
     for (let i = 0; i < 160; i++) {
-      const sp = 1 + (i % 3) * 0.3, x = (((i * 137.5 + s.t * 70 * sp) % w) + w) % w, y = (((i * 71.3 + s.t * 1500 * sp) % h) + h) % h, l = (10 + (i % 4) * 4) * h / 960;
-      ctx.moveTo(x, y); ctx.lineTo(x - l * 0.15, y + l);
+      const sp = 1 + (i % 3) * 0.3, x = (((i * 137.5 + s.t * (70 + wind * 260) * sp) % w) + w) % w, y = (((i * 71.3 + s.t * 1500 * sp) % h) + h) % h, l = (10 + (i % 4) * 4) * h / 960;
+      ctx.moveTo(x, y); ctx.lineTo(x + wind * l * 0.45, y + l);
     }
     ctx.stroke();
   }

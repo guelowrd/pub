@@ -548,3 +548,17 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
 - Radar spacing (Gaylord, 22:55): POSITION up to 9 %, AGE RANGE at 68 %, the range at 79 %, so the reticle has air above and below.
 - Radar map up with its label (Gaylord, 22:58): the reticle image sits at top -6 %, the blip's base line 44.4 to 38.4 %,
   POSITION at 5 %; the range block unchanged below.
+
+## 2026-10-16, 23:10, hazards and weather (Gaylord: "potholes and oil don't look great, their effect is too minimal,
+## wind on the rain, rain should affect the driving")
+- Look: oil and potholes are ground decals now: the sprite's painted ellipse (448 x 160 of the 512 cell) laid flat as a
+  3.6 m (oil) / 3.2 m (pothole) patch of road, projected by its own corners, so it foreshortens like the asphalt. A second
+  pass in `screen` lifts the highlights so a dark pothole reads on dark asphalt. Far patches stretch along the road
+  (depth = 0.36 x distance) to keep a quarter of their width in height on screen, shrinking back to round as they are
+  reached (a flat 3 m patch is a one-pixel line at 60 m). Cones and barriers stay sprites. Checked at 13, 33 and 63 m.
+- Effect: pothole = speed x0.7 (was 0.75) and a 1 m jolt to one side + POTHOLE! callout; oil = 2 s of slick (2.5 s in
+  rain, was 1.2), wheel bite 0.25 (was 0.4), wander 20 (was 12) + OIL! callout. Cone unchanged (x0.7).
+- Rain (sim.rain from the station): braking 28 -> 22.4 (x0.8), wheel bite x0.8, skid from 10 m/s instead of 15, the
+  curve throws x1.3, and a crosswind: a side per run from the seed (`windOf`, no rng call so spawns are unchanged),
+  0.9 m/s at top speed scaled by v/TOP. Rain streaks lean and drift with the same wind. Chain replay untouched (it checks
+  stop positions and top speed only). Test: dry vs wet on the same downtown course (songs 1 and 2).
