@@ -3,7 +3,7 @@
 // as you turn into it. Riders are the designer's characters with their fixed ages, drawn at each venue by its pool weights.
 import characters from "./data/characters.json";
 import venuesFile from "./data/venues.json";
-import { DISTRICTS, GREEN, KMH, LANE, LIGHTS, RED, SEG, W, WALK, rngFrom, seg, type District, type Hazard, type Node, type RadarClass, type Rider, type Sim } from "./sim";
+import { DISTRICTS, GREEN, KMH, LANE, LIGHTS, RED, SEG, TRAFFIC, W, WALK, rngFrom, seg, type District, type Hazard, type Node, type RadarClass, type Rider, type Sim } from "./sim";
 
 export const STREET = 1200;
 export const FORK_IN = 120; // the trunk widens over this before the decision line
@@ -121,7 +121,8 @@ export function extend(s: Sim) {
   if (f && f.side !== 0 && s.streets.length === s.forks.length) place(s, last.leg + 1, last.k + (f.side < 0 ? 0 : 1), f.zEnd);
   // traffic: keep a few cars ahead, in lanes, slower than us
   const ahead = s.traffic.filter((c) => c.z > s.z).length;
-  const want = 4 + Math.min(4, Math.floor(s.t / 30));
+  const here = s.streets.find((st) => s.z >= st.z0 && s.z < st.z1)?.district;
+  const want = 4 + (here ? TRAFFIC[here] : 0) + Math.min(4, Math.floor(s.t / 30));
   if (ahead < want && s.rng() < 0.5) {
     const z = s.z + 760 + s.rng() * 400; // beyond the draw distance, so cars come into view instead of popping in
     const x = (Math.floor(s.rng() * 3) - 1) * LANE;

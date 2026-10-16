@@ -22,6 +22,7 @@ export const NAME: Record<District, string> = { downtown: "DOWNTOWN", waterfront
 export const PLACE: Record<District, string> = { downtown: "RESTAURANT", waterfront: "CRUISE", casino: "CASINO", golf: "GOLF" };
 export const CURB: Record<District, number> = { downtown: 3, casino: 2, waterfront: 1.5, golf: 1 }; // scrape drag per second: city curbs bite, golf is grass
 export const LIGHTS: Record<District, number> = { downtown: 3, casino: 2, waterfront: 0, golf: 0 }; // traffic lights per street
+export const TRAFFIC: Record<District, number> = { downtown: 3, casino: 3, waterfront: 0, golf: 0 }; // extra cars kept ahead in the busy districts
 export const RED = 2, GREEN = 10; // light cycle, seconds
 
 export type RadarClass = "TIGHT" | "FUZZY" | "WILD";

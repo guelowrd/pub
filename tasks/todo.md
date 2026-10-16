@@ -360,3 +360,12 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
   rainy night); only BITTERSWEET SUNSET assigned (waterfront, sunset, clear); the other 12 songs open. Gaylord to
   decide: adopt the TV menu, the song assignments, whether the world renderer gets time-of-day / rain (big: the
   current world art is night-only). Decisions pending.
+
+### Gaylord's round (2026-10-16, 17:15): ribbon, HUD fonts, traffic, Stage TV go
+- Ribbon: RIDERS -> PASSENGERS (three rules).
+- HUD: "the font is now minuscule". The sizes never changed; the visual update (2373550) swapped Boomer GT / Boomer
+  LCD (pixel fonts) for Chakra Petch / Share Tech Mono, which read far smaller at the same size. The two woffs are
+  restored from that commit and the .hud subtree uses them again (radar B keeps its own fonts, it was drawn with them).
+- Traffic: TRAFFIC per district (downtown +3, casino +3) added to the cars kept ahead; the street under the car decides.
+- Stage TV: adopted. The designer's table of 13 assignments is the stage list. Brief 5 (docs/designer-brief-5.md)
+  asks for the three missing night/clear previews (downtown, waterfront, golf hills) and a list board inside the TV.
