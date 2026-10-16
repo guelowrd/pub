@@ -427,3 +427,5 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
   mouth ring (17b0a2d): the even-odd box reached the bottom of the screen once the mouth was close and the cut-out
   stopped holding, so the whole view went the ring's colour for a few frames. Now three strips around the section,
   skipped under 20 m. Measured under the car at 90 km/h: 55 -> 38 -> 53 over 9 m, largest frame-to-frame step 16 (was 39).
+- TV glass over everything (Gaylord, 20:05): the captions and lists were drawn above the glass; the glass img is now
+  the last child of the TV, so scanlines and phosphor cover the text too (the designer's note said the same).

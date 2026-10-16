@@ -225,7 +225,6 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
         </div>
         {mode !== "RADIO" && <img src={`${ART}tv/${layout}/display.png`} alt="" style={{ left: 0, top: 0, width: px(TV.size[0]), height: px(TV.size[1]) }} />}
         <img src={`${ART}tv/${layout}/bezel.png`} alt="" style={{ left: 0, top: 0, width: px(TV.size[0]), height: px(TV.size[1]) }} />
-        <img src={`${ART}tv/${layout}/glass.png`} alt="" style={{ left: 0, top: 0, width: px(TV.size[0]), height: px(TV.size[1]) }} />
         {/* the lists name themselves (the stage picture needs no tag); the count at the right is the station on the dial or the row */}
         {mode !== "RADIO" && text(mode, L.title[0], L.title[1], L.title[2], TAG, false, false, "title")}
         {mode !== "RADIO" && <i className="tv-rule" style={{ left: px(cx), top: px(L.title[1] + L.title[2] * 0.4), width: px(cw) }} />}
@@ -262,6 +261,8 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
             {statusLines.map((l, i) => <p key={i} style={i ? { color: DIM, fontSize: px(TV.title.size * 0.42) } : {}}>{l}</p>)}
           </div>
         )}
+        {/* the glass last: scanlines and phosphor over the picture and the text alike (the text was over the glass before) */}
+        <img src={`${ART}tv/${layout}/glass.png`} alt="" style={{ left: 0, top: 0, width: px(TV.size[0]), height: px(TV.size[1]) }} />
       </div>
       {/* the radio */}
       <div className="hu-unit" style={{ left: px(G.origin[0]), top: px(G.origin[1]), width: px(G.size[0]), height: px(G.size[1]) }}>
