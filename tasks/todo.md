@@ -325,3 +325,7 @@ lists, share card; no more zero padding); the results' middle well lists every r
 the ones still aboard in pink with ON BOARD and a note at the right (N STILL ON BOARD, X LOST); the posting terms are his
 three lines (RIVALS GOTTA PAY TO CHALLENGE YOUR SCORE / IF THEY BEAT IT, THEY TAKE YOUR GAMECOIN / BUT IF THEY DON'T,
 THEIR GAMECOIN IS YOURS!). Open: the TO BANK wording (FARE / ON BOARD / METER / AT STAKE offered), the splash ribbon copy.
+Same afternoon, second screenshot: "TIME IS UP, YOU SCORED" with POINTS small after the score, DISTANCE POINTS (the value
+was points all along, the "m" was wrong), "YOUR BEST: 14,236", riders still aboard have their points struck through
+(the player never scored them) with ON BOARD after, the right-hand note is gone, POST IT stands as tall as the three
+lines beside it (the key follows the status height on desktop).

@@ -56,9 +56,7 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
   const best = Math.max(Number(localStorage.getItem("pub.best") ?? 0), s.score);
   // every rider picked up, in order; the ones still aboard at time-up are a note (and pink)
   const picked = s.stops.filter((o) => o.taken && o.rider).map((o) => o.rider!);
-  const lostPts = s.lost.reduce((a, r) => a + agePoints(r.age), 0);
   const R = G.riders, shown = picked.slice(0, R.cols * R.rows);
-  const ridersNote = s.lost.length ? `${s.lost.length} STILL ON BOARD, ${fmt(lostPts)} LOST` : picked.length ? "ALL DELIVERED" : "NO RIDERS";
   const busy = chain?.busy ?? null, trouble = chain?.trouble ?? null;
 
   // the post well: what it says, which key it offers; or the shot's verdict
@@ -89,16 +87,22 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
     else { status = note ?? TERMS; keys = [postKey("POST IT")]; }
   }
 
-  const stats: [string, string][] = [["RIDERS DELIVERED", String(s.delivered)], ["DELIVERY POINTS", fmt(s.banked)], ["DISTANCE", `${fmt(Math.floor(s.dist * RATE))} m`]];
+  // the status lines shrink to fit the well's width and the room above the key (the terms are three lines); on desktop the
+  // action key sits beside them and grows to their height
+  const lines = status ? status.split("\n") : [], [, sb, size0, sw, room] = G.post.status;
+  const statusSize = Math.max(7, Math.min(size0, sw / (Math.max(1, ...lines.map((l) => l.length)) * 0.54), room / (Math.max(1, lines.length) * 1.25)));
+  const statusTop = sb - baselineEm("Share Tech Mono") * statusSize, statusH = lines.length * statusSize * 1.25;
+  if (layout === "desktop" && status) for (const k of keys) if (k.kind === "post") { const h = Math.max(k.rect[3], statusH); k.rect = [k.rect[0], statusTop + statusH / 2 - h / 2, k.rect[2], h]; }
+  const stats: [string, string][] = [["RIDERS DELIVERED", String(s.delivered)], ["DELIVERY POINTS", fmt(s.banked)], ["DISTANCE POINTS", fmt(Math.floor(s.dist * RATE))]];
   const { labels, labelSize, labelAlign, split, values, valueSize, valueAlign } = G.stats as Geometry["stats"] & { labelAlign: "left" | "center"; valueAlign: "right" | "center" };
   return (
     <div className="hu-screen" style={{ width: px(G.canvas[0]), height: px(G.canvas[1]), transform: `scale(${scale})` }}>
       <div className="hu-unit" style={{ left: px(G.origin[0]), top: px(G.origin[1]), width: px(G.size[0]), height: px(G.size[1]) }}>
         <img src={`${ART}results/${layout}/frame.png`} alt="" style={{ left: 0, top: 0, width: px(G.size[0]), height: px(G.size[1]) }} />
         <img src={`${ART}results/${layout}/wells.png`} alt="" style={{ left: 0, top: 0, width: px(G.size[0]), height: px(G.size[1]) }} />
-        {text("TIME IS UP", G.title[0], G.title[1], G.title[2], CYAN)}
-        {text(fmt(s.score), G.score[0], G.score[1], G.score[2], YELLOW, true, "left", G.score[3])}
-        {text(`BEST ${fmt(best)}`, G.best[0] as number, G.best[1] as number, G.best[2] as number, MUTED, true, G.best[3] as "left" | "right")}
+        {text("TIME IS UP, YOU SCORED", G.title[0], G.title[1], G.title[2], CYAN)}
+        <span className="hu-text hu-mono" style={{ left: px(G.score[0]), width: px(G.score[3]), top: px(G.score[1] - baselineEm("Share Tech Mono") * G.score[2]), fontSize: px(G.score[2]), color: YELLOW }}>{fmt(s.score)} <span className="hu-gt" style={{ fontSize: px(labelSize) }}>POINTS</span></span>
+        {text(`YOUR BEST: ${fmt(best)}`, G.best[0] as number, G.best[1] as number, G.best[2] as number, MUTED, true, G.best[3] as "left" | "right")}
         {stats.map(([label, value], i) => {
           const [lx, ly] = labels[i], [vx, vy] = values[i], words = split ? label.split(" ") : [label];
           return [
@@ -107,22 +111,17 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
           ];
         })}
         {text(picked.length > shown.length ? `RIDERS (${shown.length} OF ${picked.length})` : "RIDERS", R.head[0], R.head[1], R.head[2], CYAN)}
-        {text(ridersNote, R.note[0], R.note[1], R.note[2], s.lost.length ? PINK : MUTED, true, "right")}
         {shown.map((r, i) => {
           const x = R.origin[0] + (i % R.cols) * R.pitch[0], y = R.origin[1] + Math.floor(i / R.cols) * R.pitch[1], lost = s.lost.includes(r);
           return [
             face(r, [x, y], i),
             text(`AGE ${r.age}`, x + R.age[0], y + R.age[1], R.age[2], LIGHT, false, "left", R.pitch[0] - R.age[0], `a${i}`),
-            text(lost ? `${fmt(agePoints(r.age))} ON BOARD` : fmt(agePoints(r.age)), x + R.pts[0], y + R.pts[1], R.pts[2], lost ? PINK : YELLOW, true, "left", R.pitch[0] - R.pts[0], `p${i}`),
+            // a rider still aboard never scored: the points are crossed out
+            <span key={`p${i}`} className="hu-text hu-mono" style={{ left: px(x + R.pts[0]), top: px(y + R.pts[1] - baselineEm("Share Tech Mono") * R.pts[2]), fontSize: px(R.pts[2]), color: lost ? PINK : YELLOW }}>{lost ? <><s>{fmt(agePoints(r.age))}</s> ON BOARD</> : fmt(agePoints(r.age))}</span>,
           ];
         })}
         {text(heading, G.post.head[0], G.post.head[1], G.post.head[2], color)}
-        {status && (() => {
-          // the lines shrink to fit the well's width and the room above the key (the terms are three lines)
-          const [sx, sb, size0, sw, room] = G.post.status, lines = status.split("\n");
-          const size = Math.max(7, Math.min(size0, sw / (Math.max(...lines.map((l) => l.length)) * 0.54), room / (lines.length * 1.25)));
-          return <span className="hu-text hu-mono rs-status" style={{ left: px(sx), width: px(sw), top: px(sb - baselineEm("Share Tech Mono") * size), fontSize: px(size), color: MUTED }}>{status}</span>;
-        })()}
+        {status && <span className="hu-text hu-mono rs-status" style={{ left: px(G.post.status[0]), width: px(G.post.status[3]), top: px(statusTop), fontSize: px(statusSize), color: MUTED }}>{status}</span>}
         {[...keys, ...footer].map((k) => <Key key={k.label} {...k} layout={layout} />)}
       </div>
     </div>
