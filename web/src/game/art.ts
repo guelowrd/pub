@@ -1,6 +1,7 @@
 // The designer's sheets (v3 arcade batch): equal cells, a fixed anchor per cell, and a pixels-per-metre scale per
 // sheet taken from the visible bounds and world sizes in atlas-metadata.json. Draw whole cells at the anchor.
 import type { District } from "./sim";
+import type { TimeOfDay } from "./stations";
 
 export interface Sheet { file: string; cw: number; ch: number; cols: number; ax: number; ay: number; ppm: number }
 const SH = (file: string, cw: number, ch: number, cols: number, ax: number, ay: number, ppm: number): Sheet => ({ file, cw, ch, cols, ax, ay, ppm });
@@ -45,18 +46,20 @@ export const PEOPLE: Record<string, Sheet> = { a: SHEETS.people, b: SHEETS.peopl
 export const BUILDING: Record<District, [number, number, number]> = { casino: [0, 62, 63], waterfront: [1, 39, 40], golf: [2, 71, 40], downtown: [3, 70, 40] };
 export const DPROP: Record<string, [number, number]> = { "casino-fountain": [0, 168], "gold-palm-planter": [1, 183], "slot-machine": [2, 209], "mooring-bollard": [3, 428], yacht: [4, 102], "luggage-trolley": [5, 219], "golf-cart": [6, 211], "fairway-fence": [7, 286], sprinkler: [8, 360], "valet-podium": [9, 365], "velvet-rope": [10, 309], "spiral-topiary": [11, 175] };
 export const DPROPS: Record<District, string[]> = { casino: ["casino-fountain", "gold-palm-planter", "slot-machine"], waterfront: ["mooring-bollard", "yacht", "luggage-trolley"], golf: ["golf-cart", "fairway-fence", "sprinkler"], downtown: ["valet-podium", "velvet-rope", "spiral-topiary"] };
-// handoff 05: district skylines (sky painted in code), decorative fillers, painted portals, light heads
+// handoff 05: district skylines (sky painted in code), painted portals, light heads
 export const PANO: Record<District, string> = { waterfront: "pano-waterfront.webp", casino: "pano-casino.webp", downtown: "pano-downtown.png", golf: "pano-golf.png" };
 export const PANO_HORIZON = 725 / 887; // the horizon row of the 1774x887 panoramas
-const FL = (file: string, ppm: number) => SH(file, 512, 512, 1, 256, 460, ppm); // visible height / world height
-export const FILLERS: Record<District, Sheet[]> = {
-  waterfront: [FL("filler-waterfront-1.webp", 36), FL("filler-waterfront-2.webp", 45), FL("filler-waterfront-3.webp", 83)],
-  downtown: [FL("filler-downtown-1.webp", 62), FL("filler-downtown-2.webp", 51), FL("filler-downtown-3.webp", 72)],
-  casino: [FL("filler-casino-strip-1.webp", 66), FL("filler-casino-strip-2.webp", 30), FL("filler-casino-strip-3.webp", 83)],
-  golf: [FL("filler-golf-hills-1.webp", 38), FL("filler-golf-hills-2.webp", 21), FL("filler-golf-hills-3.webp", 55)],
-};
 // tunnel kit: one shared two-mouth structure per fork, chosen by the street you're on; wall and ceiling materials; glow cookies
 export const FORK_STRUCT: Record<District, string> = { waterfront: "harbour-causeway", downtown: "tower-podium", casino: "highway-overpass", golf: "wooded-ridge" };
+// world lighting pack: the night art keeps its names, the midday and sunset repaints of the skylines, the venues, the
+// destinations and the fork structures carry the light's suffix; the roadside frontage and the water exist in all three
+const DAY_ART = new Set<string>([...Object.values(PANO), "scenery-venues.webp", "buildings-atlas.webp", ...Object.values(FORK_STRUCT).map((st) => `fork-${st}.webp`)]);
+export const lit = (file: string, t: TimeOfDay) => (t === "night" || !DAY_ART.has(file) ? file : file.replace(/\.(webp|png)$/, `-${t}.webp`));
+/** The frontage band beside the road: a 2048 x 512 right-side elevation per district, its pixels per metre (the designer's
+ *  calibration: a 1.1 m promenade rail, 2.2 m doors) and how far behind the sidewalk it stands */
+export const FRONTAGE: Record<District, [number, number]> = { waterfront: [88, 7], downtown: [36, 9], casino: [16, 9], golf: [83, 7] };
+export const frontage = (d: District, t: TimeOfDay) => `frontage-${d}-${t}.webp`, water = (t: TimeOfDay) => `water-${t}.webp`;
+export const lightFiles = (t: TimeOfDay) => [...[...DAY_ART].map((f) => lit(f, t)), ...(Object.keys(FRONTAGE) as District[]).map((d) => frontage(d, t)), water(t)];
 /** The art folder and the three portrait sheets, shared by every screen that draws a face */
 export const ART = `${import.meta.env.BASE_URL}art/`;
 export const PORTRAITS: Record<string, string> = { a: "portraits.webp", b: "portraits-b.webp", c: "portraits-c.webp" };
@@ -88,8 +91,14 @@ const MAT = (d: string) => ({ asphalt: `materials/${d}-asphalt-repeat.webp`, ver
 export const MATERIALS: Record<District, { asphalt: string; verge: string }> = { waterfront: MAT("waterfront"), downtown: MAT("downtown"), casino: MAT("casino-strip"), golf: MAT("golf-hills") };
 export const SHADOW = "materials/contact-shadow.webp";
 
+/** The night world and everything else the game draws, up front behind the loading bar */
 export function loadArt(onProgress?: (done: number, total: number) => void): Promise<void> {
-  const files = new Set<string>([...Object.values(SHEETS).map((s) => s.file), ...Object.values(ICON), ...Object.values(PANO), ...Object.values(FILLERS).flat().map((s) => s.file), ...Object.values(FORK_STRUCT).flatMap((st) => [`fork-${st}.webp`, `fork-${st}-left.png`, `fork-${st}-right.png`]), ...Object.values(TUNNEL), LIGHT_RED.file, LIGHT_GREEN.file, TITLE, GANTRY.frame, GANTRY.hangers, GANTRY.plate, GANTRY.badge, ...Object.values(GANTRY.trim), ...Object.values(DECOR).map((d) => d.sheet.file), ...Object.values(MATERIALS).flatMap((m) => [m.asphalt, m.verge]), SHADOW]);
+  return loadFiles([...Object.values(SHEETS).map((s) => s.file), ...Object.values(ICON), ...Object.values(PANO), ...Object.values(FORK_STRUCT).flatMap((st) => [`fork-${st}.webp`, `fork-${st}-left.png`, `fork-${st}-right.png`]), ...Object.values(TUNNEL), LIGHT_RED.file, LIGHT_GREEN.file, TITLE, GANTRY.frame, GANTRY.hangers, GANTRY.plate, GANTRY.badge, ...Object.values(GANTRY.trim), ...Object.values(DECOR).map((d) => d.sheet.file), ...Object.values(MATERIALS).flatMap((m) => [m.asphalt, m.verge]), SHADOW], onProgress);
+}
+/** A stage's light: its repaints and bands, fetched when the run starts (a third of the world per light, so not up front) */
+export const loadLight = (t: TimeOfDay) => loadFiles(lightFiles(t));
+function loadFiles(list: string[], onProgress?: (done: number, total: number) => void): Promise<void> {
+  const files = new Set(list.filter((f) => !images.has(f)));
   let done = 0;
   return Promise.all([...files].map((file) => new Promise<void>((ok, bad) => {
     const im = new Image();

@@ -2,7 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { KMH, NAME, PLACE, RUN, TOP, agePoints, candidate, newSim, step, tick, type District, type Input, type Rider, type Sim } from "./game/sim";
 import { CHARACTERS, extend } from "./game/course";
 import { COLOR, draw, setBeat, setSong } from "./game/render";
-import { ART, ICON, PORTRAITS, loadArt } from "./game/art";
+import { ART, ICON, PORTRAITS, loadArt, loadLight } from "./game/art";
 import { MENU_TRACK, RESULTS_TRACK, STATIONS } from "./game/stations";
 import { audio, level, sound as soundNow, volume as volumeNow } from "./audio";
 import HeadUnit from "./HeadUnit";
@@ -101,7 +101,10 @@ export default function App() {
     if (mode !== "play") { audio.engine(0, false); audio.skid(false); }
   }, [mode, station]);
 
-  const start = (sd: number, song: number) => { settling.current = false; setSettled(null); setPosted(null); botRun.current = false; sim.current = newSim(sd, song); setSeed(sd); setMode("play"); };
+  // the stage's light (its skylines, venues, portals, frontage, water) is fetched first; a miss logs and the run still starts
+  const start = (sd: number, song: number) => void loadLight(STATIONS[song].time).catch((e: unknown) => console.error(e)).then(() => {
+    settling.current = false; setSettled(null); setPosted(null); botRun.current = false; sim.current = newSim(sd, song); setSeed(sd); setMode("play");
+  });
   /** A free drive on the station's song. */
   const drive = (sd: number) => { shot.current = null; start(sd, station); };
   /** A shot: the record's course and song, the stake on the table. */

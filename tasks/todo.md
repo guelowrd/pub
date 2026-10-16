@@ -490,3 +490,26 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
   the screen". Fix: the splash is a centred 4:3 box again (canvas, riders, ribbon, mute key all in the scene), the attract
   fits its frame into any canvas shape (`frameOf`), `attract.test.ts` holds the geometry (frame 4:3 and centred for five
   window shapes, every rider inside the frame, mirrored on odd periods).
+
+## 2026-10-16, World Lighting pack in (`~/Code/pub/PUB-World-Lighting`, briefs 6 and 7)
+- Pack checked: 47 production PNGs at the sizes asked, trim masks byte-identical to the shipped ones, boards read right.
+  Converted to webp (cwebp q85, 8 MB for 35 files) under the game's district names (`pano-casino-midday.webp`,
+  `frontage-golf-night.webp`, `water-sunset.webp`, `scenery-venues-sunset.webp`, `buildings-atlas-midday.webp`,
+  `fork-tower-podium-sunset.webp`). The tall 224 x 108 POST IT plates replace the stretched desktop key (crisp bevel, checked).
+- Engine: `art.ts` `lit(file, hour)` maps night art to its midday/sunset repaint; `loadLight(hour)` fetches a stage's set when
+  DRIVE is pressed (`start` in App awaits it; a miss logs and starts anyway). The renderer holds the stage's hour and rain
+  from STATIONS: the song's sky (daylight skies for the seven daylight songs in `SKY`), ground / sidewalk / asphalt
+  palettes per hour, the district's frontage band on both sides (`FRONTAGE` ppm + setback; one affine per slice like the
+  tunnel walls, mirrored on the left, broken at forks, tunnels, venues and the destination), the waterfront's water plane
+  (tile in world space, flat colour beyond 350 m), rain = cloud veil on the sky and skyline, wet sheen, 160 streaks.
+  The night fillers are gone (the band replaces them, as the designer's note says); the 12 filler files stay in public/.
+- Checked in Chrome: OUTRUN PULSE (waterfront midday) opens on a blue sky, the promenade rail with water behind, the
+  casino street at midday through the tunnel with the pastel frontage and the daylight casino destination.
+- OPEN: in the casino street a trail of small `destination-casino.png` icons shows in the sky, two lines converging above
+  the horizon (seen at z 1604 and 1648 on seed 3696130065, OUTRUN PULSE, right branch). A drawImage tally caught 28 icon
+  draws in 300 ms above the horizon; the call site is not found yet (only the drop pole and the gantry draw ICON).
+  Not yet checked: sunset stages, night + rain stages, the NIGHT frontage, phones, performance of 280 pattern fills a frame.
+- Gaylord (22:40): "there aren't any curves anymore, only straight road". Checked: `node()` still rolls curves (70 % of
+  150 to 350 m stretches, strength up to 0.05 per segment) and the renderer bends the road (seen at z 1670 on the casino
+  street). The first street of this seed had one weak curve (0.0023); strengths are uniform in ±0.05, so weak first streets
+  happen. Nothing changed in course.ts or sim.ts since the fork commits. Gaylord's call whether curves get a floor.

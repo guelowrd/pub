@@ -1,8 +1,8 @@
 // Pseudo-3D view: road segments projected from a low chase camera, sprites sorted by segment and drawn at their anchors.
 import { BAY, CAR_W, LANE, NAME, SEG, TOP, W, WALK, branchX, districtAt, isRed, leftEdge, rightEdge, seg, stopAt, type District, type Sim } from "./sim";
 import { CHARACTERS, FORK_OUT, sidewalkX } from "./course";
-import { BUILDING, DECOR, DPROP, DPROPS, DROP, FILLERS, FORK_STRUCT, GANTRY, ICON, MATERIALS, SHADOW, LIGHT_GREEN, LIGHT_RED, PANO, PANO_HORIZON, PEOPLE, PROP, ROAD_TINT, SHEETS, TRAFFIC, TREES, TUNNEL, VENUE_CELL, img, type Sheet } from "./art";
-import { CAR, DEFAULT_SKY, SKY } from "./stations";
+import { BUILDING, DECOR, DPROP, DPROPS, DROP, FORK_STRUCT, FRONTAGE, GANTRY, ICON, MATERIALS, SHADOW, LIGHT_GREEN, LIGHT_RED, PANO, PANO_HORIZON, PEOPLE, PROP, ROAD_TINT, SHEETS, TRAFFIC, TREES, TUNNEL, VENUE_CELL, frontage, img, lit, water, type Sheet } from "./art";
+import { CAR, DEFAULT_SKY, SKY, STATIONS, type TimeOfDay } from "./stations";
 
 const N = 140; // segments drawn ahead
 const TUN_H = 12, TUN_TEX = 6, TUN_IN = FORK_OUT / 2, TUN_OUT = 100; // 200 m of tunnel from the fork's mouth
@@ -11,12 +11,19 @@ const FLAT = new Set<Sheet>([SHEETS.smoke, SHEETS.burst, SHEETS.oil, SHEETS.poth
 const CAM_H = 2.2, CAM_BACK = 5;
 export const COLOR: Record<District, string> = { downtown: "#ffe564", waterfront: "#63e7ff", casino: "#ff40bd", golf: "#78ffcb" };
 const SMOKE_MS = [50, 100, 170, 260, 370, 500], SMOKE_A = [1, 1, 1, 0.85, 0.35, 0.1]; // frame ends and alphas from the metadata
+// the hour's palette (world lighting): the ground, the sidewalk and the asphalt in their two alternating slices, and the
+// water's flat colour where its tile has faded out; night is the game's first palette
+const GROUND: Record<TimeOfDay, [string, string]> = { night: ["#1c1636", "#1f193a"], midday: ["#66705f", "#6b7564"], sunset: ["#5a4258", "#5f465c"] };
+const WALK_C: Record<TimeOfDay, [string, string]> = { night: ["#5e5280", "#665a8a"], midday: ["#aeaaa0", "#b6b2a8"], sunset: ["#a8806e", "#b08876"] };
+const ASPHALT: Record<TimeOfDay, [string, string]> = { night: ["#272244", "#2c264a"], midday: ["#585862", "#5e5e68"], sunset: ["#463a54", "#4c405a"] };
+const WATER_C: Record<TimeOfDay, string> = { night: "#0e1e4d", midday: "#056cb3", sunset: "#6f4465" };
+const HAZE = "#3c4254"; // the rain's cloud veil over the sky
 
 // effects live between frames: skid puffs trail behind the car, a burst marks a wreck
 const puffs: { z: number; x: number; t: number }[] = [], bursts: { z: number; x: number; t: number }[] = [];
 let lastT = 0, lastPuff = 0, lastSpin = 0;
-let sky = DEFAULT_SKY, beat = 0;
-export const setSong = (id: string) => { sky = SKY[id] ?? DEFAULT_SKY; heroTint = tintHero(CAR[id]); };
+let sky = DEFAULT_SKY, beat = 0, hour: TimeOfDay = "night", rain = false; // the stage's hour and weather
+export const setSong = (id: string) => { const st = STATIONS.find((o) => o.id === id); sky = SKY[id] ?? DEFAULT_SKY; hour = st?.time ?? "night"; rain = !!st?.rain; heroTint = tintHero(CAR[id]); };
 // the hero in the song's paint, body only: the silver body (low saturation, mid to high luminance) takes the colour with
 // its own shading kept, the dark glass, tyres and grille, the red lamps and the neon reflections stay as painted
 let heroTint = new Map<string, HTMLCanvasElement>();
@@ -112,15 +119,17 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   const here = s.streets.filter((st) => s.z >= st.z0 - 50).pop() ?? s.streets[0];
   const district = here.district;
   const grad = ctx.createLinearGradient(0, 0, 0, hy);
-  grad.addColorStop(0, sky[0]); grad.addColorStop(1, sky[1]);
+  grad.addColorStop(0, rain ? mix(sky[0], HAZE, 0.5) : sky[0]); grad.addColorStop(1, rain ? mix(sky[1], HAZE, 0.6) : sky[1]);
   ctx.fillStyle = grad; ctx.fillRect(0, 0, w, hy);
-  const skyline = img(PANO[district]);
+  const skyline = img(lit(PANO[district], hour));
   if (skyline) {
     const dw = w * 1.4, dh = dw / 2, dx = -xo[Math.min(N, 40)] * 0.004 * w - (dw - w) / 2;
+    ctx.globalAlpha = rain ? 0.6 : 1; // the veil
     ctx.drawImage(skyline, dx, hy - dh * PANO_HORIZON, dw, dh);
+    ctx.globalAlpha = 1;
   }
-  ctx.fillStyle = "#1c1636"; ctx.fillRect(0, hy, w, h - hy);
-  const [tint, tintA] = ROAD_TINT[district], asphalt = [mix("#272244", tint, tintA), mix("#2c264a", tint, tintA)];
+  ctx.fillStyle = GROUND[hour][0]; ctx.fillRect(0, hy, w, h - hy);
+  const [tint, tintA] = ROAD_TINT[district], asphalt = ASPHALT[hour].map((c) => mix(c, tint, tintA));
 
   const X = (n: number, xr: number) => cx + (xo[n] + xr - s.x) * sc[n];
   const quad = (n: number, l1: number, r1: number, l2: number, r2: number, color: string) => {
@@ -209,7 +218,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   const road = (n: number, c1: number, c2: number, hw1: number, hw2: number, re1: number, re2: number, alt: boolean, inner: -1 | 0 | 1 = 0) => {
     const z1 = (i0 + n) * SEG, lt = lightAt(z1), shade = (c: string) => (lt < 1 ? mix(c, "#050410", 1 - lt) : c);
     const mat = MATERIALS[districtAt(s, z1) ?? district];
-    quad(n, c1 - hw1 - WALK, c1 + re1 + WALK, c2 - hw2 - WALK, c2 + re2 + WALK, shade(alt ? "#5e5280" : "#665a8a"));
+    quad(n, c1 - hw1 - WALK, c1 + re1 + WALK, c2 - hw2 - WALK, c2 + re2 + WALK, shade(WALK_C[hour][alt ? 0 : 1]));
     if (lt === 1) { material(n, c1 - hw1 - WALK, c1 - hw1, c2 - hw2 - WALK, c2 - hw2, mat.verge, 2.5, 0.3); material(n, c1 + re1, c1 + re1 + WALK, c2 + re2, c2 + re2 + WALK, mat.verge, 2.5, 0.3); }
     quad(n, c1 - hw1, c1 + re1, c2 - hw2, c2 + re2, shade(alt ? asphalt[0] : asphalt[1]));
     if (lt === 1) material(n, c1 - hw1, c1 + re1, c2 - hw2, c2 + re2, mat.asphalt, 4, 0.3);
@@ -252,7 +261,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   };
   // a whole cell of a sheet at its anchor; ppm overrides the sheet's scale, flip mirrors it for the left side
   const cell = (ctx2: CanvasRenderingContext2D, sh: Sheet, i: number, px: number, py: number, k: number, ppm = sh.ppm, flip = false, alpha = 1, light = 1) => {
-    const im = heroTint.get(sh.file) ?? img(sh.file);
+    const im = heroTint.get(sh.file) ?? img(lit(sh.file, hour));
     if (!im) return;
     const f = k / ppm, sx = (i % sh.cols) * sh.cw, sy0 = Math.floor(i / sh.cols) * sh.ch, dw = sh.cw * f, dh = sh.ch * f;
     if (dw < 1 || dh < 1) return;
@@ -294,15 +303,24 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
       prop(z + 20, side * (W + BAY + WALK + 6), trees[(i >> 5) % 2], side < 0);
     }
   }
-  // filler buildings every 70 m on each side, set back a varying distance, kept clear of the venues and the destination
-  for (let i = Math.ceil(i0 / 14) * 14; i <= i0 + N; i += 14) {
-    const z = i * SEG, st = s.streets.find((o) => z >= o.z0 + 210 && z < o.z1 - 40);
-    if (!st) continue;
-    const fl = FILLERS[st.district], side = (i >> 4) % 2 ? 1 : -1;
-    if (s.stops.some((o) => o.rider && o.side === side && Math.abs(o.z + 15 - z) < 45)) continue;
-    spr(z, side * (W + BAY + WALK + 7 + ((i >> 5) % 3) * 4), fl[(i >> 3) % 3], 0, fl[(i >> 3) % 3].ppm, side < 0, 1, 0, 0.65);
-  }
-  // street furniture every 55 m, between the lamps and the fillers, on one side or the other (mirrored on the left),
+  // the roadside frontage (world lighting): the district's 2048 x 512 band stands behind the sidewalk on both sides, tiling
+  // along the road at its pixels per metre, mirrored on the left (it is painted as the right side), one affine per slice
+  // like the tunnel walls. It breaks at forks and tunnels and around a venue or the destination so nothing hides an entrance
+  const bare = (z: number, side: number) => s.forks.some((o) => z >= o.z - 20 && z < o.zEnd + TUN_OUT + 20) || s.stops.some((o) => (o.rider ? o.side === side && z > o.z - 10 && z < o.z + o.len + 26 : side > 0 && z > o.z - 20 && z < o.z + o.len + 30));
+  const facade = (n: number, z1: number, d: District) => {
+    const im = img(frontage(d, hour));
+    if (!im || zAt[n + 1] <= zAt[n]) return;
+    const [ppm, back] = FRONTAGE[d], H = 512 / ppm, per = 2048 / ppm, xw = W + BAY + WALK + back, hgt = H * (sc[n] + sc[n + 1]) / 2, pat = pattern(im);
+    const u = (((z1 % per) + per) % per) * ppm; // the band's column at this slice
+    for (const side of [1, -1] as const) {
+      if (bare(z1, side)) continue;
+      const xa = X(n, side * xw), xb = X(n + 1, side * xw), ya = sy[n], yb = sy[n + 1];
+      const a = side * (xb - xa) / (SEG * ppm), b = side * (yb - ya) / (SEG * ppm), u0 = side > 0 ? u : 2048 - u;
+      pat.setTransform({ a, b, c: 0, d: hgt / 512, e: xa - a * u0, f: ya - b * u0 - hgt });
+      ctx.fillStyle = pat; ctx.beginPath(); ctx.moveTo(xa, ya); ctx.lineTo(xa, ya - H * sc[n]); ctx.lineTo(xb, yb - H * sc[n + 1]); ctx.lineTo(xb, yb); ctx.fill();
+    }
+  };
+  // street furniture every 55 m, between the lamps and the frontage, on one side or the other (mirrored on the left),
   // clear of the bays and the forks
   for (let i = Math.ceil((i0 - 5) / 11) * 11 + 5; i <= i0 + N; i += 11) {
     const z = i * SEG, st = s.streets.find((o) => z >= o.z0 + 120 && z < o.z1 - 60);
@@ -424,10 +442,18 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   for (let n = N; n >= 0; n--) {
     const i = i0 + n, z1 = i * SEG, z2 = z1 + SEG, alt = (i >> 1) % 2 === 0;
     // the ground follows the hills: a full-width band per segment, so whatever stands beside the road stands on it
+    const d = districtAt(s, z1) ?? district;
     if (sy[n] > sy[n + 1]) {
-      const lt = lightAt(z1), g = alt ? "#1c1636" : "#1f193a";
+      const lt = lightAt(z1), g = GROUND[hour][alt ? 0 : 1];
       ctx.fillStyle = lt < 1 ? mix(g, "#050410", 1 - lt) : g;
       ctx.fillRect(0, sy[n + 1], w, sy[n] - sy[n + 1] + 0.5);
+      // the waterfront's water: a plane from the promenade's back edge out to the sides, the tile in world space, its
+      // flat colour beyond where the tile has faded; rain uses the night tile darkened, as the designer's note says
+      if (d === "waterfront" && lt === 1) for (const side of [1, -1]) {
+        const xw = side * (W + BAY + WALK + FRONTAGE.waterfront[1]), far = side * 900;
+        quad(n, xw, far, xw, far, rain ? mix(WATER_C.night, "#050410", 0.4) : WATER_C[hour]);
+        material(n, xw, far, xw, far, water(hour), 10, rain ? 0.5 : 0.9);
+      }
     }
     // a fork is drawn the same way whatever you chose: the trunk widening to the line, then both branches at ± off
     // from the trunk axis (branchX), the gore between them, both bores until you are in yours. Once the frame has shifted
@@ -449,10 +475,11 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
       if (tun) tunnel(n, 0, 0, W, tun.side < 0 ? tun.left : tun.right);
       const st = stopAt(s, z1);
       if (st && !st.taken) quad(n, st.side * (W + 0.3), st.side * (W + BAY - 0.2), st.side * (W + 0.3), st.side * (W + BAY - 0.2), st.drop ? COLOR[st.drop] + "66" : alt ? "#8a7a20" : "#a08a20");
+      facade(n, z1, d);
     }
     if (f && past && mouth) {
       // one shared structure holds both mouths: scaled so its two openings sit on the two branches, fading out as we reach it
-      const { k, left, top, a } = frame(n, f), name = FORK_STRUCT[here.district], body = img(`fork-${name}.webp`);
+      const { k, left, top, a } = frame(n, f), name = FORK_STRUCT[here.district], body = img(lit(`fork-${name}.webp`, hour));
       if (body && a > 0) {
         ctx.save(); ctx.globalAlpha = a;
         ctx.drawImage(body, left, top, 2048 * k, 1024 * k);
@@ -467,6 +494,12 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     sprites.get(n)?.forEach((fn) => fn());
   }
 
+  // rain: the wet ground throws the sky back, a sheen from the horizon down
+  if (rain) {
+    const sheen = ctx.createLinearGradient(0, hy, 0, h);
+    sheen.addColorStop(0, "rgba(140,160,220,0.2)"); sheen.addColorStop(1, "rgba(140,160,220,0)");
+    ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = sheen; ctx.fillRect(0, hy, w, h - hy); ctx.restore();
+  }
   // headlights on the road ahead as they come up; a white bloom as we come out
   const glow = img(TUNNEL.headlight);
   if (hl > 0 && glow) {
@@ -489,4 +522,13 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     cell(ctx, s.brake ? SHEETS.heroBrake : SHEETS.hero, pose < -0.3 ? 0 : pose > 0.3 ? 2 : 1, cx, py + bob, k);
   }
   if (!img(SHEETS.hero.file)) { ctx.fillStyle = "#d0d0dc"; ctx.fillRect(cx - (CAR_W / 2) * k, py - 1.1 * k, CAR_W * k, 1.1 * k); }
+  // rain streaks over the whole picture, three speeds, a fixed set of threads scrolling with time
+  if (rain) {
+    ctx.strokeStyle = "rgba(190,205,255,0.3)"; ctx.lineWidth = Math.max(1, w / 1400); ctx.beginPath();
+    for (let i = 0; i < 160; i++) {
+      const sp = 1 + (i % 3) * 0.3, x = (((i * 137.5 + s.t * 70 * sp) % w) + w) % w, y = (((i * 71.3 + s.t * 1500 * sp) % h) + h) % h, l = (10 + (i % 4) * 4) * h / 960;
+      ctx.moveTo(x, y); ctx.lineTo(x - l * 0.15, y + l);
+    }
+    ctx.stroke();
+  }
 }

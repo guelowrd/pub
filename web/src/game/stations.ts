@@ -21,13 +21,14 @@ export const STATIONS: Station[] = [
   { id: "pick-up-or-crush-up", title: "PICK UP OR CRUSH UP", mood: "CHEEKY MAYHEM", district: "casino", time: "midday", rain: false },
 ];
 export const MENU_TRACK = "omotesando-menu", RESULTS_TRACK = "wireline-cosmos";
-// the song owns the sky: top and bottom of the gradient behind the district's skyline
+// the song owns the sky: top and bottom of the gradient behind the district's skyline, at the stage's hour (the daylight
+// skylines are painted under a #69bce2 to #d4e2dc midday and a #34347c to #ef9a6e sunset)
 export const SKY: Record<string, [string, string]> = {
-  "abandoned-factory": ["#0b0b14", "#4a3a50"], "bittersweet-sunset": ["#2a1452", "#ff8c5a"], "dark-horse": ["#0a0820", "#5a2a6e"],
+  "abandoned-factory": ["#0b0b14", "#4a3a50"], "bittersweet-sunset": ["#3a2a74", "#f8966a"], "dark-horse": ["#0a0820", "#5a2a6e"],
   "midnight-chase": ["#120a2e", "#8a2a9e"], "neon-pursuit": ["#0c1030", "#2a60c0"], "night-cruise": ["#0a1030", "#3050a0"],
-  "nocturnal-run": ["#06061a", "#4a2a7a"], "orange-horizon": ["#3a1240", "#ff7a30"], "outrun-pulse": ["#14102e", "#bc448e"],
-  "pick-up-or-crush-up": ["#2a0a40", "#ff40bd"], "pickup-truck": ["#3a3a7a", "#f0c090"], "synthwave-engine": ["#1a0a3a", "#d04aa0"],
-  "vector-world": ["#030a18", "#1a6aa0"],
+  "nocturnal-run": ["#06061a", "#4a2a7a"], "orange-horizon": ["#44306e", "#f6904e"], "outrun-pulse": ["#4aa8e0", "#d2e4e0"],
+  "pick-up-or-crush-up": ["#5eb0e6", "#e2dce8"], "pickup-truck": ["#66bce2", "#d4e6d8"], "synthwave-engine": ["#34347c", "#ef9a6e"],
+  "vector-world": ["#2e3680", "#e8a078"],
 };
 export const DEFAULT_SKY: [string, string] = ["#14102e", "#bc448e"];
 // the song owns the car's paint too (visual update station-colours.json: 13 families for the 13 songs, silver left over)
