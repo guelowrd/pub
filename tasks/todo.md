@@ -633,5 +633,4 @@ Departures from the kit, for Gaylord:
 - The logo file is the restoration downscaled to 520 px wide (1.5 MB at 1942 px is a phone's whole budget); nothing else changed in it.
 - The LCD purpose line is live text (the old plates had the LCD font baked in); the meter bed and segments are still the Grand Prix pack's.
 - SOLO ENTER and root BACK stay disabled as before; list rows stay four tall (the Grand Prix geometry, untouched).
-Not mine, in the tree at the same time: rules/vectors.json, course.ts / course.test.ts, sim.ts, stations.ts (song feels,
-00:46) are another session's uncommitted work; two chain hashes in game.test.ts fail with them in place. Left alone.
+Another session was committing the song feels (f56d657, 5a702e3) in the same tree meanwhile; with them in, 78 tests pass.
