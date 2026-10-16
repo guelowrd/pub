@@ -82,12 +82,16 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   // the curvature accumulates into the shift, the shift into the offset, so a curve keeps bending as you drive it.
   const yAt = (i: number) => s.y[i] ?? 0;
   const camY = CAM_H + yAt(i0) * (1 - frac) + yAt(i0 + 1) * frac;
-  const xo: number[] = [], sy: number[] = [], sc: number[] = [];
+  // a segment start behind the near plane (the ground the bottom row of the screen looks at) is pinned to that plane:
+  // the nearest slice then projects true instead of from a clamped distance, which blew its tile up into a blur
+  const near = camY * focal / (h - hy);
+  const xo: number[] = [], sy: number[] = [], sc: number[] = [], zAt: number[] = [];
   for (let n = 0, x = 0, dx = -dxAt(i0) * frac; n <= N + 1; n++) {
     xo[n] = x;
     x += dx;
     dx += dxAt(i0 + n);
-    sc[n] = focal / Math.max(0.3, (i0 + n) * SEG - camZ);
+    zAt[n] = Math.max((i0 + n) * SEG, camZ + near);
+    sc[n] = focal / (zAt[n] - camZ);
     sy[n] = hy + (camY - yAt(i0 + n)) * sc[n];
   }
 
@@ -169,8 +173,8 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   // fading out over 70 segments so the far road stays clean
   const material = (n: number, l1: number, r1: number, l2: number, r2: number, file: string, metres: number, alpha: number) => {
     const fade = 1 - n / 70, im = img(file);
-    if (fade <= 0 || !im) return;
-    const z1 = (i0 + n) * SEG, rate = (sy[n] - sy[n + 1]) / SEG, k = sc[n] * metres / 512;
+    if (fade <= 0 || !im || zAt[n + 1] <= zAt[n]) return;
+    const z1 = zAt[n], rate = (sy[n] - sy[n + 1]) / (zAt[n + 1] - z1), k = sc[n] * metres / 512;
     const pat = pattern(im);
     pat.setTransform(new DOMMatrix([k, 0, 0, -rate * metres / 512, X(n, 0), sy[n] + z1 * rate]));
     ctx.save(); ctx.globalAlpha = alpha * fade; ctx.fillStyle = pat;
