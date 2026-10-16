@@ -25,7 +25,7 @@ type KeyDef = { kind: Kind; rect: number[]; label: string; disabled?: boolean; o
 /** A kit key: the blank plate in its state, the label on the kit's baseline. */
 function Key({ kind, rect: [x, y, w, h], label, disabled, onClick, layout }: KeyDef & { layout: string }) {
   const [hover, setHover] = useState(false), [down, setDown] = useState(false);
-  const drive = kind === "post", size = drive ? Math.min(27, 0.22 * w) : Math.min(21, 0.37 * h, 0.22 * w), base = h * (drive ? 0.64 : 0.63) + (drive && down ? 2 : 0);
+  const drive = kind === "post", size = drive ? Math.min(27, 0.22 * w) : Math.min(21, 0.37 * h, 0.22 * w), base = drive ? h / 2 + size * 0.35 + (down ? 2 : 0) : h * 0.63;
   const state = disabled ? "disabled" : down ? "pressed" : hover ? "hover" : "rest";
   return (
     <button className="hit rk" disabled={disabled} aria-label={label} style={{ left: px(x), top: px(y), width: px(w), height: px(h) }} onClick={onClick}
@@ -88,11 +88,11 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
   }
 
   // the status lines shrink to fit the well's width and the room above the key (the terms are three lines); on desktop the
-  // action key sits beside them and grows to their height
+  // action key sits beside them, as tall as the well
   const lines = status ? status.split("\n") : [], [, sb, size0, sw, room] = G.post.status;
   const statusSize = Math.max(7, Math.min(size0, sw / (Math.max(1, ...lines.map((l) => l.length)) * 0.54), room / (Math.max(1, lines.length) * 1.25)));
-  const statusTop = sb - baselineEm("Share Tech Mono") * statusSize, statusH = lines.length * statusSize * 1.25;
-  if (layout === "desktop" && status) for (const k of keys) if (k.kind === "post") { const h = Math.max(k.rect[3], statusH); k.rect = [k.rect[0], statusTop + statusH / 2 - h / 2, k.rect[2], h]; }
+  const statusTop = sb - baselineEm("Share Tech Mono") * statusSize;
+  if (layout === "desktop") for (const k of keys) if (k.kind === "post") { const [top, h] = (G.post as { well?: number[] }).well!; k.rect = [k.rect[0], top + 12, k.rect[2], h - 24]; } // the key fills the well beside the text
   const stats: [string, string][] = [["PASSENGERS DELIVERED", String(s.delivered)], ["DELIVERY POINTS", fmt(s.banked)], ["DISTANCE POINTS", fmt(Math.floor(s.dist * RATE))]];
   const { labels, labelSize, labelAlign, split, values, valueSize, valueAlign } = G.stats as Geometry["stats"] & { labelAlign: "left" | "center"; valueAlign: "right" | "center" };
   return (

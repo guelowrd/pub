@@ -391,3 +391,5 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
 - Dial order (Gaylord, 18:30): NOCTURNAL RUN, SYNTHWAVE ENGINE, ABANDONED FACTORY, MIDNIGHT CHASE ("Midnight Pursuit"),
   OUTRUN PULSE, VECTOR WORLD, PICKUP TRUCK, DARK HORSE, BITTERSWEET SUNSET, NEON PURSUIT, ORANGE HORIZON, NIGHT CRUISE,
   PICK UP OR CRUSH UP. Song 0 now starts in golf hills, so rules/vectors.json regenerated and both commitments repinned.
+- Results (Gaylord, 18:50): the desktop post key fills the post well top to bottom, 12 px padding (well [459, 132] in
+  results.json, measured on wells.png), label centred; the 224 x 58 plate is stretched, a tall one asked in brief 5.
