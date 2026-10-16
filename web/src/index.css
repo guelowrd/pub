@@ -24,7 +24,8 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .rail { position: absolute; top: calc(190 * var(--u)); right: calc(26 * var(--u)); width: calc(228 * var(--u)); }
 .rail .panel { position: relative; width: 100%; padding: calc(8 * var(--u)); margin-bottom: calc(18 * var(--u)); }
 #bank { display: flex; flex-wrap: wrap; align-items: baseline; row-gap: calc(4 * var(--u)); color: #ffe564; font-size: calc(14 * var(--u)); white-space: pre; margin-bottom: calc(6 * var(--u)); }
-#bank em { margin-left: auto; font-style: normal; color: #ff40bd; animation: pub-blink 1s steps(1, end) infinite; } /* FULL takes the right, or its own line when the meter is wide */
+#bank .num { margin-left: auto; } /* the meter's points sit at the right of its box, as the score does in its own */
+#bank em { margin-left: calc(8 * var(--u)); font-style: normal; color: #ff40bd; animation: pub-blink 1s steps(1, end) infinite; }
 .slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(4 * var(--u)); }
 .slots > div { position: relative; min-height: calc(150 * var(--u)); border: calc(1.5 * var(--u)) solid #63e7ff; padding: calc(4 * var(--u)); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: calc(12 * var(--u)); text-align: center; }
 .slots > div > span { color: #aca5d1; }

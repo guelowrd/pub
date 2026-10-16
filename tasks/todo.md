@@ -540,3 +540,6 @@ worth a word from Gaylord: the asphalt tile (4 m) and verge tile (2.5 m) repeat 
   at its segment start; the branch centre is interpolated at the slice's real ends now.
 - Headlights come on 50 m before the mouth (ramp unchanged), so the car enters a lit tunnel; the exit bloom still keys on
   the actual exit.
+- BOOMER METER (Gaylord, 22:40, clarified: "aligned in its own box"): the name at the left of its box, the points at the
+  right, as SCORE does in its own; FULL follows the name, the points drop to their own line then. Measured: the points
+  end flush with the panel's inner edge.
