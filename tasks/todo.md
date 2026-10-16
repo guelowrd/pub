@@ -609,3 +609,4 @@ unchanged), the pack's faces on a real phone.
   murmurations). `docs/set-dressing-plan.md`: the per-song knobs (pushed), the dressing table, how each engine piece is
   drawn with its budget, the low tier guard (20 ms median for 2 s -> particles off, 1 strip, no decal pass, 70 segments).
 - Not started: the knobs can go in before the art; the rest waits for the pack.
+- Gaylord (00:30 screenshot, "bug in the menu?"): the results screen came up as bare wells and loose portraits. It shares the head unit's old CSS classes (.hu-screen, .hu-unit, .hu-text, .hu-gt, .hu-mono) and the Grand Prix rewrite deleted them with the rest. Restored under a results comment; the screen checked whole after a run.

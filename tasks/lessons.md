@@ -59,3 +59,9 @@ wrong asymmetry (the lane's perspective) while the real one was the gore's hatch
 names a screenshot, crop and read that region first, list the asymmetric elements in it (lines, hatching, edges), and
 match each to the code that draws it before touching anything. A perspective effect is never the answer to "symmetric"
 when the complaint is about markings.
+
+## 2026-10-17, the results screen lost its text with the menu rewrite
+Replacing the head unit, I deleted every `.hu-*` rule in index.css as "the old menu's". Results.tsx used the same classes
+(board.ts even says the helpers are shared by both screens). Rule: before deleting a CSS class or helper, grep the whole
+src tree for it, not just the file being replaced; and a rewrite of one screen gets the neighbouring screens (splash,
+results, pause) looked at before it is called done, as the 2026-10-16 layout lesson already said for layout changes.
