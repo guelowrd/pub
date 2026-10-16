@@ -100,7 +100,7 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
       <div className="hu-unit" style={{ left: px(G.origin[0]), top: px(G.origin[1]), width: px(G.size[0]), height: px(G.size[1]) }}>
         <img src={`${ART}results/${layout}/frame.png`} alt="" style={{ left: 0, top: 0, width: px(G.size[0]), height: px(G.size[1]) }} />
         <img src={`${ART}results/${layout}/wells.png`} alt="" style={{ left: 0, top: 0, width: px(G.size[0]), height: px(G.size[1]) }} />
-        {text("TIME IS UP, YOU SCORED", G.title[0], G.title[1], G.title[2], CYAN)}
+        {text("TIME IS UP! YOU SCORED", G.title[0], G.title[1], G.title[2], CYAN)}
         <span className="hu-text hu-mono" style={{ left: px(G.score[0]), width: px(G.score[3]), top: px(G.score[1] - baselineEm("Share Tech Mono") * G.score[2]), fontSize: px(G.score[2]), color: YELLOW }}>{fmt(s.score)}<span className="hu-gt" style={{ fontSize: px(labelSize), marginLeft: px(labelSize * 0.6) }}>POINTS</span></span>
         {text(`YOUR BEST: ${fmt(best)}`, G.best[0] as number, G.best[1] as number, G.best[2] as number, MUTED, true, G.best[3] as "left" | "right")}
         {stats.map(([label, value], i) => {
