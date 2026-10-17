@@ -25,9 +25,9 @@ type Word = "drive" | "shot" | "collect" | "connect" | "wait";
 // The font pass (PUB-Painted-Type, Gaylord 2026-10-17: "much better"): PUB Painted Pixel for words and the counter, PUB Painted
 // Matrix for numbers, the LCD line and the red key's word. The sizes in menu.json were set against the stand-ins (Chakra Petch,
 // Share Tech Mono, PUB Stereo LCD); K keeps the cap heights they gave (caps at 100 px: the stand-ins and Pixel 70, Matrix 64.6, Stereo LCD 66.7)
-type Font = "cp" | "mono" | "count";
-const FAMILY: Record<Font, string> = { cp: "PUB Painted Pixel", mono: "PUB Painted Matrix", count: "PUB Painted Pixel" };
-const K: Record<Font | "lcd", number> = { cp: 1, mono: 1.084, count: 1, lcd: 1.033 };
+type Font = "cp" | "mono";
+const FAMILY: Record<Font, string> = { cp: "PUB Painted Pixel", mono: "PUB Painted Matrix" };
+const K: Record<Font | "lcd", number> = { cp: 1, mono: 1.084, lcd: 1.033 };
 const LCD = "PUB Painted Matrix";
 // the LCD's one line per mode (the pack's copy)
 const PURPOSE: Record<Mode, string> = { solo: "PICK A STAGE AND DRIVE", challenge: "BEAT A CHAMPION", "my-runs": "YOUR RUNS AND WINNINGS", leaderboards: "BEST AND WORST PLAYERS", wallet: "YOUR WALLET AND COINS", system: "SET UP YOUR GAME" };
@@ -160,7 +160,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       list(records.length); count = `${records.length} OPEN`;
       rows = records.map((n, i) => ({ key: n.id, cells: [cell(champion(n), C.challenge.champion, C.challenge.nicknameS, "cp", i === at ? AMBER : WHITE), cell(score(n.storage.target), C.challenge.scoreR, C.challenge.scoreS, "mono", AMBER, true), cell(songOf(songIn(n)), C.challenge.stage, C.challenge.stageS, "cp", i === at ? AMBER : WHITE, false, C.challenge.stageW)] }));
       const s = records[at];
-      footer = [cell(songOf(songIn(s)), TV.safe[0], TV.review.stageS, "cp", AMBER, false, undefined, TV.footer), cell("TIME LEFT", TV.count[0], 14 * u, "cp", CYAN, true, undefined, TV.detail - 4 * u), cell(clock(s.storage.expiryBlock - height), TV.count[0], TV.review.expiryS, "mono", AMBER, true, undefined, TV.footer + 4 * u)];
+      footer = [cell(songOf(songIn(s)), TV.safe[0], TV.review.stageS, "cp", AMBER, false, undefined, TV.footer), cell("TIME LEFT", TV.count[0], Math.max(11, 14 * u), "cp", CYAN, true, undefined, TV.detail - 4 * u), cell(clock(s.storage.expiryBlock - height), TV.count[0], TV.review.expiryS, "mono", AMBER, true, undefined, TV.footer + 4 * u)];
       enter = () => setReview(s);
     }
   } else if (mode === "my-runs") {
@@ -316,7 +316,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
               <img className={`gp-pic${lock ? " locked" : ""}`} src={preview} alt="" />
               <div className="gp-shade" />
               {brand(TV.scene.logo, "left")}
-              {text(`${pad2(station + 1)} / ${pad2(STATIONS.length)}`, TV.count[0], TV.count[1], TV.count[2], "count", AMBER, true)}
+              {text(`${pad2(station + 1)} / ${pad2(STATIONS.length)}`, TV.count[0], TV.count[1], TV.count[2], "cp", AMBER, true)}
               {text(stage.title, TV.scene.title[0], TV.scene.title[1], TV.scene.title[2], "cp", WHITE)}
               {lock ? text(`LOCKED: POST ${lock.records} RECORD${lock.records > 1 ? "S" : ""}, ONE AT ${lock.score}+`, TV.cond[0].icon[0], TV.cond[0].text[1], TV.cond[0].text[2], "cp", PINK) : cond(station, TV.cond[0].text[1])}
             </>

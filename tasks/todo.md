@@ -756,3 +756,10 @@ Decided: tracks 1 to 5 open for everyone; track n from 6 up needs n-5 records po
 - Gaylord: the splash ribbon "way too small, hard to read". 17 px Chakra Petch → 34 px in PUB Painted Pixel (Chakra Petch as the fallback while it loads). The face has no ampersand, equals or bullet, so the rules read AND, a colon and a slash between them.
 - Results screen before / after sent (a CSS preview of the painted faces over the running screen); Gaylord's call.
 - Gaylord (20:10): the results screen keeps Chakra Petch and Share Tech Mono; the ribbon change stays. Decided.
+
+## 2026-10-17, evening audit (Gaylord: "ponytail and visual consistency and wording consistency and possibly more")
+- [x] Code: no dead export; the counter's own font key was the same face as the words after the font switch, folded into `cp`; no CSS without a user; no unreferenced file (the three font licences stay).
+- [x] The painted faces carry 43 glyphs; a comma, bracket, exclamation or question mark (history money lines, ??? for an unnamed player, trouble details) drew from the system fallback. Chakra Petch and Share Tech Mono are the per-glyph fallbacks behind them now; checked in the browser with "A, B! (C=?)" and "1,234 ???".
+- [x] Wording: every player-facing string listed from HeadUnit, Results, App, attract, sim, hub, flow, useChain, stations. Vocabulary holds: record / shot / champion / rival, Gamecoin spelled out in sentences and GC in rows and keys, PASSENGERS everywhere, stage on the TV; states OPEN / READY / IN PLAY / COLLECT / WON / LOST / BEATEN / DEFENDED. No em dash, no "X, not Y".
+- [x] Phones with the painted faces: smallest menu text 11 px (metadata, states); TIME LEFT's label was 8 px, floored at 11. The pack's phone geometry puts the heading 2 px over the first row's highlight (CHALLENGE), left as the designer drew it.
+- Flag for the other session: web/public/bench*.html are shipped to production as /bench.html pages.
