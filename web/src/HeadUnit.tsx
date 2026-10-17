@@ -372,11 +372,9 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
           if (c.id === "action") return null;
           const parts = "parts" in c ? c.parts : null;
           const hit = (r: number[], half?: 0 | 1, label?: string) => <button key={half} className="hit" aria-label={label ?? c.id.replace("-", " ").toUpperCase()} aria-pressed={lit(c.id) || undefined} disabled={!on(c.id)} style={box(r)} onClick={() => press(c.id, half)} onMouseUp={(e) => e.currentTarget.blur()} onMouseEnter={() => setHover(c.id)} onMouseLeave={() => setHover(null)} />;
-          const drawn = c.id === "leaderboards"; // no painted LEADERBOARDS face: the blank cap, the word drawn, its states by CSS
           return (
             <span key={c.id}>
-              <img className={drawn ? `gp-cap ${face(c.id)}` : undefined} src={`${GP}${layout}/${c.id}-${drawn ? "blank" : face(c.id)}.png`} alt="" style={box(c.rect)} />
-              {drawn && <span className={`gp-cap-word gp-cp ${face(c.id)}`} style={{ ...box(c.rect), fontSize: px(c.rect[3] * 0.36) }}>LEADERBOARDS</span>}
+              <img src={`${GP}${layout}/${c.id}-${face(c.id)}.png`} alt="" style={box(c.rect)} />
               {parts ? [hit(parts[0], 0, "VOLUME DOWN"), hit(parts[1], 1, "VOLUME UP")] : hit(c.hit)}
               <img className="gp-focus" src={`${GP}${layout}/${c.id}-focus.png`} alt="" style={box(c.rect)} />
             </span>

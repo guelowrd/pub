@@ -111,12 +111,6 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .gp-para { position: absolute; line-height: 1.3; }
 .gp-mono { font-family: "Share Tech Mono", monospace; font-weight: 400; font-variant-numeric: tabular-nums; }
 .gp-lcd { font-family: "PUB Stereo LCD", monospace; font-weight: 600; font-variant-numeric: tabular-nums; }
-/* the one key the painted pack has no face for: the blank cap, the word over it, the painting's states by filter and an amber bar */
-.gp-cap.hover { filter: brightness(1.12); } .gp-cap.pressed, .gp-cap.selected-pressed { filter: brightness(.85); } .gp-cap.disabled { filter: brightness(.7); }
-.gp-cap-word { position: absolute; display: flex; align-items: center; justify-content: center; letter-spacing: .03em; color: #e6d5b8; pointer-events: none; }
-.gp-cap-word.selected, .gp-cap-word.selected-pressed { color: #ffd16b; } .gp-cap-word.disabled { opacity: .45; }
-.gp-cap-word.pressed, .gp-cap-word.selected-pressed { transform: translateY(1px); }
-.gp-cap-word.selected::after { content: ""; position: absolute; left: 50%; bottom: 11%; width: 56%; height: 2px; transform: translateX(-50%); background: #ffd16b; box-shadow: 0 0 6px #ffd16b; }
 .gp-plaque { filter: brightness(.55) saturate(.5); } /* the painted plaque reads as a lit key; dimmed so no one presses it */
 .gp-cp { font-family: "Chakra Petch", sans-serif; font-weight: 600; }
 /* the red key: the dark lens, the word's face over it (60 ms out, 40 ms dark, 120 ms in), one scan along the atlas on a change */
