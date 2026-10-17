@@ -182,11 +182,13 @@ export function boards(notes: ChallengeNote[], height: number, me: AccountFelts 
   const coins: Hit[] = [];
   const defended: Hit[] = [];
   const smashed: Hit[] = [];
+  const losers: Hit[] = []; // the LOSERBOARD: each rival's lost shots (GQ's rule)
   for (const n of notes) {
     if (n.kind === "shot") {
       const record = recordOf(n, notes);
       if (!record || shotOutcome(n, height) !== "lost") continue;
       defended.push({ who: n.storage.champion, value: 1, at: shotDeadline(n.storage) });
+      if (n.storage.rival) losers.push({ who: n.storage.rival, value: 1, at: shotDeadline(n.storage) });
       if (n.consumedAt !== undefined) coins.push({ who: n.storage.champion, value: toGc(n.amount), at: n.consumedAt });
       continue;
     }
@@ -197,5 +199,5 @@ export function boards(notes: ChallengeNote[], height: number, me: AccountFelts 
     }
   }
   const records = notes.filter((n) => n.kind === "record").map((n) => ({ key: n.id, who: n.storage.champion, value: n.storage.target, at: n.createdAt ?? Infinity }));
-  return { coins: rank(tally(coins), me), records: rank(records, me, 100), defended: rank(tally(defended), me), smashed: rank(tally(smashed), me) };
+  return { coins: rank(tally(coins), me), records: rank(records, me, 100), defended: rank(tally(defended), me), smashed: rank(tally(smashed), me), losers: rank(tally(losers), me) };
 }

@@ -150,6 +150,7 @@ describe("boards", () => {
     const open = record(ME, 5382, { expiry: 5000 });
     const notes = [open, shot(open, KQX, 200, { consumedAt: 900 }), shot(open, MUD, 300), shot(open, MUD, 800)];
     expect(boards(notes, 400, ME).defended.top.map((r) => [name(r.who), r.value])).toEqual([["JHT", 2]]);
+    expect(boards(notes, 400, ME).losers.top.map((r) => [name(r.who), r.value])).toEqual([["KQX", 1], ["MUD", 1]]); // the LOSERBOARD: each rival's lost shots
     const many = Array.from({ length: 101 }, (_, i) => record(i ? KQX : ME, 10_000 - i * 10));
     const { records } = boards(many, 400, MUD);
     expect(records.top).toHaveLength(100);
