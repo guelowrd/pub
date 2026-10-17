@@ -753,3 +753,5 @@ Decided: tracks 1 to 5 open for everyone; track n from 6 up needs n-5 records po
 - [x] Before / after captures of the desktop (solo, leaderboards, a review, challenge) and the phones in temp/type-compare, sent to Gaylord. His call; without the flag the game is unchanged.
 - Seen in the phone captures and fixed: the review's status line (1 GC TO COLLECT, OPEN) sat on the stage name on phones, where the stage is 44 px under the score; the line now goes halfway between them there, the desktop position unchanged.
 - Gaylord (19:50): "push the new one it's much better". The painted faces are the menu's fonts now; the flag, the PUB Stereo LCD face and its licence are gone. Chakra Petch and Share Tech Mono stay on the results screen, the radar and the splash ribbon.
+- Gaylord: the splash ribbon "way too small, hard to read". 17 px Chakra Petch → 34 px in PUB Painted Pixel (Chakra Petch as the fallback while it loads). The face has no ampersand, equals or bullet, so the rules read AND, a colon and a slash between them.
+- Results screen before / after sent (a CSS preview of the painted faces over the running screen); Gaylord's call.

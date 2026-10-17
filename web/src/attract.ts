@@ -6,11 +6,13 @@ import { PEOPLE, img } from "./game/art";
 const IDS = Object.keys(CHARACTERS).filter((id) => CHARACTERS[id].age >= 50); // boomers only on the splash
 const DOOR = [965, 850] as const, FAR = [1150, 590] as const; // where the rider ends up (ground point) and where they appear; mirrored for the left side
 const PERIOD = 7; // seconds per rider
+// the rules, set in the menu's painted face (43 glyphs: no ampersand, equals or bullet, so AND, a colon and a slash)
 const RULES = [
-  "DON'T DRINK & DRIVE", "PICK UP BOOMERS AT THE CURB", "AGES 70 TO 80 = MAX POINTS", "MILLENNIALS AND GEN Z ARE NOT WORTH IT", "READ THE BOOMER RADAR BEFORE YOU STOP",
-  "YOU GOT 3-MIN TO DRIVE & PICK UP BOOMERS", "3 SEATS IN THE CAR = MAX 3 PASSENGERS", "DROP YOUR PASSENGERS WHERE THEY WANT TO GET POINTS", "DON'T CRASH! OR PASSENGERS WILL LEAVE THE CAR",
-  "DRIVE MORE KMS = GET MORE POINTS",
-].join("      •      ");
+  "DON'T DRINK AND DRIVE", "PICK UP BOOMERS AT THE CURB", "AGES 70 TO 80: MAX POINTS", "MILLENNIALS AND GEN Z ARE NOT WORTH IT", "READ THE BOOMER RADAR BEFORE YOU STOP",
+  "YOU GOT 3 MIN TO DRIVE AND PICK UP BOOMERS", "3 SEATS IN THE CAR: MAX 3 PASSENGERS", "DROP YOUR PASSENGERS WHERE THEY WANT TO GET POINTS", "DON'T CRASH! OR PASSENGERS WILL LEAVE THE CAR",
+  "DRIVE MORE KMS: GET MORE POINTS",
+].join("     /     ");
+void document.fonts?.load('400 34px "PUB Painted Pixel"'); // the frame loop draws with the fallback until it is in (jsdom has no fonts)
 const RIBBON_PX_PER_S = 140;
 
 /** The 1280x960 frame fitted in a canvas of w x h: its scale and offset. The splash box is 4:3, so this is the whole canvas;
@@ -48,14 +50,14 @@ export function startAttract(cv: HTMLCanvasElement): () => void {
       ctx.restore();
     }
     // the rules ribbon, right to left, looping
-    // the kit's smoked-glass strip (results kit): 64 px at 896, a hairline on top, Chakra at 17 px on a .6 h baseline
-    ctx.font = `600 ${17 * k}px "Chakra Petch", sans-serif`; ctx.textBaseline = "alphabetic"; ctx.textAlign = "left";
-    const text = `${RULES}      •      `, tw = ctx.measureText(text).width, off = (t * RIBBON_PX_PER_S * k) % tw;
+    // the smoked-glass strip (results kit), 64 px at 896 with a hairline on top; the rules at 34 px (Gaylord: 17 was too small to read)
+    ctx.font = `400 ${34 * k}px "PUB Painted Pixel", "Chakra Petch", sans-serif`; ctx.textBaseline = "alphabetic"; ctx.textAlign = "left";
+    const text = `${RULES}     /     `, tw = ctx.measureText(text).width, off = (t * RIBBON_PX_PER_S * k) % tw;
     const fw = 1280 * k;
     ctx.fillStyle = "rgba(7,16,26,0.91)"; ctx.fillRect(0, 896 * k, fw, 64 * k);
     ctx.fillStyle = "#4b6970"; ctx.fillRect(12 * k, 897 * k, fw - 24 * k, 1);
     ctx.fillStyle = "#d5e3e0";
-    for (let x = -off; x < fw; x += tw) ctx.fillText(text, x, (896 + 38.4) * k);
+    for (let x = -off; x < fw; x += tw) ctx.fillText(text, x, (896 + 44) * k);
     ctx.restore();
   };
   raf = requestAnimationFrame(frame);
