@@ -167,23 +167,20 @@ describe("stops", () => {
 });
 
 describe("fork", () => {
-  it("entering the bore with a rider for the street ahead says how far the drop-off is", () => {
+  it("choosing a side with a rider aboard for it says the drop-off is after the tunnel", () => {
     const s = newSim(1);
     extend(s);
     const f = s.forks[0];
-    s.z = f.zDecide + 1; s.x = -3; step(s, idle, 1 / 120, extend); // left it is
     s.seats[0] = R("A", 70, f.left);
-    s.z = f.mouth + 1; step(s, idle, 1 / 120, extend);
-    const bay = s.stops.find((o) => o.drop === f.left && o.z > f.mouth)!;
-    expect(s.callout?.text).toBe(`DROP OFF IN ${Math.round((bay.z - s.z) / 10) * 10} M`);
+    s.z = f.zDecide + 1; s.x = -3; step(s, idle, 1 / 120, extend); // left it is
+    expect(s.callout?.text).toBe("DROP OFF AFTER THE TUNNEL!");
   });
-  it("says nothing at the mouth when nobody aboard wants the street ahead", () => {
+  it("says nothing at the choice when nobody aboard wants that street", () => {
     const s = newSim(1);
     extend(s);
     const f = s.forks[0];
-    s.z = f.zDecide + 1; s.x = -3; step(s, idle, 1 / 120, extend);
     s.seats[0] = R("A", 70, f.right);
-    s.z = f.mouth + 1; step(s, idle, 1 / 120, extend);
+    s.z = f.zDecide + 1; s.x = -3; step(s, idle, 1 / 120, extend);
     expect(s.callout?.text ?? "").not.toMatch(/DROP OFF/);
   });
   it("locks the side you're on at the decision line; the frame shifts onto your bore at its mouth, not before", () => {
