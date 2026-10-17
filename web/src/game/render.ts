@@ -721,7 +721,11 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
       road(n, 0, 0, leftEdge(s, z1), leftEdge(s, z2), rightEdge(s, z1), rightEdge(s, z2), alt);
       if (tun) tunnel(n, 0, 0, W, tun.side < 0 ? tun.left : tun.right);
       const st = stopAt(s, z1);
-      if (st && !st.taken) quad(n, st.side * (W + 0.3), st.side * (W + BAY - 0.2), st.side * (W + 0.3), st.side * (W + BAY - 0.2), st.drop ? COLOR[st.drop] + "66" : alt ? "#8a7a20" : "#a08a20");
+      if (st && !st.taken) {
+        // the bay lights up: it pulses when it is for you (a drop a rider aboard wants, a pickup with a seat free), faint otherwise
+        const hot = st.drop ? s.seats.some((r) => r && r.dest === st.drop) : s.seats.includes(null), a = hot ? 0.45 + 0.45 * (0.5 + 0.5 * Math.sin(t * 7)) : 0.18;
+        quad(n, st.side * (W + 0.3), st.side * (W + BAY - 0.2), st.side * (W + 0.3), st.side * (W + BAY - 0.2), (st.drop ? COLOR[st.drop] : "#ffd84a") + Math.round(a * 255).toString(16).padStart(2, "0"));
+      }
       if (!low || n < 70) facade(n, z1, d);
       if (songId === "vector-world" && n < 60 && sy[n] > sy[n + 1]) {
         // the vector grid beside the road: a line across every other segment, four along, over the near 60

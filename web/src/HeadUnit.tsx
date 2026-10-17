@@ -9,6 +9,7 @@ import { baselineEm, px, store, stored, useFit } from "./board";
 import geometry from "./game/data/menu.json";
 import { ART } from "./game/art";
 import { STATIONS, type Station } from "./game/stations";
+import { need, unlocked } from "./game/unlock";
 import { NAME } from "./game/sim";
 import { audio } from "./audio";
 import type { ChainApi, ChallengeNote } from "./chain/ChainHost";
@@ -139,8 +140,11 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     enter = pairs[at]?.[2] ?? null;
   };
   const stage = STATIONS[station], preview = previewOf(stage), tuning = mode === "solo" && !loaded.has(preview);
+  // the dial's locks: what this wallet has posted opens the later tracks (unlock.ts); a locked stage shows, dark, with its price, and DRIVE stays dark
+  const posted = notes.filter((n) => n.kind === "record" && same(me, n.storage.champion)).map((n) => n.storage.target);
+  const lock = mode === "solo" && !unlocked(station, posted) ? need(station) : null;
   if (mode === "solo") {
-    word = "drive"; go = onDrive;
+    word = "drive"; go = lock ? null : onDrive;
     if (tuning) status = ["TUNING"];
   } else if (mode === "challenge") {
     heading = "CHALLENGE";
@@ -308,12 +312,12 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
         <div className="gp-content" style={{ width: px(TV.size[0]), height: px(TV.size[1]), clipPath: `url(#gp-tube-${layout})` }}>
           {mode === "solo" && !status && (
             <>
-              <img className="gp-pic" src={preview} alt="" />
+              <img className={`gp-pic${lock ? " locked" : ""}`} src={preview} alt="" />
               <div className="gp-shade" />
               {brand(TV.scene.logo, "left")}
               {text(`${pad2(station + 1)} / ${pad2(STATIONS.length)}`, TV.count[0], TV.count[1], TV.count[2], "mono", AMBER, true)}
               {text(stage.title, TV.scene.title[0], TV.scene.title[1], TV.scene.title[2], "cp", WHITE)}
-              {cond(station, TV.cond[0].text[1])}
+              {lock ? text(`LOCKED: POST ${lock.records} RECORD${lock.records > 1 ? "S" : ""}, ONE AT ${lock.score}+`, TV.cond[0].icon[0], TV.cond[0].text[1], TV.cond[0].text[2], "cp", PINK) : cond(station, TV.cond[0].text[1])}
             </>
           )}
           {mode !== "solo" && !status && !rev && (

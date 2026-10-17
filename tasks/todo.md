@@ -725,3 +725,11 @@ Found and done (03:40):
   fork trims tinted ahead one a frame (the 15 ms hitch at the mouth). Open road 17 ms on the iPhone, tunnel 17, downtown 18.
 - [x] The fork structure drawn only where it is on screen (near the mouth it spans several screens), frontage slices wholly
   off a side skipped. Gaylord on the phone after the previous round: "very playable now"; this round not yet measured there.
+
+## 2026-10-17, track locks and the pickup / drop-off rule made visible (Gaylord: "ppl don't understand the pick up / drop off rule")
+Decided: tracks 1 to 5 open for everyone; track n from 6 up needs n-5 records posted by this wallet (any track, open, smashed or expired all count) with one at (n-5) x 1000 or more; shots do not count; no wallet = 1 to 5; challenges ignore the lock (a rival's record on track 9 can be shot).
+- [x] `game/unlock.ts`: need(i), unlocked(i, scores) → verify: unlock.test.ts (boundaries 5/6, 1000 exact, 13 = 8 records and 8000)
+- [x] Head unit: a locked stage dims its painting, the conditions line reads LOCKED + the requirement, DRIVE is dark → verify: Chrome, this wallet has records so 6 opened and 13 read LOCKED: POST 8 RECORDS, ONE AT 8000+ with DRIVE dark; tsc
+- [x] Fork cue: the HUD fork line on every screen size, the side a rider wants bright with blinking arrows and the count, the other side dim → verify: Chrome, two riders for DOWNTOWN: << DOWNTOWN / DROP OFF x2 blinking, CASINO STRIP >> dim
+- [x] Tunnel warning: the radar says DROP OFF IN n M with the venue's icon when a rider aboard wants the bore's district → verify: Chrome, in the bore: DROP OFF / IN 180 M with the icon
+- [x] Bays light up: the bay stripe pulses; bright for a drop bay a rider aboard wants and for a free pickup, faint otherwise → verify: Chrome, the downtown bay pulsing yellow past the tunnel; 82 tests pass

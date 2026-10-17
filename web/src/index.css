@@ -52,12 +52,14 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 #radar .reveal { position: absolute; left: 52%; top: 30%; width: 44%; font-size: 3.2cqw; color: #85e64b; line-height: 1.5; }
 #radar .reveal b { font-size: 5.6cqw; color: #fff3f4; }
 #radar .icon { top: 8%; right: 5%; width: 6cqw; height: 6cqw; }
-.fork { position: absolute; top: calc(24 * var(--u)); left: 50%; transform: translateX(-50%); display: none; gap: calc(24 * var(--u)); font-size: calc(16 * var(--u)); white-space: pre; }
+.fork { position: absolute; top: calc(24 * var(--u)); left: 50%; transform: translateX(-50%); display: flex; gap: calc(32 * var(--u)); font-size: calc(22 * var(--u)); white-space: pre; text-align: center; text-shadow: 0 0 calc(10 * var(--u)) #000, 0 0 calc(3 * var(--u)) #000; }
+.fork .pass { opacity: .45; } .fork .want { animation: pub-blink .9s steps(1, end) infinite; } .fork .want b { display: block; font-size: .72em; color: #ffe564; }
+#radar .range.warn { left: 50%; top: 30%; font-family: "Chakra Petch", sans-serif; font-size: 8cqw; line-height: 1.25; color: #ffe564; animation: pub-blink 1s steps(1, end) infinite; }
 .callout { position: absolute; top: 44%; left: 50%; transform: translateX(-50%); font-size: calc(36 * var(--u)); text-shadow: 0 0 calc(12 * var(--u)) #000, 0 0 calc(4 * var(--u)) #000; white-space: nowrap; }
 .pad { display: none; width: 100%; padding: 12px; gap: 10px; }
 .pad button { flex: 1; height: 72px; font: inherit; font-size: 16px; color: #63e7ff; background: rgba(11,16,45,.8); border: 2px solid #63e7ff; touch-action: none; user-select: none; -webkit-user-select: none; }
 .pad button:nth-child(3) { color: #ff40bd; border-color: #ff40bd; } .pad button:nth-child(4) { color: #ffe564; border-color: #ffe564; }
-@media (pointer: coarse) { .pad { display: flex; } #root:has(.overlay) .pad { display: none; } /* the pad drives the run only: nothing under the splash, the menu, the pause or the results */ .app { height: min(100vh - 96px, calc(100vw * 3 / 4)); width: min(100vw, calc((100vh - 96px) * 4 / 3)); } .fork { display: flex; } }
+@media (pointer: coarse) { .pad { display: flex; } #root:has(.overlay) .pad { display: none; } /* the pad drives the run only: nothing under the splash, the menu, the pause or the results */ .app { height: min(100vh - 96px, calc(100vw * 3 / 4)); width: min(100vw, calc((100vh - 96px) * 4 / 3)); } }
 /* landscape phones: wider than 4:3, the whole width above the pad, so the HUD scales with the screen and not with a box in its middle */
 @media (pointer: coarse) and (min-aspect-ratio: 1/1) {
   .app { width: 100vw; height: calc(100vh - 96px); --u: calc(100vw / 1280); }
@@ -106,6 +108,7 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .gp-tv img, .gp-radio img, .gp-radio i, .gp-key img, .gp-key i { position: absolute; pointer-events: none; user-select: none; }
 .gp-content { position: absolute; left: 0; top: 0; overflow: hidden; background: #080e17; }
 .gp-pic { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; } /* the 256x192 buffer, every pixel square (the boards) */
+.gp-pic.locked { filter: grayscale(.8) brightness(.45); }
 .gp-shade { position: absolute; left: 0; right: 0; top: 62%; bottom: 0; background: linear-gradient(#080e1700, #080e17c8 45%, #080e17f0); }
 .gp-text { position: absolute; white-space: nowrap; line-height: 1; overflow: hidden; }
 .gp-para { position: absolute; line-height: 1.3; }

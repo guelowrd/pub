@@ -189,14 +189,18 @@ export default function App() {
       // the radar's POSITION map: the blip sits on the curb's side and climbs with the distance (centre = here, top = 250 m out)
       const blip = (st: { z: number; side: number }) => `<i class="blip" style="left:${73.5 + st.side * 6.75}%;top:${38.4 - 21.8 * Math.min(1, Math.max(0, (st.z - s.z) / 250))}%"></i>`;
       // in a tunnel the radar scans: the next street's stop is not a target yet
-      const tunnel = s.forks.some((o) => s.z >= o.mouth && s.z < o.zEnd + 100);
+      const bore = s.forks.find((o) => s.z >= o.mouth && s.z < o.zEnd + 100), tunnel = !!bore;
+      // in the bore the next street's drop-off bay is 30 m past the tunnel's end: a rider aboard who wants that district is told how far
+      const dest = bore ? (bore.side < 0 ? bore.left : bore.right) : null, ahead = bore && s.stops.find((o) => o.drop && o.z > s.z);
+      const warn = bore && dest && s.seats.some((r) => r && r.dest === dest) ? { dest, m: Math.max(0, Math.round(((ahead?.z ?? bore.zEnd + 130) - s.z) / 10) * 10) } : null;
       const radar = node("radar").parentElement!;
-      radar.className = `radar-box ${just ? "" : tunnel ? "search" : c?.rider && full ? "full" : c?.rider || c?.drop ? "" : "search"}`;
+      radar.className = `radar-box ${just ? "" : tunnel ? (warn ? "" : "search") : c?.rider && full ? "full" : c?.rider || c?.drop ? "" : "search"}`;
       html("radar", just ? `${face(just)}<div class="reveal"><b>AGE ${just.age}</b><br>+${fmt(agePoints(just.age))} ON THE METER</div>${icon(just.dest)}`
-        : tunnel ? "" : c?.rider ? (full ? "" : `<img class="dither" src="${dithered(c.rider)}" alt=""><small class="pos">POSITION</small><img class="reticle" src="${ART}radar/reticle-B.png" alt="">${blip(c)}<small class="lab">AGE RANGE</small><b class="range">${c.rider.lo} TO ${c.rider.hi}</b>`)
+        : tunnel ? (warn ? `<b class="range warn">DROP OFF<br>IN ${warn.m} M</b>${icon(warn.dest)}` : "") : c?.rider ? (full ? "" : `<img class="dither" src="${dithered(c.rider)}" alt=""><small class="pos">POSITION</small><img class="reticle" src="${ART}radar/reticle-B.png" alt="">${blip(c)}<small class="lab">AGE RANGE</small><b class="range">${c.rider.lo} TO ${c.rider.hi}</b>`)
         : c?.drop ? `<small class="pos">POSITION</small><img class="reticle" src="${ART}radar/reticle-B.png" alt="">${blip(c)}<b class="range drop">DROP OFF</b>${icon(c.drop)}` : "");
-      const badge = (d: District) => { const n = s.seats.filter((r) => r && r.dest === d).length; return n ? ` x${n}` : ""; };
-      html("fork", f ? `<span style="color:${COLOR[f.left]}">&lt; ${NAME[f.left]}${badge(f.left)}</span><span style="color:${COLOR[f.right]}">${NAME[f.right]}${badge(f.right)} &gt;</span>` : "");
+      // the fork cue, 400 m out to the decision line: the side a rider aboard wants blinks with the count, the other side dims
+      const side = (d: District, left: boolean) => { const n = s.seats.filter((r) => r && r.dest === d).length; return `<span class="${n ? "want" : "pass"}" style="color:${COLOR[d]}">${left ? `&lt;&lt; ${NAME[d]}` : `${NAME[d]} &gt;&gt;`}${n ? `<b>DROP OFF x${n}</b>` : ""}</span>`; };
+      html("fork", f ? side(f.left, true) + side(f.right, false) : "");
       const text = s.callout?.text ?? "";
       html("callout", text.replace(/\+(\d+)|X(\d[\d.]*)|AGE (\d+)/g, (_, award, mult, age) => award ? `<span class="num">+${fmt(Number(award))}</span>` : mult ? `<span class="num">x${mult}</span>` : `AGE <span class="num">${age}</span>`));
       node("callout").style.color = /WRECK|SPIN|BAILED/.test(text) ? "#ff40bd" : /CRAZY/.test(text) ? "#78ffcb" : /^\+|GROUP/.test(text) ? "#ffe564" : "#fff3f4";
