@@ -713,3 +713,8 @@ Found and done (03:40):
 - [x] Measured in 844x390 and 740x340 iframes with the coarse-pointer rules forced: the rail's column ran 65 px under the scene, the radar (262 to 355) sat on GAS (302 to 374). Now a row on landscape phones: meter left, radar right, the rail ends 40 px above the pad on both sizes.
 - [x] A phone held upright reads TURN YOUR PHONE: THE GAME IS PLAYED IN LANDSCAPE on the splash, above the ribbon (CSS only, 12 px on a 390 wide phone).
 - Not checked on a device: the iframes cannot report a coarse pointer, so the real media query is untested there; the rules inside it were.
+- Gaylord (phone in hand): the pad showed under the splash; the meter belongs on the left between TIME and SPEED, the radar on the right.
+- [x] The pad is hidden under any overlay (splash, menu, pause, results) and shows for the run only.
+- [x] Landscape phones: the meter at the left under TIME (its seats 100 board px tall, faces 42, figures 18 / 12, so a filled seat is no taller than an empty one), the radar at the right where the rail began. Measured filled and empty at 844x390 (meter ends 18 px above SPEED) and 740x340 (2 px above).
+- [x] Portrait phones: the pad sat behind the rail (its margin used `--u`, which lives on `.app` only); the margin is in viewport units now and the pad clears the rail.
+- All with the coarse-pointer rules forced into the iframes (lessons.md); a look on the phone itself is still the real check.

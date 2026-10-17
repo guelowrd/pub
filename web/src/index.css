@@ -57,13 +57,16 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .pad { display: none; width: 100%; padding: 12px; gap: 10px; }
 .pad button { flex: 1; height: 72px; font: inherit; font-size: 16px; color: #63e7ff; background: rgba(11,16,45,.8); border: 2px solid #63e7ff; touch-action: none; user-select: none; -webkit-user-select: none; }
 .pad button:nth-child(3) { color: #ff40bd; border-color: #ff40bd; } .pad button:nth-child(4) { color: #ffe564; border-color: #ffe564; }
-@media (pointer: coarse) { .pad { display: flex; } .app { height: min(100vh - 96px, calc(100vw * 3 / 4)); width: min(100vw, calc((100vh - 96px) * 4 / 3)); } .fork { display: flex; } }
+@media (pointer: coarse) { .pad { display: flex; } #root:has(.overlay) .pad { display: none; } /* the pad drives the run only: nothing under the splash, the menu, the pause or the results */ .app { height: min(100vh - 96px, calc(100vw * 3 / 4)); width: min(100vw, calc((100vh - 96px) * 4 / 3)); } .fork { display: flex; } }
 /* landscape phones: wider than 4:3, the whole width above the pad, so the HUD scales with the screen and not with a box in its middle */
 @media (pointer: coarse) and (min-aspect-ratio: 1/1) {
   .app { width: 100vw; height: calc(100vh - 96px); --u: calc(100vw / 1280); }
-  /* the scene is a third as tall as it is wide here: the rail's column ran under the scene and the radar sat on GAS; the meter left and the radar right instead (Gaylord) */
-  .rail { display: flex; align-items: flex-start; gap: calc(12 * var(--u)); width: auto; }
-  .rail .panel, .rail .radar-box { width: calc(228 * var(--u)); flex: none; margin: 0; }
+  /* the scene is a third as tall as it is wide here: the rail's column ran under the scene and the radar sat on GAS. Gaylord: the
+     meter on the left between TIME and SPEED (its seats shorter so it fits that gap), the radar on the right where the rail began */
+  .rail { position: static; width: auto; }
+  .rail .panel { position: absolute; left: calc(26 * var(--u)); top: calc(126 * var(--u)); width: calc(228 * var(--u)); margin: 0; }
+  .rail .radar-box { position: absolute; right: calc(26 * var(--u)); top: calc(190 * var(--u)); width: calc(228 * var(--u)); }
+  .slots > div { min-height: calc(100 * var(--u)); } .slots > div > b { font-size: calc(18 * var(--u)); } .slots > div > em { font-size: calc(12 * var(--u)); } .face { width: calc(42 * var(--u)); height: calc(42 * var(--u)); } /* a filled seat no taller than an empty one */
 }
 /* a phone held upright: the game is laid out for landscape, say so on the splash */
 @media (pointer: coarse) and (max-aspect-ratio: 1/1) {
@@ -146,6 +149,6 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
   .slots > div > b { font-size: calc(40 * var(--u)); } .slots > div > em { font-size: calc(26 * var(--u)); } .slots > div > small, .slots > div > em small { font-size: calc(18 * var(--u)); }
   .face { width: calc(90 * var(--u)); height: calc(90 * var(--u)); } .icon { width: calc(32 * var(--u)); height: calc(32 * var(--u)); }
   .fork { font-size: calc(30 * var(--u)); } .callout { font-size: calc(56 * var(--u)); }
-  .pad { margin-top: calc(300 * var(--u)); }
+  .pad { margin-top: calc(100vw * 430 / 1280); } /* under the rail (the rail is 408 board px tall here); --u lives on .app, not here */
   .pause { width: 76%; }
   }

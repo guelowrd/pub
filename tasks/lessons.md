@@ -87,3 +87,11 @@ desktop numbers; two were real but small, two were wrong. What found it: run the
 bisect it by operation kind (no-op one canvas method at a time, read the frame interval). Rule: on a device I cannot
 inspect, measure before fixing, and bisect the real frame rather than micro tests of what I think it does. WebKit's
 canvas: `repeat-x` pattern fills from a big tile cost ~1 ms each; `drawImage` under a transform is free.
+
+## 2026-10-17, the phone HUD checked in iframes that never showed the pad
+The night audit called the phone layouts clean after iframes at 390x844 and 740x340, but an iframe in desktop Chrome has a
+fine pointer, so the `(pointer: coarse)` rules (the pad, the full-width landscape scene) never applied; Gaylord then found the
+radar on the GAS key, the pad under every splash and the portrait pad behind the rail. Rule: a phone check injects a copy of
+the coarse-pointer rules without their media condition into the iframe and measures with them on, on every screen state
+(splash, menu, run with a filled seat, pause, results), before the layout is called clean. And a `var(--u)` used outside
+`.app` resolves to nothing: the custom property lives on `.app` only.
