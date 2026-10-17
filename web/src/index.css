@@ -143,7 +143,8 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
   #bank { font-size: calc(30 * var(--u)); } .slots > div { min-height: calc(220 * var(--u)); font-size: calc(22 * var(--u)); }
   .slots > div > b { font-size: calc(40 * var(--u)); } .slots > div > em { font-size: calc(26 * var(--u)); } .slots > div > small, .slots > div > em small { font-size: calc(18 * var(--u)); }
   .face { width: calc(90 * var(--u)); height: calc(90 * var(--u)); } .icon { width: calc(32 * var(--u)); height: calc(32 * var(--u)); }
-  .fork { font-size: calc(30 * var(--u)); } .callout { font-size: calc(56 * var(--u)); } .callout.high { font-size: calc(46 * var(--u)); }
+  /* the cue centred between TIME and SCORE (SCORE is the wider box), at the largest size that stays 10 px clear of both with a five-digit score and CASINO STRIP against WATERFRONT (measured; 30 touched) */
+  .fork { left: calc(262 * var(--u)); right: calc(354 * var(--u)); transform: none; justify-content: center; font-size: calc(27 * var(--u)); } .callout { font-size: calc(56 * var(--u)); } .callout.high { font-size: calc(46 * var(--u)); }
   .pad { margin-top: calc(100vw * 430 / 1280); } /* under the rail (the rail is 408 board px tall here); --u lives on .app, not here */
   .pause { width: 76%; }
   }
