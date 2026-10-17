@@ -708,3 +708,8 @@ Found and done (03:40):
 - [x] Canvas size rounded to whole pixels (App.tsx): dpr 1.5 on an odd CSS size never matched and WebKit rebuilt the
   canvas every frame.
 - Left: the road materials' pattern fills are the other 20 ms on the phone (`without materials` 17 ms); fine at 37 fps.
+
+## 2026-10-17, landscape phones (Gaylord: "the radar is on top of the gas button", "add a warning the game is designed to be played landscape", "keep the meter on the left and the radar on the right")
+- [x] Measured in 844x390 and 740x340 iframes with the coarse-pointer rules forced: the rail's column ran 65 px under the scene, the radar (262 to 355) sat on GAS (302 to 374). Now a row on landscape phones: meter left, radar right, the rail ends 40 px above the pad on both sizes.
+- [x] A phone held upright reads TURN YOUR PHONE: THE GAME IS PLAYED IN LANDSCAPE on the splash, above the ribbon (CSS only, 12 px on a 390 wide phone).
+- Not checked on a device: the iframes cannot report a coarse pointer, so the real media query is untested there; the rules inside it were.
