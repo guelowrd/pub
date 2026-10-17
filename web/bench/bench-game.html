@@ -20,7 +20,12 @@ const inp = { gas: true, brake: false, left: false, right: false };
 const counts = {}; let counting = false, off = "";
 // bisect by operation kind: with `off` set, that kind of call does nothing (or falls back to a flat colour)
 const P = CanvasRenderingContext2D.prototype;
-for (const n of ["fill", "fillRect", "drawImage", "stroke", "clip"]) { const d = Object.getOwnPropertyDescriptor(P, n); Object.defineProperty(P, n, { ...d, value: function (...a) { if (off === n) return; return d.value.apply(this, a); } }); }
+let inClip = false;
+for (const n of ["fill", "fillRect", "drawImage", "stroke", "clip", "restore"]) { const d = Object.getOwnPropertyDescriptor(P, n); Object.defineProperty(P, n, { ...d, value: function (...a) {
+  if (n === "clip") inClip = true; if (n === "restore") inClip = false;
+  if (off === n && n !== "restore") return;
+  if (n === "drawImage") { const big = a.length === 9 ? a[7] * a[8] : a.length === 5 ? a[3] * a[4] : 0; if (off === "canvasDraw" && a[0] instanceof HTMLCanvasElement) return; if (off === "clippedImage" && inClip && !(a[0] instanceof HTMLCanvasElement)) return; if (off === "bigDraw" && big > 150000) return; }
+  return d.value.apply(this, a); } }); }
 // patterns remember their repetition (repeat-x = the frontage bands, repeat = road materials and tunnel), and their transforms can be tamed
 { const cp = P.createPattern; P.createPattern = function (im, rep) { const pat = cp.call(this, im, rep); pat.rep = rep; return pat; }; }
 { const st = CanvasPattern.prototype.setTransform; CanvasPattern.prototype.setTransform = function (m) { if (off === "skew") m = { ...m, b: 0, c: 0 }; if (off === "flip") m = { ...m, d: Math.abs(m.d) }; if (off === "tiny" && Math.abs(m.a) < 0.02) m = { ...m, a: Math.sign(m.a || 1) * 0.02, d: Math.sign(m.d || 1) * 0.02 }; return st.call(this, m); }; }
@@ -44,7 +49,7 @@ const run = (name, f) => new Promise((done) => {
   if (where) { const fk = s.forks[0], goal = where === "tunnel" ? fk.mouth + 40 : fk.mouth - 100; let guard = 0; while (s.z < goal && guard++ < 60000) step(s, inp, STEP, extend); say(`parked at ${Math.round(s.z)} m, mouth ${Math.round(fk.mouth)} m`); }
   counting = true; draw(ctx, s, cv.width, cv.height); counting = false;
   say(`low tier ${location.search.includes("low") ? "ON" : "off"}, one frame: ` + Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(", "));
-  for (const kind of ["", "pattern", "frontage", "materials", "skew", "flip", "tiny"]) { off = kind; await run(kind ? `without ${kind}` : "full draw", () => draw(ctx, s, cv.width, cv.height)); }
+  for (const kind of where ? ["", "drawImage", "canvasDraw", "clippedImage", "bigDraw", "clip"] : ["", "pattern", "frontage", "materials", "skew", "flip", "tiny"]) { off = kind; await run(kind ? `without ${kind}` : "full draw", () => draw(ctx, s, cv.width, cv.height)); }
   off = "";
   say("done. send these numbers back.");
 })().catch((e) => say(`error: ${e.message}\n${e.stack?.slice(0, 300)}`));

@@ -70,6 +70,14 @@ const tinted = new Map<string, HTMLCanvasElement>();
 // repeating patterns per image, made once; a scratch canvas darkens sprites without a canvas filter
 const patterns = new Map<CanvasImageSource, CanvasPattern>();
 const hazed = new Map<CanvasImageSource, HTMLCanvasElement>();
+/** The band as a canvas: WebKit's canvas drew a transformed slice of the decoded image at ~0.05 ms (the near villas
+ * cost an iPhone 13 ms a frame at a fork) and the same slice of a canvas for nothing */
+const copies = new Map<CanvasImageSource, HTMLCanvasElement>();
+const asCanvas = (im: HTMLImageElement) => {
+  let c = copies.get(im);
+  if (!c) { c = document.createElement("canvas"); c.width = im.naturalWidth; c.height = im.naturalHeight; c.getContext("2d")!.drawImage(im, 0, 0); copies.set(im, c); }
+  return c;
+};
 /** The band pushed into the distance: the same pixels under a veil (night: dark; day: the sky's blue) */
 const haze = (im: HTMLImageElement) => {
   let c = hazed.get(im);
@@ -111,6 +119,9 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   }
   lastNow = now;
   const t = s.t;
+  // the next fork's tinted trims built early, one a frame, so the mouth does not cost a 15 ms frame when it comes into view
+  { const fk = s.forks.find((o) => o.z > s.z), st = fk && s.streets.find((o) => fk.z > o.z0 && fk.z <= o.z1); // the street that ends at the fork, whose structure it is
+    if (fk && st) for (const [side, to] of [["left", fk.left], ["right", fk.right]] as const) if (!tinted.has(`fork-${FORK_STRUCT[st.district]}-${side}.png|${COLOR[to]}`)) { tintMask(`fork-${FORK_STRUCT[st.district]}-${side}.png`, COLOR[to], 1024, 512); break; } }
   // PICKUP TRUCK: dust when a wheel is on the verge
   if ((s.skid || (songId === "pickup-truck" && Math.abs(s.x) + CAR_W / 2 > W && s.v > 5)) && s.t - lastPuff > 0.07) { lastPuff = s.t; puffs.push({ z: s.z - 1.2, x: s.x + (puffs.length % 2 ? 0.8 : -0.8), t: s.t }); }
   if (s.spin > lastSpin) bursts.push({ z: s.z + 2.5, x: s.x, t: s.t });
@@ -497,20 +508,22 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
       // a slice is a trapezoid (its top converges, its bottom does not), which one affine cannot map: the band is cut into
       // horizontal strips, each pinned exactly along its bottom edge, enough of them that the top's step stays under 3 px
       // (a 26 m casino front near the camera stepped 16 px a slice and its spires broke into a trail of floating tips)
-      const strips = low ? 1 : Math.min(4, Math.max(1, Math.ceil(Math.abs(hN - hF) / 3)));
+      const strips = Math.min(4, Math.max(1, Math.ceil(Math.abs(hN - hF) / 3)));
       for (const side of [1, -1] as const) {
         if (bare(z1, side)) continue;
         const xa = X(n, side * x), xb = X(n + 1, side * x), ya = sy[n], yb = sy[n + 1];
         const a = side * (xb - xa) / (SEG * ppm), u0 = side > 0 ? u : 2048 - u;
         for (let j = 0; j < strips; j++) {
-          const v1 = 512 * j / strips, v2 = 512 * (j + 1) / strips, lo = 1 - v2 / 512, hi = 1 - v1 / 512;
+          const v1 = 512 * j / strips, v2 = 512 * (j + 1) / strips, lo = 1 - v2 / 512;
           const bn = ya - hN * lo, bf = yb - hF * lo, b = side * (bf - bn) / (SEG * ppm), dv = (hN + hF) / 2 / 512;
+          // no clip (WebKit pays for a clipped image by its area, 13 ms a frame of near villas on an iPhone): the strip is a
+          // parallelogram whose top misses the trapezoid's by under 3 px, and each strip reaches a step up under the one
+          // above it, so no gap opens between them; only the band's top edge keeps that error
           ctx.save();
-          ctx.beginPath(); ctx.moveTo(xa, bn); ctx.lineTo(xa, ya - hN * hi); ctx.lineTo(xb, yb - hF * hi); ctx.lineTo(xb, bf); ctx.clip();
           ctx.transform(a, b, 0, dv, xa - a * u0, bn - b * u0 - dv * v2);
           // the slice runs SEG metres of tile from u0, toward the far end (down the tile on the left side)
-          const du = SEG * ppm, us = side > 0 ? u0 : u0 - du;
-          tiled(tile, us, us + du, v1, v2);
+          const du = SEG * ppm, us = side > 0 ? u0 : u0 - du, pad = j ? Math.abs(hN - hF) / strips / dv : 0;
+          tiled(tile, us, us + du, v1 - pad, v2);
           ctx.restore();
         }
         if (foot) { ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.beginPath(); ctx.moveTo(X(n, side * (x - 3)), ya); ctx.lineTo(xa, ya); ctx.lineTo(xb, yb); ctx.lineTo(X(n + 1, side * (x - 3)), yb); ctx.fill(); }
@@ -519,7 +532,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     // depth (Gaylord: "flat like paperboard buildings"): a second rank of the same fronts stands 30 m further back, taller
     // and hazed, so roofs rise behind the near rank and slide slower, and the near rank throws a shadow on the ground
     rank(haze(im), xw + 30, 1.6, per / 3, false);
-    rank(im, xw, 1, 0, true);
+    rank(asCanvas(im), xw, 1, 0, true);
   };
   // street furniture every 55 m, between the lamps and the frontage, on one side or the other (mirrored on the left),
   // clear of the bays and the forks
