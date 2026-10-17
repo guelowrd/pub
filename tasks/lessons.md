@@ -80,3 +80,10 @@ ran, and the run then kept the default look; the music had the same race and kep
 (`start()`, with `newSim`), never in an effect that infers "fresh run" from mutable state. And in Chrome checks: the
 menu remembers the stage, so step it from the keyboard (ArrowRight x n after a reload) and read `pub.sim.current.song`
 before trusting a screenshot; a click during the splash's attract mode looks like a run and is not one.
+
+## 2026-10-17, "one second takes ten seconds" on the iPhone
+Four confident theories (texture memory, canvas resize, scratch canvas copies, gradients) came from reading code and
+desktop numbers; two were real but small, two were wrong. What found it: run the actual draw on the actual device and
+bisect it by operation kind (no-op one canvas method at a time, read the frame interval). Rule: on a device I cannot
+inspect, measure before fixing, and bisect the real frame rather than micro tests of what I think it does. WebKit's
+canvas: `repeat-x` pattern fills from a big tile cost ~1 ms each; `drawImage` under a transform is free.

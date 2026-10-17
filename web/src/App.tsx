@@ -163,7 +163,7 @@ export default function App() {
         audio.engine(Math.abs(s.v) / TOP, input.current.gas); audio.skid(s.skid);
         audio.fade(Math.min(1, (RUN - s.t) / 3)); // the song ends with the clock
       } else acc = 0;
-      const dpr = Math.min(1.5, devicePixelRatio), w = cv.clientWidth * dpr, h = cv.clientHeight * dpr;
+      const dpr = Math.min(1.5, devicePixelRatio), w = Math.round(cv.clientWidth * dpr), h = Math.round(cv.clientHeight * dpr); // whole pixels: a half pixel never matched and WebKit rebuilt the canvas every frame (0.1x on an iPhone)
       if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
       if (s.streets.length === 0) extend(s);
       setBeat(audio.levels()[0]);

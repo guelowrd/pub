@@ -481,7 +481,9 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     const [ppm, back] = FRONTAGE[d], per = 2048 / ppm, xw = W + BAY + WALK + back;
     // one rank of fronts: `x` metres from the axis, `grow` times the band's height, its columns shifted `shift` metres along the
     // road, with a shadow at its foot on the ground when `foot`
-    const rank = (pat: CanvasPattern, x: number, grow: number, shift: number, foot: boolean) => {
+    // each strip is the tile's slice drawn under the strip's affine inside the trapezoid's clip: the same pixels as a
+    // repeat-x pattern fill, which WebKit's canvas rasterised ten times slower (550 fills a frame held an iPhone at 2 fps)
+    const rank = (tile: CanvasImageSource, x: number, grow: number, shift: number, foot: boolean) => {
       const H = 512 / ppm * grow, hN = H * sc[n], hF = H * sc[n + 1];
       const u = ((((z1 + shift) % per) + per) % per) * ppm; // the band's column at this slice
       // a slice is a trapezoid (its top converges, its bottom does not), which one affine cannot map: the band is cut into
@@ -495,16 +497,24 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
         for (let j = 0; j < strips; j++) {
           const v1 = 512 * j / strips, v2 = 512 * (j + 1) / strips, lo = 1 - v2 / 512, hi = 1 - v1 / 512;
           const bn = ya - hN * lo, bf = yb - hF * lo, b = side * (bf - bn) / (SEG * ppm), dv = (hN + hF) / 2 / 512;
-          pat.setTransform({ a, b, c: 0, d: dv, e: xa - a * u0, f: bn - b * u0 - dv * v2 });
-          ctx.fillStyle = pat; ctx.beginPath(); ctx.moveTo(xa, bn); ctx.lineTo(xa, ya - hN * hi); ctx.lineTo(xb, yb - hF * hi); ctx.lineTo(xb, bf); ctx.fill();
+          ctx.save();
+          ctx.beginPath(); ctx.moveTo(xa, bn); ctx.lineTo(xa, ya - hN * hi); ctx.lineTo(xb, yb - hF * hi); ctx.lineTo(xb, bf); ctx.clip();
+          ctx.transform(a, b, 0, dv, xa - a * u0, bn - b * u0 - dv * v2);
+          // the slice runs SEG metres of tile from u0, toward the far end (down the tile on the left side); split where it wraps
+          const du = SEG * ppm, us = side > 0 ? u0 : u0 - du;
+          for (let k = Math.floor(us / 2048); k * 2048 < us + du; k++) {
+            const x0 = Math.max(us, k * 2048), x1 = Math.min(us + du, (k + 1) * 2048);
+            ctx.drawImage(tile, x0 - k * 2048, v1, x1 - x0, v2 - v1, x0, v1, x1 - x0, v2 - v1);
+          }
+          ctx.restore();
         }
         if (foot) { ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.beginPath(); ctx.moveTo(X(n, side * (x - 3)), ya); ctx.lineTo(xa, ya); ctx.lineTo(xb, yb); ctx.lineTo(X(n + 1, side * (x - 3)), yb); ctx.fill(); }
       }
     };
     // depth (Gaylord: "flat like paperboard buildings"): a second rank of the same fronts stands 30 m further back, taller
     // and hazed, so roofs rise behind the near rank and slide slower, and the near rank throws a shadow on the ground
-    rank(pattern(haze(im), "repeat-x"), xw + 30, 1.6, per / 3, false);
-    rank(pattern(im, "repeat-x"), xw, 1, 0, true);
+    rank(haze(im), xw + 30, 1.6, per / 3, false);
+    rank(im, xw, 1, 0, true);
   };
   // street furniture every 55 m, between the lamps and the frontage, on one side or the other (mirrored on the left),
   // clear of the bays and the forks

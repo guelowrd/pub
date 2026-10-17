@@ -696,3 +696,15 @@ Found and done (03:40):
 - Fixed: MY RUNS' footer read OPEN under a row that read OPEN; it now names the run's stage (the rows have no stage column, CHALLENGE's footer names it too), with the money or the rival's line at the right only when it says more than the state.
 - Fixed: WALLET and SYSTEM page past four rows with nothing saying so; a cursor count (01 / 06) like the solo and leaderboards counters, only when there are more rows than the TV shows.
 - Seen, left alone: the drawn LEADERBOARDS key word (brief 12), the meter (parked), the coarse-pointer check (the pad, the landscape full-width HUD) which an iframe cannot do; an automated `p` right after DRIVE is swallowed once (timing, as the 10-16 lesson says).
+
+## 2026-10-17, the phone ran at a tenth of speed (Gaylord: "one second actually takes ten seconds", iPhone 16, Chrome)
+- The loop caps catch-up at 0.1 s a frame, so a 700 ms frame is slow motion. Measured on the phone with three pages now in
+  `web/bench/` (served by the dev server at /bench/…, not built): `bench.html` canvas micro tests, `bench-game.html` the
+  real sim + draw with a per-operation bisect (`?song=N`, `&low=1`), `bench-app.html` the game with a stopwatch box
+  (`?nohud`, `?nochain`, `?noaudio`). Every micro test ran at 17 ms; the bisect named the frontage bands: ~550
+  `repeat-x` pattern fills a frame from a 2048 px tile, which WebKit's canvas rasterises ~1 ms each (580 ms a frame).
+- [x] Frontage strips drawn as clipped `drawImage` slices under the strip's affine (render.ts `rank`): same pixels, 37 ms
+  bare, the game at 1.00x on the phone (26 ms frames).
+- [x] Canvas size rounded to whole pixels (App.tsx): dpr 1.5 on an odd CSS size never matched and WebKit rebuilt the
+  canvas every frame.
+- Left: the road materials' pattern fills are the other 20 ms on the phone (`without materials` 17 ms); fine at 37 fps.
