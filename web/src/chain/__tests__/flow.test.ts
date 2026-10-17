@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { ChallengeNote } from "../chain";
 import type { ChallengeStorage, Word4 } from "../notes";
 import { GC_FAUCET, MIN_SHOT_WINDOW_BLOCKS, SCORE_MAX } from "../config";
+import { encodeGame, newGame, RULES_VERSION } from "../game";
 import { acceptNote, blocksToClock, claimVerdict, explain, fmtGamecoin, fmtGc, isChainBehind, myOpenShotsOn, NOT_FINISHED, noteKind, doneText, recordLinks, settlePlan, shotRefusal, submitWithRetry, withTimeout } from "../flow";
 
 const champion = { suffix: 1n, prefix: 2n };
@@ -10,7 +11,7 @@ const me = { suffix: 3n, prefix: 4n };
 const other = { suffix: 5n, prefix: 6n };
 const recordId = [9n, 9n, 9n, 9n] as const;
 
-const base: ChallengeStorage = { expiryBlock: 1000, target: 2000, minStake: 1_000_000n, champion, rival: null, recordId: [0n, 0n, 0n, 0n], shotRoot: [1n, 1n, 1n, 1n], game: [], shotDeadline: 0 };
+const base: ChallengeStorage = { expiryBlock: 1000, target: 2000, minStake: 1_000_000n, champion, rival: null, recordId: [0n, 0n, 0n, 0n], shotRoot: [1n, 1n, 1n, 1n], game: encodeGame(newGame(7, 0)), shotDeadline: 0 };
 const prize: ChallengeNote = { id: "0x9", idWord: [...recordId], kind: "record", storage: base, faucet: GC_FAUCET, amount: 1_000_000n, consumed: false };
 const challenge = (rival: typeof me, deadline: number, consumed = false, id = "0xc"): ChallengeNote => ({
   id, idWord: [1n, 2n, 3n, 4n], kind: "shot", storage: { ...base, rival, recordId: [...recordId], shotDeadline: deadline }, faucet: GC_FAUCET, amount: 1_000_000n, consumed,
@@ -95,6 +96,16 @@ describe("accepting a note from the chain", () => {
     expect(acceptNote({ ...record, storage: { ...base, shotDeadline: 5 } }, shotRoot)).toBe(false);
     expect(acceptNote({ ...record, storage: { ...base, recordId: [...recordId] as Word4 } }, shotRoot)).toBe(false);
     expect(acceptNote({ ...shot, storage: { ...shot.storage, recordId: [0n, 0n, 0n, 0n] } }, shotRoot)).toBe(false);
+  });
+
+  it("keeps only records and shots this app can drive: this rules version, the course grown from the seed", () => {
+    const game = encodeGame(newGame(7, 0));
+    const older = game.map((f, i) => (i === 5 ? RULES_VERSION - 1n : f));
+    const foreign = game.map((f, i) => (i === 8 ? f + 1n : f));
+    expect(acceptNote({ ...record, storage: { ...base, game: older } }, shotRoot)).toBe(false);
+    expect(acceptNote({ ...record, storage: { ...base, game: foreign } }, shotRoot)).toBe(false);
+    expect(acceptNote({ ...shot, storage: { ...shot.storage, game: foreign } }, shotRoot)).toBe(false);
+    expect(acceptNote({ ...record, storage: { ...base, game: [] } }, shotRoot)).toBe(false);
   });
 });
 

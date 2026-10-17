@@ -65,3 +65,11 @@ Replacing the head unit, I deleted every `.hu-*` rule in index.css as "the old m
 (board.ts even says the helpers are shared by both screens). Rule: before deleting a CSS class or helper, grep the whole
 src tree for it, not just the file being replaced; and a rewrite of one screen gets the neighbouring screens (splash,
 results, pause) looked at before it is called done, as the 2026-10-16 layout lesson already said for layout changes.
+
+## 2026-10-17, "TRY AGAIN: this record's course does not match its seed" on every listed record
+I changed the course generator twice (feel per song, waterfront hills), regenerated the vectors and re-pinned the
+commitments, and left RULES_VERSION at 2. Every record on the testnet then failed at shoot time, and the version 1
+records from before Stage TV had been failing silently all along, because the version check only ran when a rival
+pressed the key. Rule: a course generator change bumps RULES_VERSION (the COURSE_COMMIT pin moving is the signal, now
+said next to it), and notes the app cannot drive are dropped where every note enters (acceptNote), never caught at the
+last key.

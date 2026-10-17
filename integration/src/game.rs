@@ -16,7 +16,7 @@ use miden_client::{note::NoteStorage, Felt, Word};
 
 use crate::felt;
 
-pub const RULES_VERSION: u64 = 1;
+pub const RULES_VERSION: u64 = 3; // keep in step with web/src/chain/game.ts
 pub const LEGS: usize = 7;
 pub const NODES: usize = LEGS * (LEGS + 1) / 2;
 pub const NODE_FELTS: usize = 8;

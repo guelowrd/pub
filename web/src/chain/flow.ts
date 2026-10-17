@@ -3,6 +3,7 @@
 
 import type { ChallengeNote } from "./chain";
 import { noteDeadline, shotDeadline, ZERO_WORD, type AccountFelts, type ChallengeStorage, type Word4 } from "./notes";
+import { playable } from "./game";
 import { BLOCK_SECONDS, CLAIM_FUZZ, GC_DECIMALS, GC_FAUCET, MIN_SHOT_WINDOW_BLOCKS, RECORD_LIFETIME_BLOCKS, SCORE_MAX, STAKE } from "./config";
 
 export const sameAccount = (a: AccountFelts | null | undefined, b: AccountFelts | null | undefined) =>
@@ -47,6 +48,8 @@ export function noteKind(root: string, current: { recordRoot: string; shotRoot: 
 export function acceptNote(n: { kind: "record" | "shot"; storage: ChallengeStorage; sender: AccountFelts; assets: { faucet: string; amount: bigint }[] }, shotRoot?: Word4): boolean {
   if (n.assets.length !== 1 || n.assets[0].faucet !== GC_FAUCET) return false;
   const s = n.storage;
+  // a record of another rules version, or whose course is not the one this app grows from its seed, stays out of every list
+  if (!playable(s.game)) return false;
   if (n.kind === "record") return sameAccount(n.sender, s.champion) && !s.rival && s.shotDeadline === 0 && sameWord(s.recordId, ZERO_WORD) && !!shotRoot && sameWord(s.shotRoot, shotRoot);
   return sameAccount(n.sender, s.rival) && !sameWord(s.recordId, ZERO_WORD);
 }

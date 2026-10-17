@@ -8,6 +8,7 @@ import { wordFromFelts } from "../chain";
 import type { Event } from "../../game/sim";
 
 const run = vectors.runs[0];
+// when this pin moves, the course generator changed: bump RULES_VERSION in game.ts, older records can no longer be driven
 const COURSE_COMMIT = "0x6814ceec0297251f4a49c8f356e48773ceb1aaaa4d8cb88e988972e4dce9aa08";
 const LOG_COMMIT = "0x4a40a444bd1fbad57c5d8316ab3050e1dd5f5373b8fe2c3d54ecdb7cd612a358";
 const hex = (w: bigint[]) => wordFromFelts(w as [bigint, bigint, bigint, bigint]).toHex();

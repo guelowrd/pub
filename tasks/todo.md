@@ -634,3 +634,14 @@ Departures from the kit, for Gaylord:
 - The LCD purpose line is live text (the old plates had the LCD font baked in); the meter bed and segments are still the Grand Prix pack's.
 - SOLO ENTER and root BACK stay disabled as before; list rows stay four tall (the Grand Prix geometry, untouched).
 Another session was committing the song feels (f56d657, 5a702e3) in the same tree meanwhile; with them in, 78 tests pass.
+
+## 2026-10-17, stale records on the testnet (Gaylord: "TRY AGAIN… course does not match its seed" / "not Pick Up Boomers game data")
+- Probe of the testnet: 12 records + 1 shot under the note tag. 7 are rules version 1 (before Stage TV), 4 are version 2
+  with a course the current generator no longer grows (feel per song, waterfront hills), 1 was genuine. All open, all expire
+  within a day.
+- [x] RULES_VERSION 3 (web and integration/src/game.rs); the course generator changing bumps it, said at the COURSE_COMMIT pin.
+- [x] acceptNote drops any record or shot whose game data is not this version with the course grown from its seed: stale
+  records leave every list (CHALLENGE, HIGH-SCORES, MY RUNS) instead of failing at the key. Test in flow.test.ts.
+- Decision (mine, flag to Gaylord): a champion's own stale records vanish too, so their stake is not reclaimable from the
+  app. Testnet coins; if a version bump ever happens with real money, keep stale notes visible for reclaim only.
+- Checked in Chrome: CHALLENGE and HIGH-SCORES empty, no console errors. 79 tests, Rust replay green.

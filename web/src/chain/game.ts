@@ -9,7 +9,10 @@ import { packCourse, packLog } from "../game/chain";
 import { pyramid } from "../game/course";
 import type { Event } from "../game/sim";
 
-export const RULES_VERSION = 2n; // 2: the course starts in the song's district (Stage TV); version 1 records grew another course
+// Bump it whenever the course generator changes (the COURSE_COMMIT pin in __tests__/game.test.ts moves): a record of
+// another version grew a course this app cannot regrow, so nobody could drive it.
+// 1: first courses; 2: the course starts in the song's district (Stage TV); 3: a feel per song, every waterfront street rises
+export const RULES_VERSION = 3n;
 export const GAME_FELTS = 12;
 
 export type PubGame = { seed: number; song: number; courseCommit: Word4 };
@@ -39,6 +42,15 @@ export const newGame = (seed: number, song: number): PubGame => ({ seed, song, c
 
 /** True when `g`'s course commitment is the one this app grows from its seed: a rival can drive it. */
 export const genuine = (g: PubGame): boolean => commitment(courseFelts(g.seed, g.song)).every((f, i) => f === g.courseCommit[i]);
+
+/** True when `game` is this version's data with the course this app grows from its seed: the only records anyone can drive. */
+export function playable(game: bigint[]): boolean {
+  try {
+    return genuine(decodeGame(game));
+  } catch {
+    return false;
+  }
+}
 
 /** A random u32 seed for a new drive. */
 export const randomSeed = (): number => crypto.getRandomValues(new Uint32Array(1))[0];
