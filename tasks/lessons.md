@@ -76,7 +76,7 @@ last key.
 
 ## 2026-10-17, a run drew the default look (silver car, default sky) on some starts
 The renderer's `setSong` lived in the play effect behind `sim.t === 0`; a frame could step the sim before the effect
-ran, and the run then kept the default look. Rule: state the renderer needs for a run is set where the run is made
+ran, and the run then kept the default look; the music had the same race and kept the menu track (Gaylord heard it). Rule: state the renderer needs for a run is set where the run is made
 (`start()`, with `newSim`), never in an effect that infers "fresh run" from mutable state. And in Chrome checks: the
 menu remembers the stage, so step it from the keyboard (ArrowRight x n after a reload) and read `pub.sim.current.song`
 before trusting a screenshot; a click during the splash's attract mode looks like a run and is not one.
