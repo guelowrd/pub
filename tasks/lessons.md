@@ -95,3 +95,6 @@ radar on the GAS key, the pad under every splash and the portrait pad behind the
 the coarse-pointer rules without their media condition into the iframe and measures with them on, on every screen state
 (splash, menu, run with a filled seat, pause, results), before the layout is called clean. And a `var(--u)` used outside
 `.app` resolves to nothing: the custom property lives on `.app` only.
+
+## 2026-10-17, "no deployment exists" was wrong
+I probed guessed vercel.app names, found pub.vercel.app owned by someone else, and told Gaylord nothing was deployed. The project was live at pub-swart.vercel.app, deploying every push. The repo's commit statuses (GitHub API, no auth needed on a public repo) and the Vercel dashboard's project list were one request away and definitive. Rule: before saying "not deployed", read the commit statuses or the dashboard; never conclude from guessed URLs or an unchecked todo item.

@@ -129,7 +129,7 @@ Reuse `masm/challenge/*` untouched; write one `beats_target` (`masm/games/pub_sc
 - [ ] Gaylord's Bread round on desktop and phone
 
 ### M6: ship (on Gaylord's word)
-- [ ] Vercel on `guelowrd/pub` (root `web`, cross-origin isolation headers) → verify: live URL plays a full run and a challenge
+- [x] Vercel on `guelowrd/pub` (root `web`, cross-origin isolation headers): project `pub`, live at https://pub-swart.vercel.app, every push to main deploys (2026-10-17) → still to verify: a full run and a challenge on the live URL
 
 ## Open items (my proposals, confirm or change)
 
