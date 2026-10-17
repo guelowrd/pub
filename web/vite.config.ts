@@ -10,6 +10,10 @@ import { midenVitePlugin } from "@miden-sdk/vite-plugin";
 const assetFileNames = (a: { names?: string[] }) =>
   (a.names?.[0] ?? "").endsWith(".wasm") ? "assets/assets/miden_client_web.wasm" : "assets/[name]-[hash][extname]";
 
+// The site's public address for the link previews (absolute URLs in index.html): SITE_URL wins, on Vercel the production
+// domain is known at build time, and a local build keeps the paths relative (the previews then only work when deployed)
+const siteUrl = (process.env.SITE_URL ?? (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "")).replace(/\/$/, "");
+
 const version = (() => { try { return execSync("git rev-parse --short HEAD").toString().trim(); } catch { return "dev"; } })();
 
 export default defineConfig({
@@ -17,7 +21,7 @@ export default defineConfig({
   build: { rollupOptions: { output: { assetFileNames } } },
   worker: { rollupOptions: { output: { assetFileNames } } },
   // the SDK plugin points the SDK at its browser build; tests run on node, where the SDK reads its wasm from disk
-  plugins: [react(), ...(process.env.VITEST ? [] : [midenVitePlugin({ crossOriginIsolation: true })])],
+  plugins: [react(), { name: "site-url", transformIndexHtml: (html) => html.replaceAll("%SITE_URL%", siteUrl) }, ...(process.env.VITEST ? [] : [midenVitePlugin({ crossOriginIsolation: true })])],
   resolve: {
     dedupe: ["react", "react-dom", "react/jsx-runtime"],
     alias: {

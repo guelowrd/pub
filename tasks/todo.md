@@ -675,3 +675,7 @@ Plan (docs/set-dressing-plan.md steps 2 to 4), each step checked in Chrome on th
 - [x] The key: no painted LEADERBOARDS face, so the pack's blank cap with the word drawn (Chakra Petch, .36 of the key height), states by filter, the painting's amber bar when selected; focus bracket copied from CHALLENGE
 - [x] Verified: desktop solo + leaderboards pages 1 and 5 (NEXT off on the last), phones in iframes (no hit under 44 px, no broken image), tsc, 79 tests
 Open: the drawn key word is whiter and heavier than the painted legends (the font pass, brief 12); the meter stays parked.
+
+## 2026-10-17, link previews (Gaylord: "make sure game has a preview / thumbnail on X / TG / slack etc")
+- [x] `og:url`, `og:image`, `twitter:image` absolute via `%SITE_URL%` filled at build (SITE_URL, else Vercel's production domain, else relative for a local build); JPEG card `art/share/og.jpg` (1200 x 630, the designer's share background and title with a four-line tagline) instead of the empty-box template webp, which nothing else used. Build checked with SITE_URL=https://example.test.
+- Needs the deploy to be seen: X, Telegram and Slack fetch the card from the live address; after the first deploy, paste the URL in a DM to each to confirm, and use the X card validator or Telegram's @WebpageBot to refresh a cached preview.

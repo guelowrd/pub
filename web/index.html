@@ -14,10 +14,18 @@
     <meta property="og:site_name" content="Pick Up Boomers" />
     <meta property="og:title" content="Pick Up Boomers" />
     <meta property="og:description" content="Three minutes, one song: pick up boomers, drop them where they want, then post your score as a record and let rivals pay a Gamecoin to beat it." />
-    <meta property="og:image" content="/art/share/template.webp" />
+    <!-- link previews (X, Telegram, Slack, Facebook): absolute URLs and a JPEG card; %SITE_URL% is filled in at build time, see vite.config.ts -->
+    <meta property="og:url" content="%SITE_URL%/" />
+    <meta property="og:image" content="%SITE_URL%/art/share/og.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Pick Up Boomers: the logo over a neon city at night, a wet road ahead" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Pick Up Boomers" />
+    <meta name="twitter:description" content="Three minutes, one song: pick up boomers, drop them where they want, then post your score as a record and let rivals pay a Gamecoin to beat it." />
+    <meta name="twitter:image" content="%SITE_URL%/art/share/og.jpg" />
+    <meta name="twitter:image:alt" content="Pick Up Boomers: the logo over a neon city at night, a wet road ahead" />
   </head>
   <body>
     <div id="root"></div>
