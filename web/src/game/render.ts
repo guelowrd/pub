@@ -312,6 +312,12 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
       ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 0.5 + 0.5 * beat; ctx.fillStyle = tint;
       poly([[xa, ya - 2.6 * sc[n]], [xa, ya - 2.85 * sc[n]], [xb, yb - 2.85 * sc[n + 1]], [xb, yb - 2.6 * sc[n + 1]]]); ctx.fill(); ctx.restore();
     }
+    if (n === 0) { // the camera's slice: on a screen wider than 4:3 the near walls end inside it and the world outside showed past them (landscape phones)
+      const xl0 = X(0, l1), xr0 = X(0, r1), yt = Math.min(top1, 0), yb = sy[0] + 2;
+      ctx.fillStyle = "#141028";
+      if (xl0 > 0) ctx.fillRect(0, yt, xl0, yb - yt);
+      if (xr0 < w) ctx.fillRect(xr0, yt, w - xr0, yb - yt);
+    }
     // ceiling: u along the tunnel runs down the screen, v across runs along it
     const xl = X(n, l1), xr = X(n, r1);
     poly([[xl, top1], [xr, top1], [X(n + 1, r2), top2], [X(n + 1, l2), top2]]);
