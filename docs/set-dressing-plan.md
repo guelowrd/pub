@@ -105,3 +105,8 @@ Heat shimmer (per-pixel), long cast shadows (a second draw per prop), full front
   every stretch, always positive) so the water shows from the crests, Gaylord's ask. Courses changed, so
   `rules/vectors.json` was regenerated and the two pinned commitments in `chain/__tests__/game.test.ts` updated; the
   Rust replay passes on the new vectors (4 tests).
+- 2026-10-17, later: steps 2 to 4 done from the designer's PUB-Track-Signatures pack. `art.ts` holds the lamp sheets
+  (`lampOf`), the per-song `LOOK` (props, tall pieces, curbs, dash, lamp gap, sky files) and `loadLook`; `render.ts`
+  draws the lamps, the song's pieces in the furniture and tree slots, the sky pieces and every ambient effect of the
+  table above within its budget, and runs the guard (`?low=1` to force the low tier). Traffic sets live in
+  `stations.ts` `feel.cars`. All 13 stages checked in Chrome; the throttled check remains to be done by hand.

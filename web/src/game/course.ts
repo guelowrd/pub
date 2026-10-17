@@ -138,7 +138,7 @@ export function extend(s: Sim) {
     // past a split the road is a branch at ± off from the axis: a car spawned there rides one (ours once we chose)
     const fz = s.forks.find((o) => z >= o.zDecide && z < o.zEnd + FORK_OUT && !(o.shifted && z >= o.mouth));
     if (fz) { const side = fz.side || (s.rng() < 0.5 ? -1 : 1); x += branchX(fz, z, side); if (z < fz.mouth) branch = side; }
-    const kind = Math.floor(s.rng() * 6), cruise = (kind === 2 || kind === 5 ? 70 + s.rng() * 30 : 90 + s.rng() * 50) / KMH;
+    const cars = STATIONS[s.song].feel.cars, kind = cars[Math.floor(s.rng() * cars.length)], cruise = (kind === 2 || kind === 5 ? 70 + s.rng() * 30 : 90 + s.rng() * 50) / KMH;
     if (!s.traffic.some((c) => Math.abs(c.z - z) < 30 && c.tx === x))
       s.traffic.push({ z, x, tx: x, v: cruise, cruise, kind, braking: false, branch });
   }

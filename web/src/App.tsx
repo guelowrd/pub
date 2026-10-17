@@ -2,7 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { KMH, NAME, PLACE, RUN, TOP, agePoints, candidate, newSim, step, tick, type District, type Input, type Rider, type Sim } from "./game/sim";
 import { CHARACTERS, extend } from "./game/course";
 import { COLOR, draw, setBeat, setSong } from "./game/render";
-import { ART, ICON, PORTRAITS, loadArt, loadLight } from "./game/art";
+import { ART, ICON, PORTRAITS, loadArt, loadLight, loadLook } from "./game/art";
 import { MENU_TRACK, RESULTS_TRACK, STATIONS } from "./game/stations";
 import { audio, level, sound as soundNow, volume as volumeNow } from "./audio";
 import HeadUnit from "./HeadUnit";
@@ -95,15 +95,16 @@ export default function App() {
   // music follows the screen: menus loop Omotesando, the run plays the station from its first second, results loop Wireline Cosmos
   useEffect(() => {
     if (mode === "ready" || mode === "menu") audio.menu(MENU_TRACK); // silent until the browser allows sound; the song starts with the run
-    else if (mode === "play") { if (sim.current.t === 0) { setSong(STATIONS[station].id); audio.run(STATIONS[station].id); } else audio.resume(); }
+    else if (mode === "play") { if (sim.current.t === 0) audio.run(STATIONS[station].id); else audio.resume(); }
     else if (mode === "paused") audio.pause();
     else if (mode === "over") audio.results(RESULTS_TRACK);
     if (mode !== "play") { audio.engine(0, false); audio.skid(false); }
   }, [mode, station]);
 
-  // the stage's light (its skylines, venues, portals, frontage, water) is fetched first; a miss logs and the run still starts
-  const start = (sd: number, song: number) => void loadLight(STATIONS[song].time).catch((e: unknown) => console.error(e)).then(() => {
-    settling.current = false; setSettled(null); setPosted(null); botRun.current = false; sim.current = newSim(sd, song); setSeed(sd); setMode("play");
+  // the stage's light (its skylines, venues, portals, frontage, water) and the song's look (its lamps, props, sky pieces) are fetched first; a miss logs and the run still starts.
+  // The renderer learns the song here, with the sim: the play effect ran after the first frame had stepped the sim on some runs and skipped it (a silver car under the default sky)
+  const start = (sd: number, song: number) => void Promise.all([loadLight(STATIONS[song].time), loadLook(STATIONS[song])]).catch((e: unknown) => console.error(e)).then(() => {
+    settling.current = false; setSettled(null); setPosted(null); botRun.current = false; sim.current = newSim(sd, song); setSong(STATIONS[song].id); setSeed(sd); setMode("play");
   });
   /** A free drive on the station's song. */
   const drive = (sd: number) => { shot.current = null; start(sd, station); };

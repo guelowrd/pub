@@ -5,24 +5,25 @@ import type { District, HazardKind } from "./sim";
 export type TimeOfDay = "midday" | "sunset" | "night";
 /** How a song drives (Gaylord's moods, 2026-10-17, docs/set-dressing-plan.md): extra cars over the district's base, hazard
  *  rolls per street and the kinds they draw from, how much the curves and hills roll, how hard the crosswind leans in rain */
-export interface Feel { traffic: number; hazards: number; mix: HazardKind[]; curves: number; hills: number; wind: number }
+export interface Feel { traffic: number; hazards: number; mix: HazardKind[]; curves: number; hills: number; wind: number; cars: number[] }
 /** A song is a stage: where the run starts, the light and the weather (the designer's table, 2026-10-16), and its feel. */
 export interface Station { id: string; title: string; mood: string; district: District; time: TimeOfDay; rain: boolean; feel: Feel }
-const F = (traffic: number, hazards: number, mix: string, curves: number, hills: number, wind = 1): Feel => ({ traffic, hazards, mix: mix.split(" ") as HazardKind[], curves, hills, wind });
+// cars: the traffic kinds the song draws from (art.ts TRAFFIC: 0 suv, 1 sedan, 2 rv, 3 convertible, 4 van, 5 bus, 6 pickup, 7 taxi)
+const F = (traffic: number, hazards: number, mix: string, curves: number, hills: number, wind = 1, cars = "0 1 2 3 4 5"): Feel => ({ traffic, hazards, mix: mix.split(" ") as HazardKind[], curves, hills, wind, cars: cars.split(" ").map(Number) });
 export const STATIONS: Station[] = [
   { id: "nocturnal-run", title: "NOCTURNAL RUN", mood: "SLEEK AFTER DARK", district: "golf", time: "night", rain: false, feel: F(0, 4, "cone oil", 1.0, 1.3) },
   { id: "synthwave-engine", title: "SYNTHWAVE ENGINE", mood: "REVVING RETRO", district: "downtown", time: "sunset", rain: false, feel: F(1, 7, "cone cone oil pothole", 1.2, 0.8) },
-  { id: "abandoned-factory", title: "ABANDONED FACTORY", mood: "DARK INDUSTRIAL", district: "downtown", time: "night", rain: true, feel: F(1, 12, "pothole pothole barrier barrier oil", 0.9, 0.5, 1.4) },
-  { id: "midnight-chase", title: "MIDNIGHT CHASE", mood: "FLIRTY SLOW CHASE", district: "downtown", time: "night", rain: false, feel: F(3, 6, "cone oil pothole", 1.3, 1.0) },
+  { id: "abandoned-factory", title: "ABANDONED FACTORY", mood: "DARK INDUSTRIAL", district: "downtown", time: "night", rain: true, feel: F(1, 12, "pothole pothole barrier barrier oil", 0.9, 0.5, 1.4, "4 4 2 5") },
+  { id: "midnight-chase", title: "MIDNIGHT CHASE", mood: "FLIRTY SLOW CHASE", district: "downtown", time: "night", rain: false, feel: F(3, 6, "cone oil pothole", 1.3, 1.0, 1, "0 1 1 1 3 4 5") },
   { id: "outrun-pulse", title: "OUTRUN PULSE", mood: "CLASSIC ARCADE DRIVE", district: "waterfront", time: "midday", rain: false, feel: F(0, 5, "cone oil", 1.5, 0.4) },
   { id: "vector-world", title: "VECTOR WORLD", mood: "WIREFRAME COOL", district: "casino", time: "sunset", rain: false, feel: F(1, 9, "cone cone cone oil", 1.3, 1.3) },
-  { id: "pickup-truck", title: "PICKUP TRUCK", mood: "HARD-WON TRIUMPH", district: "golf", time: "midday", rain: false, feel: F(1, 9, "pothole pothole barrier cone", 1.0, 1.8) },
+  { id: "pickup-truck", title: "PICKUP TRUCK", mood: "HARD-WON TRIUMPH", district: "golf", time: "midday", rain: false, feel: F(1, 9, "pothole pothole barrier cone", 1.0, 1.8, 1, "6 6 6 2 2 0") },
   { id: "dark-horse", title: "DARK HORSE", mood: "UNDERDOG GRIT", district: "golf", time: "night", rain: true, feel: F(0, 7, "pothole oil barrier", 0.7, 1.8, 1.4) },
   { id: "bittersweet-sunset", title: "BITTERSWEET SUNSET", mood: "WISTFUL GOLDEN HOUR", district: "waterfront", time: "sunset", rain: false, feel: F(-1, 3, "cone oil", 0.9, 0.8) },
-  { id: "neon-pursuit", title: "NEON PURSUIT", mood: "TUNNEL-LIGHT RUSH", district: "casino", time: "night", rain: true, feel: F(3, 10, "cone cone oil oil", 1.5, 0.6, 0.7) },
+  { id: "neon-pursuit", title: "NEON PURSUIT", mood: "TUNNEL-LIGHT RUSH", district: "casino", time: "night", rain: true, feel: F(3, 10, "cone cone oil oil", 1.5, 0.6, 0.7, "7 7 7 1 3") },
   { id: "orange-horizon", title: "ORANGE HORIZON", mood: "STORM TO GLORY", district: "golf", time: "sunset", rain: false, feel: F(0, 4, "cone pothole", 1.2, 1.5) },
   { id: "night-cruise", title: "NIGHT CRUISE", mood: "LAID-BACK CRUISING", district: "waterfront", time: "night", rain: false, feel: F(-2, 2, "cone", 0.7, 0.4) },
-  { id: "pick-up-or-crush-up", title: "PICK UP OR CRUSH UP", mood: "CHEEKY MAYHEM", district: "casino", time: "midday", rain: false, feel: F(3, 12, "cone cone oil pothole barrier", 1.0, 1.0) },
+  { id: "pick-up-or-crush-up", title: "PICK UP OR CRUSH UP", mood: "CHEEKY MAYHEM", district: "casino", time: "midday", rain: false, feel: F(3, 12, "cone cone oil pothole barrier", 1.0, 1.0, 1, "5 5 3 3 0 1") },
 ];
 export const MENU_TRACK = "omotesando-menu", RESULTS_TRACK = "wireline-cosmos";
 // the song owns the sky: top and bottom of the gradient behind the district's skyline, at the stage's hour (the daylight

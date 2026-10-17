@@ -254,7 +254,7 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
         continue;
       }
       if (s.v - c.v > WRECK) wreck(s);
-      else { s.v = Math.min(s.v, c.v * 0.85); s.x += (s.x < c.x ? -1 : 1) * 0.8; say(s, "BUMP"); }
+      else { s.v = Math.min(s.v, c.v * 0.85); s.x += (s.x < c.x ? -1 : 1) * 0.8; say(s, STATIONS[s.song].id === "pick-up-or-crush-up" ? "HONK!" : "BUMP"); }
       s.bumpCd = 0.6;
     }
   }

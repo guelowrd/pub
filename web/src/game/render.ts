@@ -1,7 +1,7 @@
 // Pseudo-3D view: road segments projected from a low chase camera, sprites sorted by segment and drawn at their anchors.
-import { BAY, CAR_W, LANE, NAME, SEG, TOP, W, WALK, branchX, districtAt, isRed, leftEdge, rightEdge, seg, stopAt, windOf, type District, type Sim } from "./sim";
+import { BAY, CAR_W, KMH, LANE, NAME, SEG, TOP, W, WALK, branchX, districtAt, isRed, leftEdge, rightEdge, seg, stopAt, windOf, type District, type Sim } from "./sim";
 import { CHARACTERS, FORK_OUT, sidewalkX } from "./course";
-import { BUILDING, DECOR, DPROP, DPROPS, DROP, FORK_STRUCT, FRONTAGE, GANTRY, ICON, MATERIALS, SHADOW, LIGHT_GREEN, LIGHT_RED, PANO, PANO_HORIZON, PEOPLE, PROP, ROAD_TINT, SHEETS, TRAFFIC, TREES, TUNNEL, VENUE_CELL, frontage, img, lit, water, type Sheet } from "./art";
+import { ANTENNA_TIP, BEACON, BILLBOARDS, BUILDING, DECOR, DPROP, DPROPS, DROP, FORK_STRUCT, FRONTAGE, GANTRY, GATE, ICON, LAMP_ROOM, LOOK, MATERIALS, SHADOW, LIGHT_GREEN, LIGHT_RED, PANO, PANO_HORIZON, PEOPLE, PROP, ROAD_TINT, SHEETS, SKY_ART, TRAFFIC, TREES, TUBE_MAN, TUBE_PPM, TUNNEL, VENUE_CELL, frontage, img, lampOf, lit, water, type Look, type Sheet } from "./art";
 import { CAR, DEFAULT_SKY, SKY, STATIONS, type TimeOfDay } from "./stations";
 
 const N = 140; // segments drawn ahead
@@ -24,7 +24,14 @@ const HAZE = "#3c4254"; // the rain's cloud veil over the sky
 const puffs: { z: number; x: number; t: number }[] = [], bursts: { z: number; x: number; t: number }[] = [];
 let lastT = 0, lastPuff = 0, lastSpin = 0;
 let sky = DEFAULT_SKY, beat = 0, hour: TimeOfDay = "night", rain = false; // the stage's hour and weather
-export const setSong = (id: string) => { const st = STATIONS.find((o) => o.id === id); sky = SKY[id] ?? DEFAULT_SKY; hour = st?.time ?? "night"; rain = !!st?.rain; heroTint = tintHero(CAR[id]); };
+let songId = "", home: District = "downtown", look: Look = { files: [] }; // the song's look (track signatures): its pieces, curbs, lamps
+export const setSong = (id: string) => { const st = STATIONS.find((o) => o.id === id); sky = SKY[id] ?? DEFAULT_SKY; hour = st?.time ?? "night"; rain = !!st?.rain; heroTint = tintHero(CAR[id]); songId = id; home = st?.district ?? "downtown"; look = LOOK[id] ?? { files: [] }; };
+// the performance guard (set-dressing plan): a 60-frame median over 20 ms for 2 s drops the frame to the low tier for the rest
+// of the run (particles off, one frontage strip, no decal highlight, the frontage to 70 segments); ?low=1 forces it
+let low = new URLSearchParams(location.search).has("low"), lastNow = 0, slowSince = -1;
+const frameMs: number[] = [];
+export const lowTier = () => low;
+const hash = (n: number) => { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); };
 // the hero in the song's paint, body only: the silver body (low saturation, mid to high luminance) takes the colour with
 // its own shading kept, the dark glass, tyres and grille, the red lamps and the neon reflections stay as painted
 let heroTint = new Map<string, HTMLCanvasElement>();
@@ -95,9 +102,18 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   const cx = w / 2, hy = h * 0.42, focal = h * 0.9;
   const camZ = s.z - CAM_BACK, i0 = seg(camZ), frac = camZ / SEG - i0;
   const dxAt = (i: number) => s.dx[i] ?? 0;
-  if (s.t < lastT) { puffs.length = 0; bursts.length = 0; lastSpin = 0; wasIn = wasNear = false; inT = exitT = -1; }
+  if (s.t < lastT) { puffs.length = 0; bursts.length = 0; lastSpin = 0; wasIn = wasNear = false; inT = exitT = -1; frameMs.length = 0; lastNow = 0; slowSince = -1; }
   lastT = s.t;
-  if (s.skid && s.t - lastPuff > 0.07) { lastPuff = s.t; puffs.push({ z: s.z - 1.2, x: s.x + (puffs.length % 2 ? 0.8 : -0.8), t: s.t }); }
+  const now = performance.now();
+  if (lastNow && !low) {
+    frameMs.push(now - lastNow);
+    if (frameMs.length > 60) frameMs.shift();
+    if (frameMs.length === 60 && [...frameMs].sort((a, b) => a - b)[30] > 20) { if (slowSince < 0) slowSince = now; else if (now - slowSince > 2000) { low = true; console.warn("[pub] slow frames: low tier for this run"); } } else slowSince = -1;
+  }
+  lastNow = now;
+  const t = s.t;
+  // PICKUP TRUCK: dust when a wheel is on the verge
+  if ((s.skid || (songId === "pickup-truck" && Math.abs(s.x) + CAR_W / 2 > W && s.v > 5)) && s.t - lastPuff > 0.07) { lastPuff = s.t; puffs.push({ z: s.z - 1.2, x: s.x + (puffs.length % 2 ? 0.8 : -0.8), t: s.t }); }
   if (s.spin > lastSpin) bursts.push({ z: s.z + 2.5, x: s.x, t: s.t });
   lastSpin = s.spin;
 
@@ -134,12 +150,85 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   const grad = ctx.createLinearGradient(0, 0, 0, hy);
   grad.addColorStop(0, rain ? mix(sky[0], HAZE, 0.5) : sky[0]); grad.addColorStop(1, rain ? mix(sky[1], HAZE, 0.6) : sky[1]);
   ctx.fillStyle = grad; ctx.fillRect(0, 0, w, hy);
+  // the song's sky (track signatures): pieces slide with the skyline's parallax, animation from the run's clock
+  const par = -xo[Math.min(N, 40)] * 0.004 * w;
+  const piece = (file: string, x: number, y: number, dw: number, frame = 0, fw = 0, ax = 0.5, ay = 0.5, rot = 0, alpha = 1) => {
+    const im = img(file);
+    if (!im) return;
+    const sw = fw || im.naturalWidth, sh = im.naturalHeight, dh = dw * sh / sw;
+    ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x + par * 0.6, y); if (rot) ctx.rotate(rot);
+    ctx.drawImage(im, frame * sw, 0, sw, sh, -dw * ax, -dh * ay, dw, dh); ctx.restore();
+  };
+  if (songId === "nocturnal-run" && !low) {
+    // sixty stars, each on its own twinkle
+    ctx.fillStyle = "#fff6dc";
+    for (let i = 0; i < 60; i++) { ctx.globalAlpha = 0.25 + 0.6 * Math.abs(Math.sin(t * 1.5 + i * 2.1)); ctx.fillRect(hash(i) * w, hash(i + 100) * hy * 0.85, 2, 2); }
+    ctx.globalAlpha = 1;
+  }
+  if (songId === "synthwave-engine") {
+    // the synthwave sun: a warm disc on the horizon, cut by six dark bands, behind the towers
+    const sx = cx + par * 0.6, sy0 = hy * 0.92, r = 0.13 * w, g = ctx.createRadialGradient(sx, sy0, 0, sx, sy0, r);
+    g.addColorStop(0, "#ffe9a0"); g.addColorStop(0.55, "#ff9a4a"); g.addColorStop(1, "#ff4fd0");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(sx, sy0, r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = grad;
+    for (let k = 0; k < 6; k++) ctx.fillRect(sx - r, sy0 + r * (0.12 + 0.14 * k), 2 * r, r * (0.02 + 0.018 * k));
+  }
+  if (songId === "bittersweet-sunset") {
+    // a huge low sun, its halo
+    const sx = cx + par * 0.6, sy0 = hy * 0.96, r = 0.14 * w, g = ctx.createRadialGradient(sx, sy0, r * 0.6, sx, sy0, r * 2.2);
+    g.addColorStop(0, "rgba(255,210,140,0.9)"); g.addColorStop(0.3, "rgba(255,150,90,0.35)"); g.addColorStop(1, "rgba(255,120,90,0)");
+    ctx.fillStyle = g; ctx.fillRect(sx - r * 2.2, sy0 - r * 2.2, r * 4.4, r * 4.4);
+    ctx.fillStyle = "#fff0c8"; ctx.beginPath(); ctx.arc(sx, sy0, r * 0.6, 0, Math.PI * 2); ctx.fill();
+  }
+  if (songId === "nocturnal-run") piece(SKY_ART.moon, w * 0.72, hy * 0.5, w * 0.2);
+  if (songId === "night-cruise") piece(SKY_ART.moon, w * 0.78, hy * 0.3, w * 0.07);
+  if (songId === "orange-horizon") for (let i = 0; i < 3; i++) piece(SKY_ART.balloons[i], ((w * (0.15 + 0.3 * i) + t * (3 + i)) % (w * 1.2)) - w * 0.1, hy * (0.28 + 0.12 * i) + 6 * Math.sin(t * 0.4 + i), w * (0.05 + 0.015 * i));
+  if (songId === "bittersweet-sunset") {
+    // the Ferris wheel on the pier, over the marina on the left (the right is under the HUD): the structure, then the cabins turning about the shared pivot (512,440 of 1024)
+    piece(SKY_ART.ferris[0], w * 0.2, hy * 0.82, w * 0.24, 0, 0, 0.5, 440 / 1024);
+    piece(SKY_ART.ferris[1], w * 0.2, hy * 0.82, w * 0.24, 0, 0, 0.5, 440 / 1024, t * 0.12);
+  }
   const skyline = img(lit(PANO[district], hour));
   if (skyline) {
-    const dw = w * 1.4, dh = dw / 2, dx = -xo[Math.min(N, 40)] * 0.004 * w - (dw - w) / 2;
+    const dw = w * 1.4, dh = dw / 2, dx = par - (dw - w) / 2;
     ctx.globalAlpha = rain ? 0.6 : 1; // the veil
     ctx.drawImage(skyline, dx, hy - dh * PANO_HORIZON, dw, dh);
     ctx.globalAlpha = 1;
+  }
+  if (songId === "midnight-chase") {
+    // the helicopter hovers and drifts, its rotor on two frames; the searchlight is drawn with the road, below
+    piece(SKY_ART.helicopter, w * (0.5 + 0.3 * Math.sin(t * 0.12)), hy * 0.3 + 6 * Math.sin(t * 1.3), w * 0.16, Math.floor(t * 12) % 2, 512, 0.5, 330 / 512);
+  }
+  if (songId === "outrun-pulse" && !low) for (let i = 0; i < 6; i++) piece(SKY_ART.gull, ((t * (40 + 6 * i) + i * 230) % (w * 1.3)) - w * 0.15, hy * (0.22 + 0.1 * ((i * 37) % 5) / 5) + 5 * Math.sin(t * 2 + i), w * (0.035 + 0.01 * (i % 3)), Math.floor(t * 5 + i) % 2, 256);
+  if (songId === "vector-world") {
+    // the blimp, its LED panel a window: the panel's dark ground and scrolling text go on first, clipped to the opening
+    const bx = w * (0.62 + 0.04 * Math.sin(t * 0.07)) + par * 0.6, by = hy * 0.35 + 4 * Math.sin(t * 0.5), dw = w * 0.28, f = dw / 1024, ox = bx - dw / 2, oy = by - 256 * f;
+    const poly = [[297, 162], [752, 202], [751, 303], [298, 270]];
+    ctx.save(); ctx.beginPath(); poly.forEach(([x, y], j) => (j ? ctx.lineTo(ox + x * f, oy + y * f) : ctx.moveTo(ox + x * f, oy + y * f))); ctx.closePath(); ctx.clip();
+    ctx.fillStyle = "#06101c"; ctx.fillRect(ox, oy, dw, 512 * f);
+    const fs = 80 * f;
+    if (fs >= 3) {
+      ctx.font = `${fs}px "Share Tech Mono"`; ctx.fillStyle = "#62f3a4"; ctx.textBaseline = "middle"; ctx.textAlign = "left";
+      const msg = "VECTOR WORLD   PICK UP BOOMERS   ", tw = ctx.measureText(msg).width, off = (t * 120 * f) % tw;
+      ctx.fillText(msg + msg, ox + 297 * f - off, oy + 232 * f);
+    }
+    ctx.restore();
+    piece(SKY_ART.blimp, bx - par * 0.6, by, dw);
+    // horizon glow lines
+    ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.strokeStyle = "#62f3a4"; ctx.lineWidth = 1;
+    for (const [dy, a] of [[2, 0.5], [6, 0.3], [11, 0.15]]) { ctx.globalAlpha = a; ctx.beginPath(); ctx.moveTo(0, hy - dy); ctx.lineTo(w, hy - dy); ctx.stroke(); }
+    ctx.restore();
+  }
+  if (songId === "orange-horizon" && !low) {
+    // a small starling flock turning far away
+    const fx = w * (0.35 + 0.1 * Math.sin(t * 0.2)) + par * 0.6, fy = hy * (0.4 + 0.08 * Math.sin(t * 0.3));
+    ctx.fillStyle = "rgba(40,30,40,0.6)";
+    for (let i = 0; i < 20; i++) ctx.fillRect(fx + 0.06 * w * Math.sin(t * 0.9 + i * 0.7) * Math.cos(i), fy + 0.03 * w * Math.cos(t * 1.1 + i * 1.3), 2, 2);
+  }
+  if (songId === "abandoned-factory" || songId === "dark-horse") {
+    // lightning: two blinks every ten seconds or so, the sky alone on the golf hills, the whole picture at the factory
+    const per = 9 + 4 * hash(Math.floor(t / 13)), ph = t % per;
+    if (ph < 0.07 || (ph > 0.18 && ph < 0.24)) { ctx.fillStyle = "rgba(225,232,255,0.55)"; ctx.fillRect(0, 0, w, songId === "dark-horse" ? hy : h); }
   }
   ctx.fillStyle = GROUND[hour][0]; ctx.fillRect(0, hy, w, h - hy);
   const [tint, tintA] = ROAD_TINT[district], asphalt = ASPHALT[hour].map((c) => mix(c, tint, tintA));
@@ -159,7 +248,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   if (ahead && !wasNear) inT = s.t;
   if (!inside && wasIn) exitT = s.t;
   wasIn = !!inside; wasNear = !!ahead;
-  const hl = ahead ? Math.min(1, Math.max(0, (s.t - inT - 0.15) / 0.5)) : 0; // the headlights ramp, 0 to 1 (a step here went black then bright)
+  const hl = songId === "dark-horse" ? 1 : ahead ? Math.min(1, Math.max(0, (s.t - inT - 0.15) / 0.5)) : 0; // the headlights ramp, 0 to 1 (a step here went black then bright); always on in DARK HORSE's rain
   const lightAt = (z: number) => {
     const f = tunnelAt(z);
     if (!f) return 1;
@@ -239,10 +328,10 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     quad(n, c1 - hw1, c1 + re1, c2 - hw2, c2 + re2, shade(alt ? asphalt[0] : asphalt[1]));
     if (lt === 1) material(n, c1 - hw1, c1 + re1, c2 - hw2, c2 + re2, mat.asphalt, 4, 0.3);
     // the curbs alternate white and pink; a fork branch's inner edge is a plain white line instead
-    const curb = shade(alt ? "#e8e8f8" : "#ff6fc8"), line = shade("#e8e8f8");
+    const [ca, cb] = look.curbs ?? ["#e8e8f8", "#ff6fc8"], curb = shade(alt ? ca : cb), line = shade("#e8e8f8");
     quad(n, c1 - hw1 - 0.4, c1 - hw1, c2 - hw2 - 0.4, c2 - hw2, inner < 0 ? line : curb);
     quad(n, c1 + re1, c1 + re1 + 0.4, c2 + re2, c2 + re2 + 0.4, inner > 0 ? line : curb);
-    if (alt) for (const lx of [-LANE / 2, LANE / 2]) quad(n, c1 + lx - 0.08, c1 + lx + 0.08, c2 + lx - 0.08, c2 + lx + 0.08, shade("#e0e0f0"));
+    if (alt) for (const lx of [-LANE / 2, LANE / 2]) quad(n, c1 + lx - 0.08, c1 + lx + 0.08, c2 + lx - 0.08, c2 + lx + 0.08, shade(look.dash ?? "#e0e0f0"));
   };
   // the trunk widening to a fork: one plane, its two dashes running straight to the split
   const widening = (n: number, f: Sim["forks"][number], c: number, alt: boolean) => {
@@ -310,16 +399,78 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   });
   const prop = (z: number, x: number, p: keyof typeof PROP, flip = false) => spr(z, x, SHEETS.props, PROP[p][0], PROP[p][1], flip);
 
-  // lamp posts every 40 m, a tree between them on one side or the other; the fork zones stay bare
-  for (let i = Math.ceil(i0 / 8) * 8; i <= i0 + N; i += 8) {
+  // a string of lights from the top of one post to the next, sagging, eight bulbs on it
+  const string = (z1: number, z2: number, x: number, hgt: number, color: string) => at(z1, () => {
+    const a = place(z1, x), b = place(z2, x), ax = a.px, ay = a.py - hgt * a.k, bx = b.px, by = b.py - hgt * b.k, mx = (ax + bx) / 2, my = (ay + by) / 2 + 0.5 * a.k;
+    ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.strokeStyle = color; ctx.fillStyle = color; ctx.globalAlpha = 0.5; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.quadraticCurveTo(mx, my, bx, by); ctx.stroke();
+    ctx.globalAlpha = 0.9;
+    const r = Math.max(1, 0.05 * a.k);
+    for (let j = 1; j < 9; j++) { const u = j / 9, v = 1 - u, px = v * v * ax + 2 * v * u * mx + u * u * bx, py = v * v * ay + 2 * v * u * my + u * u * by; ctx.fillRect(px - r, py - r, 2 * r, 2 * r); }
+    ctx.restore();
+  });
+  // a wet streak under a light on NEON PURSUIT: its colour thrown down the asphalt toward the camera
+  const streak = (z: number, x: number, wm: number, len: number, color: string) => at(z, () => {
+    const p = place(z, x), g = ctx.createLinearGradient(0, p.py, 0, p.py + len * p.k);
+    g.addColorStop(0, color); g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 0.35; ctx.fillStyle = g; ctx.fillRect(p.px - wm / 2 * p.k, p.py, wm * p.k, len * p.k); ctx.restore();
+  });
+  // the song's tall piece in a tree slot: the district's tree when it has none; the smokestack smokes, the antenna's beacon
+  // blinks, the lighthouse sweeps its beam
+  const tallAt = (z: number, x: number, st: Sim["streets"][number], i: number) => {
+    const side = x < 0 ? -1 : 1;
+    if (!look.tall) { prop(z, x, TREES[st.district][(i >> 5) % 2], side < 0); return; }
+    const [sh, c, ppm] = look.tall[(i >> 5) % look.tall.length];
+    spr(z, x, sh, c, ppm, side < 0);
+    if (songId === "abandoned-factory" && !low) for (let j = 0; j < 8; j++) { const u = (t * 0.25 + j / 8) % 1; spr(z, x + side * u * 5, SHEETS.smoke, Math.min(5, Math.floor(u * 6)), SHEETS.smoke.ppm * 0.45, false, 0.55 * (1 - u), 22 + u * 14); }
+    if (songId === "midnight-chase" && t % 1 < 0.5) at(z, () => { const p = place(z, x), f = p.k / ppm; cell(ctx, BEACON, 0, p.px - side * (256 - ANTENNA_TIP[0]) * f, p.py - (980 - ANTENNA_TIP[1]) * f, p.k, ppm * 96 / 36); });
+    if (songId === "night-cruise" && z - s.z < 320) at(z, () => {
+      // the beam from the lamp room, each lighthouse on its own phase (in step they fanned out like one lamp)
+      const p = place(z, x), f = p.k / ppm, rx = p.px, ry = p.py - (980 - LAMP_ROOM[1]) * f, ang = t * 0.9 + z * 0.013, len = 0.55 * w, ex = rx + len * Math.cos(ang), ey = ry + len * Math.sin(ang) * 0.3;
+      const g = ctx.createLinearGradient(rx, ry, ex, ey); g.addColorStop(0, "rgba(255,244,200,0.45)"); g.addColorStop(1, "rgba(255,244,200,0)");
+      ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(rx, ry); ctx.lineTo(ex, ey - 0.04 * len); ctx.lineTo(ex, ey + 0.04 * len); ctx.fill(); ctx.restore();
+    });
+  };
+  // lamp posts every 40 m (80 on NIGHT CRUISE), the district's at the song's hour, a tree or the song's tall piece between
+  // them on one side or the other; the fork zones stay bare. The factory's sodium lamps flicker, the casino pylons pulse
+  // with the beat on NEON PURSUIT, NOCTURNAL RUN strings festoon lights from post to post
+  const gap = look.lampGap ?? 8, lx = W + WALK + 0.8;
+  for (let i = Math.ceil(i0 / gap) * gap; i <= i0 + N; i += gap) {
     const z = i * SEG, f = s.forks.find((o) => z >= o.z && z < o.zEnd + FORK_OUT);
     if (f) continue;
-    prop(z, -(W + WALK + 0.8), "lamp", true); prop(z, W + BAY + WALK + 0.8, "lamp");
-    const st = s.streets.find((o) => z >= o.z0 && z < o.z1);
-    if (st && (i >> 3) % 2 === 0) {
-      const trees = TREES[st.district], side = (i >> 4) % 2 ? 1 : -1;
-      prop(z + 20, side * (W + BAY + WALK + 6), trees[(i >> 5) % 2], side < 0);
-    }
+    const st = s.streets.find((o) => z >= o.z0 && z < o.z1), [lsh, lc, lppm] = lampOf(st?.district ?? district, hour, songId);
+    const la = songId === "abandoned-factory" ? (hash(i * 7 + Math.floor(t * 25)) > 0.12 ? 1 : 0.4) : songId === "neon-pursuit" ? 0.75 + 0.25 * beat : 1;
+    spr(z, -lx, lsh, lc, lppm, true, la); spr(z, W + BAY + lx, lsh, lc, lppm, false, la);
+    const next = z + gap * SEG, hgt = (lsh.ay - 32) / lppm;
+    if (songId === "nocturnal-run" && !s.forks.some((o) => next >= o.z && next < o.zEnd + FORK_OUT)) for (const x of [-lx, W + BAY + lx]) string(z, next, x, hgt, (i >> 3) % 2 ? "#ffd36a" : "#fff4e0");
+    if (songId === "neon-pursuit" && z - s.z < 150) for (const x of [-lx, W + BAY + lx]) streak(z, x, 1, 6, "#ff4abe");
+    if (st && (i >> 3) % 2 === 0) tallAt(z + 20, ((i >> 4) % 2 ? 1 : -1) * (W + BAY + WALK + 6), st, i);
+  }
+  if (songId === "bittersweet-sunset") for (let i = Math.ceil(i0 / 8) * 8; i <= i0 + N; i += 8) {
+    // string lights along the promenade rail, both sides, where the frontage stands
+    const z = i * SEG;
+    if (s.forks.some((o) => z + 40 >= o.z - 20 && z < o.zEnd + TUN_OUT + 20)) continue;
+    for (const x of [-(W + WALK + FRONTAGE.waterfront[1]), W + BAY + WALK + FRONTAGE.waterfront[1]]) string(z, z + 40, x, 1.1, "#ffd0a0");
+  }
+  if (songId === "nocturnal-run" && !low) for (let i = 0; i < 24; i++) {
+    // fireflies over the verges
+    const z = s.z + 10 + ((i * 53 + t * 3) % 120), x = (i % 2 ? 1 : -1) * (W + WALK + 1 + ((i * 7) % 6)) + (i % 2 ? BAY : 0);
+    at(z, () => { const p = place(z, x); ctx.fillStyle = "#e8ff80"; ctx.globalAlpha = 0.3 + 0.6 * Math.abs(Math.sin(t * 3 + i)); ctx.fillRect(p.px - 1, p.py - (0.5 + 0.5 * Math.sin(t * 1.7 + i)) * p.k - 1, 2, 2); ctx.globalAlpha = 1; });
+  }
+  if (songId === "abandoned-factory" && !low) for (let z = Math.ceil((camZ - 37) / 90) * 90 + 37; z < camZ + 300; z += 90) {
+    // steam vents at fixed spots on the road
+    if (s.forks.some((o) => z >= o.z && z < o.zEnd + FORK_OUT)) continue;
+    for (let j = 0; j < 3; j++) { const u = (t * 0.8 + j / 3) % 1; spr(z, 2.5, SHEETS.smoke, Math.floor(u * 6) % 6, SHEETS.smoke.ppm, false, 0.45 * (1 - u), 0.3 + u * 2); }
+  }
+  if (songId === "neon-pursuit") for (let z = Math.ceil(camZ / 200) * 200; z < camZ + N * SEG; z += 200) {
+    // a neon gate every 200 m, its passage (664 to 1384 of 2048, ground row 928) over the road between the curbs, its glow on the wet asphalt
+    if (s.forks.some((o) => z >= o.z - 30 && z < o.zEnd + TUN_OUT + 30)) continue;
+    at(z, () => {
+      const im = img(GATE); if (!im) return;
+      const p = place(z, 0), g = (2 * W + 0.8) * p.k / 720;
+      ctx.drawImage(im, p.px - 1024 * g, p.py - 928 * g, 2048 * g, 1024 * g);
+    });
+    if (z - s.z < 150) streak(z, 0, 2 * W, 4, "#35cfff");
   }
   // the roadside frontage (world lighting): the district's 2048 x 512 band stands behind the sidewalk on both sides, tiling
   // along the road at its pixels per metre, mirrored on the left (it is painted as the right side), one affine per slice
@@ -337,7 +488,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
       // a slice is a trapezoid (its top converges, its bottom does not), which one affine cannot map: the band is cut into
       // horizontal strips, each pinned exactly along its bottom edge, enough of them that the top's step stays under 3 px
       // (a 26 m casino front near the camera stepped 16 px a slice and its spires broke into a trail of floating tips)
-      const strips = Math.min(4, Math.max(1, Math.ceil(Math.abs(hN - hF) / 3)));
+      const strips = low ? 1 : Math.min(4, Math.max(1, Math.ceil(Math.abs(hN - hF) / 3)));
       for (const side of [1, -1] as const) {
         if (bare(z1, side)) continue;
         const xa = X(n, side * x), xb = X(n + 1, side * x), ya = sy[n], yb = sy[n + 1];
@@ -361,12 +512,23 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   for (let i = Math.ceil((i0 - 5) / 11) * 11 + 5; i <= i0 + N; i += 11) {
     const z = i * SEG, st = s.streets.find((o) => z >= o.z0 + 120 && z < o.z1 - 60);
     if (!st || s.forks.some((o) => z >= o.z && z < o.zEnd + FORK_OUT) || s.stops.some((o) => Math.abs(o.z + 15 - z) < 40)) continue;
-    const side = (i >> 3) % 2 ? 1 : -1, d = DECOR[st.district], j = (i >> 1) % 8;
-    spr(z, side > 0 ? W + BAY + WALK * 0.6 : -(W + WALK * 0.6), d.sheet, j, d.ppm[j], side < 0);
+    const side = (i >> 3) % 2 ? 1 : -1, d = DECOR[st.district], j = (i >> 1) % 8, x = side > 0 ? W + BAY + WALK * 0.6 : -(W + WALK * 0.6);
+    // the song's props in its home district, alternating with the district's decor elsewhere (one look per song)
+    if (look.props && (st.district === home || j % 2)) {
+      const pi = (i >> 1) % look.props.length, [sh, c, ppm, frames] = look.props[pi];
+      spr(z, x, sh, c + (frames ? Math.floor(t * 3) % frames : 0), ppm, side < 0 && !look.noMirror?.has(pi), BILLBOARDS.includes(sh) ? 0.8 + 0.2 * beat : 1);
+    } else spr(z, x, d.sheet, j, d.ppm[j], side < 0);
   }
   for (const c of s.traffic) {
     const yaw = c.tx - c.x < -0.3 ? 0 : c.tx - c.x > 0.3 ? 2 : 1;
     spr(c.z, c.x, TRAFFIC[c.kind], yaw + (c.braking ? 3 : 0), undefined, false, 1, 0, 1, 0.6); // its own lights keep it visible down a tunnel
+    if (songId === "midnight-chase" && c.v * KMH > 100) at(c.z, () => {
+      // tail-light streaks at speed
+      const p = place(c.z, c.x), len = 2.5 * p.k * (c.v / TOP);
+      ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.strokeStyle = "rgba(255,40,70,0.5)"; ctx.lineWidth = Math.max(1, 0.1 * p.k); ctx.beginPath();
+      for (const dx of [-0.7, 0.7]) { ctx.moveTo(p.px + dx * p.k, p.py - 0.5 * p.k); ctx.lineTo(p.px + dx * p.k * 1.15, p.py - 0.5 * p.k + len); }
+      ctx.stroke(); ctx.restore();
+    });
   }
   // traffic lights: a head on each curb, a stop line across the road
   for (const l of s.lights) {
@@ -395,7 +557,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     ctx.transform((fr.px - fl.px) / sw, (fr.py - fl.py) / sw, (nl.px - fl.px) / sh, (nl.py - fl.py) / sh, fl.px, fl.py);
     ctx.drawImage(im, sx, sy0, sw, sh, 0, 0, sw, sh);
     // a second pass adds the highlights on top, so a dark pothole still reads on dark asphalt from 30 m
-    ctx.globalCompositeOperation = "screen"; ctx.globalAlpha *= 0.6; ctx.drawImage(im, sx, sy0, sw, sh, 0, 0, sw, sh);
+    if (!low) { ctx.globalCompositeOperation = "screen"; ctx.globalAlpha *= 0.6; ctx.drawImage(im, sx, sy0, sw, sh, 0, 0, sw, sh); }
     ctx.restore();
   });
   for (const hz of s.hazards) {
@@ -408,6 +570,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
       // a left-curb stop mirrors its venue, shelter and person
       const m = st.side, flip = m < 0;
       if (st.venue! in VENUE_CELL) spr(zc + 6, m * (W + BAY + WALK + 9), SHEETS.venues, VENUE_CELL[st.venue!], undefined, flip);
+      if (songId === "pick-up-or-crush-up") spr(st.z - 14, m * (W + BAY + WALK + 3), TUBE_MAN, Math.floor(t * 4) % 2, TUBE_PPM, flip);
       if (!st.taken) {
         prop(st.z + 8, m * (sidewalkX + 1.5), "shelter", flip);
         const ch = CHARACTERS[st.rider.id];
@@ -531,7 +694,17 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
       if (tun) tunnel(n, 0, 0, W, tun.side < 0 ? tun.left : tun.right);
       const st = stopAt(s, z1);
       if (st && !st.taken) quad(n, st.side * (W + 0.3), st.side * (W + BAY - 0.2), st.side * (W + 0.3), st.side * (W + BAY - 0.2), st.drop ? COLOR[st.drop] + "66" : alt ? "#8a7a20" : "#a08a20");
-      facade(n, z1, d);
+      if (!low || n < 70) facade(n, z1, d);
+      if (songId === "vector-world" && n < 60 && sy[n] > sy[n + 1]) {
+        // the vector grid beside the road: a line across every other segment, four along, over the near 60
+        ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.strokeStyle = "#62f3a4"; ctx.globalAlpha = 0.22 * (1 - n / 60); ctx.lineWidth = 1; ctx.beginPath();
+        for (const side of [-1, 1]) {
+          const e = side * (W + WALK + 1.5) + (side > 0 ? BAY : 0);
+          if (i % 2 === 0) { ctx.moveTo(X(n, e), sy[n]); ctx.lineTo(X(n, e + side * 60), sy[n]); }
+          for (const xw of [12, 24, 36, 48]) { ctx.moveTo(X(n, e + side * xw), sy[n]); ctx.lineTo(X(n + 1, e + side * xw), sy[n + 1]); }
+        }
+        ctx.stroke(); ctx.restore();
+      }
     }
     if (f && past && mouth) {
       // one shared structure holds both mouths: scaled so its two openings sit on the two branches, fading out as we reach it
@@ -550,6 +723,40 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     sprites.get(n)?.forEach((fn) => fn());
   }
 
+  if (songId === "dark-horse") for (const [n, a] of [[90, 0.24], [50, 0.2], [20, 0.14]]) {
+    // low fog banks over the ground, thicker where the road dips
+    const y = sy[Math.min(N, n)], dip = Math.max(0, roadY(camZ) - roadY(zAt[Math.min(N, n)])) / 8, g = ctx.createLinearGradient(0, y - 0.05 * h, 0, y + 0.07 * h);
+    g.addColorStop(0, "rgba(120,130,165,0)"); g.addColorStop(0.5, `rgba(120,130,165,${(a * (1 + 0.6 * dip)).toFixed(3)})`); g.addColorStop(1, "rgba(120,130,165,0)");
+    ctx.fillStyle = g; ctx.fillRect(0, y - 0.05 * h, w, 0.12 * h);
+  }
+  if (songId === "midnight-chase") {
+    // the searchlight: from the helicopter down to a spot that sweeps the road ahead
+    const hx = w * (0.5 + 0.3 * Math.sin(t * 0.12)) + par * 0.6, hyy = hy * 0.3 + 6 * Math.sin(t * 1.3) + (420 - 330) / 512 * w * 0.16;
+    const p = place(s.z + 70 + 30 * Math.sin(t * 0.5), 3 * Math.sin(t * 0.37)), g = ctx.createLinearGradient(hx, hyy, p.px, p.py);
+    g.addColorStop(0, "rgba(255,250,220,0.05)"); g.addColorStop(1, "rgba(255,250,220,0.3)");
+    ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(hx, hyy); ctx.lineTo(p.px - 4 * p.k, p.py); ctx.lineTo(p.px + 4 * p.k, p.py); ctx.fill(); ctx.restore();
+  }
+  if (songId === "outrun-pulse" || songId === "bittersweet-sunset" || songId === "night-cruise") {
+    // sun glare, a lens flare, or the moon's path: light on the water to the right
+    const gx = w * (songId === "night-cruise" ? 0.78 : 0.85) + par * 0.6, gy = hy + 0.22 * (h - hy), r = 0.28 * w, g = ctx.createRadialGradient(gx, hy, 0, gx, gy, r);
+    const c = songId === "night-cruise" ? "200,220,255" : "255,240,200";
+    g.addColorStop(0, `rgba(${c},${songId === "night-cruise" ? 0.22 : 0.3})`); g.addColorStop(1, `rgba(${c},0)`);
+    ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = g; ctx.fillRect(gx - r, hy, 2 * r, r); 
+    if (songId === "bittersweet-sunset") for (const [u, rr, a] of [[0.35, 0.02, 0.12], [0.6, 0.035, 0.08], [0.85, 0.015, 0.1]]) { const sx = cx + par * 0.6, sy0 = hy * 0.96, fx = sx + (cx - sx + 0.1 * w) * u * 2, fy = sy0 + (h * 0.6 - sy0) * u; ctx.globalAlpha = a; ctx.fillStyle = "#ffd0a0"; ctx.beginPath(); ctx.arc(fx, fy, rr * w, 0, Math.PI * 2); ctx.fill(); }
+    ctx.restore();
+  }
+  if (songId === "synthwave-engine" && beat > 0.05) {
+    // the beat's wash over the neon of the frontage
+    const g = ctx.createLinearGradient(0, hy - 0.15 * h, 0, hy + 0.1 * h); g.addColorStop(0, "rgba(255,79,208,0)"); g.addColorStop(0.5, `rgba(255,79,208,${(0.08 * beat).toFixed(3)})`); g.addColorStop(1, "rgba(89,230,255,0)");
+    ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = g; ctx.fillRect(0, hy - 0.15 * h, w, 0.25 * h); ctx.restore();
+  }
+  if (songId === "neon-pursuit" && s.v * KMH > 200 && !low) {
+    // speed lines past 200 km/h, from the vanishing point
+    const a = Math.min(1, (s.v * KMH - 200) / 60), r0 = Math.hypot(w, h) * 0.3;
+    ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.strokeStyle = `rgba(120,220,255,${(0.35 * a).toFixed(3)})`; ctx.lineWidth = 1; ctx.beginPath();
+    for (let i = 0; i < 20; i++) { const ang = i / 20 * Math.PI * 2 + hash(i + Math.floor(t * 20)) * 0.3, r1 = r0 * (1 + hash(i * 3 + Math.floor(t * 20))), r2 = r1 + r0 * 0.6; ctx.moveTo(cx + Math.cos(ang) * r1, hy + Math.sin(ang) * r1); ctx.lineTo(cx + Math.cos(ang) * r2, hy + Math.sin(ang) * r2); }
+    ctx.stroke(); ctx.restore();
+  }
   // rain: the wet ground throws the sky back, a sheen from the horizon down
   if (rain) {
     const sheen = ctx.createLinearGradient(0, hy, 0, h);
@@ -582,7 +789,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   // run's crosswind (the same wind that leans on the car)
   if (rain) {
     const wind = windOf(s);
-    ctx.strokeStyle = "rgba(190,205,255,0.3)"; ctx.lineWidth = Math.max(1, w / 1400); ctx.beginPath();
+    ctx.strokeStyle = songId === "neon-pursuit" ? "rgba(140,215,255,0.35)" : "rgba(190,205,255,0.3)"; ctx.lineWidth = Math.max(1, w / 1400); ctx.beginPath();
     for (let i = 0; i < 160; i++) {
       const sp = 1 + (i % 3) * 0.3, x = (((i * 137.5 + s.t * (70 + wind * 260) * sp) % w) + w) % w, y = (((i * 71.3 + s.t * 1500 * sp) % h) + h) % h, l = (10 + (i % 4) * 4) * h / 960;
       ctx.moveTo(x, y); ctx.lineTo(x + wind * l * 0.45, y + l);
