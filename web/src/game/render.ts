@@ -30,7 +30,6 @@ export const setSong = (id: string) => { const st = STATIONS.find((o) => o.id ==
 // of the run (particles off, one frontage strip, no decal highlight, the frontage to 70 segments); ?low=1 forces it
 let low = new URLSearchParams(location.search).has("low"), lastNow = 0, slowSince = -1;
 const frameMs: number[] = [];
-export const lowTier = () => low;
 const hash = (n: number) => { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); };
 // the hero in the song's paint, body only: the silver body (low saturation, mid to high luminance) takes the colour with
 // its own shading kept, the dark glass, tyres and grille, the red lamps and the neon reflections stay as painted

@@ -134,7 +134,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   let heading = "", count = "", rows: Row[] = [], total = 0, at = 0, start = 0, selected = -1, footer: Cell[] = [], status: [string, string?] | null = null, rev: Review | null = null;
   const list = (n: number) => { total = n; at = Math.min(cur, Math.max(0, n - 1)); start = Math.min(Math.max(0, at - N + 1), Math.max(0, n - N)); selected = at; };
   const kv = (pairs: [string, string, (() => void)?][], valueFont: Font, valueColor: string) => {
-    list(pairs.length);
+    list(pairs.length); if (pairs.length > N) count = `${pad2(at + 1)} / ${pad2(pairs.length)}`; // more rows than the TV shows: say where the cursor is
     rows = pairs.map(([k, v], i) => ({ key: k, cells: [cell(k, C["my-runs"].type, C["wallet-system"].keyS, "cp", i === at ? AMBER : CYAN), cell(v, C["wallet-system"].valueR, C["wallet-system"].valueS, valueFont, valueColor, true)] }));
     enter = pairs[at]?.[2] ?? null;
   };
@@ -171,7 +171,8 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     else {
       list(runs.length); count = `${runs.length} RUNS`;
       rows = runs.map((r, i) => ({ key: r.key, cells: [cell(r.kind.toUpperCase(), C["my-runs"].type, C["my-runs"].typeS, "cp", i === at ? AMBER : WHITE), cell(score(r.score), C["my-runs"].scoreR, C["my-runs"].scoreS, "mono", AMBER, true), cell(r.state, C["my-runs"].stateR, C["my-runs"].stateS, "cp", i === at ? AMBER : TONE[r.state] ?? WHITE, true)] }));
-      footer = [cell(runs[at].line, TV.safe[0], 24 * u, "cp", CYAN, false, undefined, TV.detail)];
+      const r = runs[at]; // the stage under the list (the rows have no room for it); the money or the rival on the right, unless the line only repeats the state
+      footer = [cell(songOf(r.song), TV.safe[0], TV.review.stageS, "cp", AMBER, false, undefined, TV.footer), ...(r.line === r.state ? [] : [cell(r.line, TV.count[0], 20 * u, "cp", CYAN, true, undefined, TV.footer)])];
       const k = runs[at].key; enter = () => setOpened(k);
     }
   } else if (mode === "leaderboards") {

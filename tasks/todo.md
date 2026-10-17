@@ -679,3 +679,20 @@ Open: the drawn key word is whiter and heavier than the painted legends (the fon
 ## 2026-10-17, link previews (Gaylord: "make sure game has a preview / thumbnail on X / TG / slack etc")
 - [x] `og:url`, `og:image`, `twitter:image` absolute via `%SITE_URL%` filled at build (SITE_URL, else Vercel's production domain, else relative for a local build); JPEG card `art/share/og.jpg` (1200 x 630, the designer's share background and title with a four-line tagline) instead of the empty-box template webp, which nothing else used. Build checked with SITE_URL=https://example.test.
 - Needs the deploy to be seen: X, Telegram and Slack fetch the card from the live address; after the first deploy, paste the URL in a DM to each to confirm, and use the X card validator or Telegram's @WebpageBot to refresh a cached preview.
+
+## 2026-10-17, night audit (Gaylord: "do a thorough audit: ponytail, visual, everything, and fix the obvious things")
+Plan, each line checked before it is ticked:
+- [x] Code: exports nothing uses, dead files under public/, CSS nothing references, leftover logs → verify: the scans, tsc, 79 tests
+- [x] Desktop in Chrome (muted): splash, the six menu modes, a review, a run's HUD, pause, results → verify: no broken image, no text overflow, hits measured, fonts as decided
+- [x] Phones in iframes (390x844, 740x340): splash, menu modes, HUD, results → verify: same checks, no hit under 44 px
+- [x] Copy: em dashes, "X, not Y", words a neighbouring label already says → verify: grep + the screens
+- [x] Build: chunk sizes, warnings, index.html / manifest → verify: vite build
+Found and done (03:40):
+- Dead files: the twelve `filler-*.webp` roadside sprites (brief 7's frontage bands replaced them, nothing loads them, 920 KB) and `gp/icons/cloud.png`; `lowTier` in render.ts exported and never read. Thirty other exports are used only in their own file or by tests: left as they are (no weight, no behaviour).
+- No em dash, console.log or TODO in src; no CSS class or id without a user. Build: the SDK wasm 20.8 MB (6.2 MB gzip), the app 300 KB (100 KB gzip), no warning.
+- Desktop (1728x886): no broken image, no overflow on any menu text; every radio key 41 px tall at that window (44.5 canvas px scaled); the menu on Chakra Petch / Share Tech Mono / PUB Stereo LCD, the HUD on Boomer GT / LCD as decided. Results: POST IT 207x100, the footer keys 456x65.
+- Phones: menu hits 44 px (portrait) and 43 px (landscape, the pack's geometry); results footer keys 43 px tall on landscape (the kit's); no broken image, no overflow.
+- Fixed: a portrait phone showed the road and the HUD (TIME 3:00, SCORE 0, SPEED 000) above and below the splash's 4:3 box; the canvas and the HUD are hidden while the splash is up (one CSS rule with :has, App.tsx untouched).
+- Fixed: MY RUNS' footer read OPEN under a row that read OPEN; it now names the run's stage (the rows have no stage column, CHALLENGE's footer names it too), with the money or the rival's line at the right only when it says more than the state.
+- Fixed: WALLET and SYSTEM page past four rows with nothing saying so; a cursor count (01 / 06) like the solo and leaderboards counters, only when there are more rows than the TV shows.
+- Seen, left alone: the drawn LEADERBOARDS key word (brief 12), the meter (parked), the coarse-pointer check (the pad, the landscape full-width HUD) which an iframe cannot do; an automated `p` right after DRIVE is swallowed once (timing, as the 10-16 lesson says).
