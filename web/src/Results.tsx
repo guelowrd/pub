@@ -23,7 +23,8 @@ type KeyDef = { kind: Kind; rect: number[]; label: string; disabled?: boolean; o
 /** A kit key: the blank plate in its state, the label on the kit's baseline. */
 function Key({ kind, rect: [x, y, w, h], label, disabled, onClick, layout }: KeyDef & { layout: string }) {
   const [hover, setHover] = useState(false), [down, setDown] = useState(false);
-  const drive = kind === "post", size = drive ? Math.min(27, 0.22 * w) : Math.min(21, 0.37 * h, 0.22 * w), base = drive ? h / 2 + size * 0.35 + (down ? 2 : 0) : h * 0.63;
+  // the size fits the key's width as well as its height: three share keys in a portrait row cut SHARE ON X to SHARE O (Gaylord's phone, 2026-10-17)
+  const drive = kind === "post", size = Math.min(drive ? 27 : Math.min(21, 0.37 * h), 0.22 * w, (w - 16) / (label.length * 0.62)), base = drive ? h / 2 + size * 0.35 + (down ? 2 : 0) : h * 0.63;
   const state = disabled ? "disabled" : down ? "pressed" : hover ? "hover" : "rest";
   return (
     <button className="hit rk" disabled={disabled} aria-label={label} style={{ left: px(x), top: px(y), width: px(w), height: px(h) }} onClick={onClick}
