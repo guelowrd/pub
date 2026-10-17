@@ -217,6 +217,9 @@ export function step(s: Sim, inp: Input, dt: number, extend: (s: Sim) => void) {
     if (f.side !== 0 && !f.shifted && s.z >= f.mouth) {
       const d = branchX(f, f.mouth, f.side);
       f.shifted = true;
+      // entering the bore with a rider for the street ahead: the drop-off bay is 30 m past the tunnel's end, say how far (Gaylord, 2026-10-17)
+      const to = f.side < 0 ? f.left : f.right, bay = s.stops.find((o) => o.drop === to && o.z > s.z);
+      if (bay && s.seats.some((r) => r && r.dest === to)) say(s, `DROP OFF IN ${Math.round((bay.z - s.z) / 10) * 10} M`, 3);
       if (s.z < f.mouth + 50) { // crossed the mouth (a jump further on, as tests and the dev console do, is already in the bore's frame)
         s.x -= d;
         // the traffic comes along; a car in the other bore is gone
