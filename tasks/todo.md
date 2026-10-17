@@ -666,3 +666,12 @@ Plan (docs/set-dressing-plan.md steps 2 to 4), each step checked in Chrome on th
 - [ ] The 6x CPU throttle check (DevTools, not reachable from the automation): Gaylord's call, or next session by hand.
 - Fixed on the way: the renderer learned the song in the play effect, which could run after the first frame had stepped the sim (a silver car under the default sky on some runs); `start()` sets it with the sim now.
 - Decisions (mine): props of other districts alternate with the song's outside its home district so the look carries through a run; the water tower and the dead trees stand in the roadside slot as the pack says, so they pass close to the camera.
+
+## 2026-10-17, menu audit + LEADERBOARDS (Gaylord: "previous font on the tv", "DRIVE too tall", "GRAND PRIX more discreet", "LEADERBOARDS with pages like GQ, the LOSERBOARD")
+- [x] TV on Chakra Petch (words) and Share Tech Mono (numbers) again; the radio's LCD line and the red key's word stay on PUB Stereo LCD
+- [x] Measured against the painting (desktop px): heading baseline 552 / cap within 2 px, metadata and icons within 3 px, counter at the painting's corner (right edge 786.5), the LCD line 43 px into the glass on baseline 60 at 33 px (the painting's 416 px width), the red key's word at the painting's 73 x 21 legend (font 22 px, was 26.4)
+- [x] Plaque dimmed (brightness .55, saturate .5): engraved, not a key
+- [x] LEADERBOARDS: one board a page, PREV / NEXT, five pages in GQ's order (BEST RECORDS, MOST GAMECOINS WON, RIVALS BEATEN, RECORDS SMASHED, LOSERBOARD); hub.boards gained `losers` (each rival's lost shots, GQ's rule) with a test; NO ONE YET on an empty page; my row closes the page when I am outside its top
+- [x] The key: no painted LEADERBOARDS face, so the pack's blank cap with the word drawn (Chakra Petch, .36 of the key height), states by filter, the painting's amber bar when selected; focus bracket copied from CHALLENGE
+- [x] Verified: desktop solo + leaderboards pages 1 and 5 (NEXT off on the last), phones in iframes (no hit under 44 px, no broken image), tsc, 79 tests
+Open: the drawn key word is whiter and heavier than the painted legends (the font pass, brief 12); the meter stays parked.
