@@ -1,6 +1,8 @@
 /* the Arcade Dash pairing (visual update, 2026-10-16): Chakra Petch for words and legends, Share Tech Mono for lists and every number */
 @font-face { font-family: "Chakra Petch"; src: url("/fonts/ChakraPetch-SemiBold.woff") format("woff"); font-weight: 600; font-display: swap; }
 @font-face { font-family: "Share Tech Mono"; src: url("/fonts/ShareTechMono-Regular.woff") format("woff"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "PUB Painted Pixel"; src: url("/fonts/PUB-Painted-Pixel.woff") format("woff"); font-weight: 400; font-display: swap; } /* the font pass (PUB-Painted-Type): headings, names, metadata, counter */
+@font-face { font-family: "PUB Painted Matrix"; src: url("/fonts/PUB-Painted-Matrix.woff") format("woff"); font-weight: 400; font-display: swap; } /* LCD line, scores, clocks, the red key's word */
 @font-face { font-family: "PUB Stereo LCD"; src: url("/fonts/PUBStereoLCD-Demi.woff") format("woff"); font-weight: 600; font-display: swap; } /* the menu's LCD lettering (the designer's dot-matrix derivative, Grand Prix pack) */
 * { box-sizing: border-box; margin: 0; }
 html, body, #root { height: 100%; background: #080c24; color: #fff3f4; font-family: "Chakra Petch", ui-sans-serif, sans-serif; font-weight: 600; overflow: hidden; }
@@ -113,6 +115,8 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .gp-lcd { font-family: "PUB Stereo LCD", monospace; font-weight: 600; font-variant-numeric: tabular-nums; }
 .gp-plaque { filter: brightness(.55) saturate(.5); } /* the painted plaque reads as a lit key; dimmed so no one presses it */
 .gp-cp { font-family: "Chakra Petch", sans-serif; font-weight: 600; }
+/* ?type=painted: the font pass on trial. The painted faces are weight 400 */
+.gp-painted .gp-cp { font-family: "PUB Painted Pixel", sans-serif; font-weight: 400; } .gp-painted .gp-mono { font-family: "PUB Painted Matrix", monospace; font-weight: 400; } .gp-painted .gp-lcd { font-family: "PUB Painted Matrix", monospace; font-weight: 400; } .gp-painted .gp-count { font-family: "PUB Painted Pixel", sans-serif; font-weight: 400; }
 /* the red key: the dark lens, the word's face over it (60 ms out, 40 ms dark, 120 ms in), one scan along the atlas on a change */
 .gp-key.down { transform: translateY(2px); }
 /* the red key's word: closes to its centreline in 60 ms, opens in 80 ms, a glint settles over the last 40 ms (the kit's motion contract) */

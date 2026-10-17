@@ -747,3 +747,7 @@ Decided: tracks 1 to 5 open for everyone; track n from 6 up needs n-5 records po
 ## 2026-10-17, the painted LEADERBOARDS key (PUB-Leaderboards-Key, Gaylord: "to fix leaderboard word in menu")
 - [x] The designer's six faces per layout in `art/gp/{layout}/leaderboards-{state}.png` (250x44 / 166x44 / 150x44, the same rects as menu.json); the blank cap, the drawn Chakra Petch word and its CSS states are gone. The key is now like the other three: one painted face per state. Faces checked loading on desktop and both phone iframes, selected and hover; tsc clean, 84 tests.
 - The pack says the font pass (PUB Painted Pixel and PUB Painted Matrix) is delivered as PUB-Painted-Type, present in ~/Code/pub, not integrated yet: Gaylord's call.
+
+## 2026-10-17, the font pass on trial (PUB-Painted-Type; Gaylord: "do that and send me the files i should look at to compare")
+- [x] `?type=painted` swaps the stand-ins for the designer's faces: PUB Painted Pixel on words and the counter, PUB Painted Matrix on numbers, the LCD line and the red key's word. Cap heights measured at 100 px (Chakra Petch, Share Tech Mono, Pixel 70; Matrix 64.6; Stereo LCD 66.7): Pixel keeps the CSS sizes, Matrix gets x1.084 for numbers and x1.033 on the LCD so the caps stay where they were. Baselines come from baselineEm, so nothing moved.
+- [x] Before / after captures of the desktop (solo, leaderboards, a review, challenge) and the phones in temp/type-compare, sent to Gaylord. His call; without the flag the game is unchanged.
