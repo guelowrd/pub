@@ -1,6 +1,7 @@
 /* the Arcade Dash pairing (visual update, 2026-10-16): Chakra Petch for words and legends, Share Tech Mono for lists and every number */
 @font-face { font-family: "Chakra Petch"; src: url("/fonts/ChakraPetch-SemiBold.woff") format("woff"); font-weight: 600; font-display: swap; }
 @font-face { font-family: "Share Tech Mono"; src: url("/fonts/ShareTechMono-Regular.woff") format("woff"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "PUB Stereo LCD"; src: url("/fonts/PUBStereoLCD-Demi.woff") format("woff"); font-weight: 600; font-display: swap; } /* the menu's LCD lettering (the designer's dot-matrix derivative, Grand Prix pack) */
 * { box-sizing: border-box; margin: 0; }
 html, body, #root { height: 100%; background: #080c24; color: #fff3f4; font-family: "Chakra Petch", ui-sans-serif, sans-serif; font-weight: 600; overflow: hidden; }
 #root { display: flex; flex-direction: column; align-items: center; justify-content: center; }
@@ -88,8 +89,6 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .hu-gt { font-family: "Chakra Petch", sans-serif; font-weight: 600; }
 .hu-mono { font-family: "Share Tech Mono", monospace; font-weight: 400; font-variant-numeric: tabular-nums; }
 .gp-screen { position: absolute; transform-origin: top left; font-synthesis: none; }
-.gp-mount { position: absolute; background: #101315; border: 0.65px solid #282e31; border-radius: 1px; } /* the TV's feet on the radio, the shadow under it (the boards) */
-.gp-contact { position: absolute; background: linear-gradient(#000000b3, #00000000); }
 .gp-tv, .gp-radio, .gp-key { position: absolute; }
 .gp-tv img, .gp-radio img, .gp-radio i, .gp-key img, .gp-key i { position: absolute; pointer-events: none; user-select: none; }
 .gp-content { position: absolute; left: 0; top: 0; overflow: hidden; background: #080e17; }
@@ -97,12 +96,13 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .gp-shade { position: absolute; left: 0; right: 0; top: 62%; bottom: 0; background: linear-gradient(#080e1700, #080e17c8 45%, #080e17f0); }
 .gp-text { position: absolute; white-space: nowrap; line-height: 1; overflow: hidden; }
 .gp-para { position: absolute; line-height: 1.3; }
-.gp-mono { font-family: "Share Tech Mono", monospace; font-weight: 400; font-variant-numeric: tabular-nums; }
+.gp-gt { font-family: "Boomer GT", monospace; font-weight: normal; transform: skewX(10deg); transform-origin: 0 100%; } /* un-slanted: the painted heading is upright */
+.gp-lcd { font-family: "PUB Stereo LCD", monospace; font-weight: 600; font-variant-numeric: tabular-nums; }
 .gp-cp { font-family: "Chakra Petch", sans-serif; font-weight: 600; }
 /* the red key: the dark lens, the word's face over it (60 ms out, 40 ms dark, 120 ms in), one scan along the atlas on a change */
 .gp-key.down { transform: translateY(2px); }
 /* the red key's word: closes to its centreline in 60 ms, opens in 80 ms, a glint settles over the last 40 ms (the kit's motion contract) */
-.gp-legend { transform-origin: 50% 50%; } .gp-legend.dim { opacity: .45; }
+.gp-legend { position: absolute; display: flex; align-items: center; justify-content: center; line-height: 1; color: #ffd27a; text-shadow: 0 0 5px #ff9a3a, 0 0 12px #ff5a2a80; transform-origin: 50% 50%; } .gp-legend.dim { opacity: .45; }
 .gp-legend.out { animation: gp-close 60ms ease-in forwards; } .gp-legend.in { animation: gp-open 80ms ease-out; }
 .gp-glint { animation: gp-glint 120ms linear forwards; }
 @keyframes gp-close { to { transform: scaleY(0); } } @keyframes gp-open { from { transform: scaleY(0); } }

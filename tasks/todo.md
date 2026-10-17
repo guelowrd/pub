@@ -645,3 +645,10 @@ Another session was committing the song feels (f56d657, 5a702e3) in the same tre
 - Decision (mine, flag to Gaylord): a champion's own stale records vanish too, so their stake is not reclaimable from the
   app. Testnet coins; if a version bump ever happens with real money, keep stale notes visible for reclaim only.
 - Checked in Chrome: CHALLENGE and HIGH-SCORES empty, no console errors. 79 tests, Rust replay green.
+
+## 2026-10-17, the painted menu (Gaylord: the approved painting is the menu; the designer cut it: PUB-Painted-Menu)
+- [x] The painting's pieces in: TV shell with its traced tube (new clip path), radio body with open wells, LCD glass, plaque, every key in six states, the blank red glass; the fidelity CRT layer kept over the tube (the painting's tube is baked, the pack says keep the game's CRT); logo, icons, meter grid kept
+- [x] Text where the painting has it: counter top right (786.5 / 100.6, 24 px), heading at 92.6 / 552 (43 px), metadata 20 px with 22 px icons, logo 256 wide at 87 / 66; phones scaled to the tube with the Grand Prix minimums (18 / 12 / 11 px)
+- [x] Stand-in fonts until the font pass (the pack: the painted lettering has no font): Boomer GT with its slant removed (skewX 10°) on headings, names, metadata and the counter; PUB Stereo LCD on the LCD line, scores, clocks and the red key's word (live text, so every word works); Chakra Petch on states and small labels
+- [x] Verified in Chrome (muted): desktop solo / challenge / my runs / high-scores / system, fonts measured, no broken image; portrait + landscape iframes, no hit under 44 px; 79 tests, tsc clean. docs/screens/20-menu-painted.jpg
+Open: the font pass (brief 12), the meter (both bad, later), a device check. Briefs 10 and 11 were never sent (overtaken).
