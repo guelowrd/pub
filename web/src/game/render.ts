@@ -579,7 +579,11 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     // the patch stretches along the road with distance so it keeps a quarter of its width in height on screen: a flat
     // 3 m patch is a one-pixel line at 60 m, and a pothole has to be seen in time to dodge. It shrinks back to round as
     // you reach it, while it grows on screen, so the morph never shows
-    const dm = Math.max(wm, 0.36 * (z - camZ));
+    let dm = Math.max(wm, 0.36 * (z - camZ));
+    // the stretch stays on one side of a fork's mouth and of its end: place() shifts by the branch across them, and a patch straddling one skewed across the screen
+    for (const o of s.forks) for (const b of [o.mouth, o.zEnd + FORK_OUT]) if (Math.abs(b - z) < dm / 2) dm = Math.max(wm, 2 * Math.abs(b - z));
+    // nothing whose far end is past the last slice: place() has no row there, the transform went NaN, the canvas ignored it and drew the patch full size at the origin (Gaylord's phone: a pothole in the sky)
+    if (seg(z + dm / 2) - i0 > N) return;
     const fl = place(z + dm / 2, x - wm / 2), fr = place(z + dm / 2, x + wm / 2), nl = place(z - dm / 2, x - wm / 2);
     ctx.save(); ctx.globalAlpha = 0.3 + 0.7 * lightAt(z);
     ctx.transform((fr.px - fl.px) / sw, (fr.py - fl.py) / sw, (nl.px - fl.px) / sh, (nl.py - fl.py) / sh, fl.px, fl.py);
@@ -758,20 +762,21 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     sprites.get(n)?.forEach((fn) => fn());
   }
 
-  if (songId === "dark-horse") for (const [n, a] of [[90, 0.24], [50, 0.2], [20, 0.14]]) {
+  // under the bore's roof none of the weather and sky light reaches the road: no fog, no searchlight, no glare, no rain
+  if (songId === "dark-horse" && !inside) for (const [n, a] of [[90, 0.24], [50, 0.2], [20, 0.14]]) {
     // low fog banks over the ground, thicker where the road dips
     const y = sy[Math.min(N, n)], dip = Math.max(0, roadY(camZ) - roadY(zAt[Math.min(N, n)])) / 8, g = ctx.createLinearGradient(0, y - 0.05 * h, 0, y + 0.07 * h);
     g.addColorStop(0, "rgba(120,130,165,0)"); g.addColorStop(0.5, `rgba(120,130,165,${(a * (1 + 0.6 * dip)).toFixed(3)})`); g.addColorStop(1, "rgba(120,130,165,0)");
     ctx.fillStyle = g; ctx.fillRect(0, y - 0.05 * h, w, 0.12 * h);
   }
-  if (songId === "midnight-chase") {
+  if (songId === "midnight-chase" && !inside) {
     // the searchlight: from the helicopter down to a spot that sweeps the road ahead
     const hx = w * (0.5 + 0.3 * Math.sin(t * 0.12)) + par * 0.6, hyy = hy * 0.3 + 6 * Math.sin(t * 1.3) + (420 - 330) / 512 * w * 0.16;
     const p = place(s.z + 70 + 30 * Math.sin(t * 0.5), 3 * Math.sin(t * 0.37)), g = ctx.createLinearGradient(hx, hyy, p.px, p.py);
     g.addColorStop(0, "rgba(255,250,220,0.05)"); g.addColorStop(1, "rgba(255,250,220,0.3)");
     ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(hx, hyy); ctx.lineTo(p.px - 4 * p.k, p.py); ctx.lineTo(p.px + 4 * p.k, p.py); ctx.fill(); ctx.restore();
   }
-  if (songId === "outrun-pulse" || songId === "bittersweet-sunset" || songId === "night-cruise") {
+  if ((songId === "outrun-pulse" || songId === "bittersweet-sunset" || songId === "night-cruise") && !inside) {
     // sun glare, a lens flare, or the moon's path: light on the water to the right
     const gx = w * (songId === "night-cruise" ? 0.78 : 0.85) + par * 0.6, gy = hy + 0.22 * (h - hy), r = 0.28 * w, g = ctx.createRadialGradient(gx, hy, 0, gx, gy, r);
     const c = songId === "night-cruise" ? "200,220,255" : "255,240,200";
@@ -793,7 +798,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     ctx.stroke(); ctx.restore();
   }
   // rain: the wet ground throws the sky back, a sheen from the horizon down
-  if (rain) {
+  if (rain && !inside) {
     const sheen = ctx.createLinearGradient(0, hy, 0, h);
     sheen.addColorStop(0, "rgba(140,160,220,0.2)"); sheen.addColorStop(1, "rgba(140,160,220,0)");
     ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = sheen; ctx.fillRect(0, hy, w, h - hy); ctx.restore();
@@ -822,7 +827,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   if (!img(SHEETS.hero.file)) { ctx.fillStyle = "#d0d0dc"; ctx.fillRect(cx - (CAR_W / 2) * k, py - 1.1 * k, CAR_W * k, 1.1 * k); }
   // rain streaks over the whole picture, three speeds, a fixed set of threads scrolling with time and leaning with the
   // run's crosswind (the same wind that leans on the car)
-  if (rain) {
+  if (rain && !inside) {
     const wind = windOf(s);
     ctx.strokeStyle = songId === "neon-pursuit" ? "rgba(140,215,255,0.35)" : "rgba(190,205,255,0.3)"; ctx.lineWidth = Math.max(1, w / 1400); ctx.beginPath();
     for (let i = 0; i < 160; i++) {
