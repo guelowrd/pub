@@ -98,3 +98,9 @@ the coarse-pointer rules without their media condition into the iframe and measu
 
 ## 2026-10-17, "no deployment exists" was wrong
 I probed guessed vercel.app names, found pub.vercel.app owned by someone else, and told Gaylord nothing was deployed. The project was live at pub-swart.vercel.app, deploying every push. The repo's commit statuses (GitHub API, no auth needed on a public repo) and the Vercel dashboard's project list were one request away and definitive. Rule: before saying "not deployed", read the commit statuses or the dashboard; never conclude from guessed URLs or an unchecked todo item.
+
+## 2026-10-17, the portrait fork cue "now too big and ugly"
+I enlarged the portrait fork cue and moved it under the clocks because it measured 8 px in an iframe. Gaylord had seen it on
+his phone and it was fine; the bigger cue crowded the side boxes. Rule: a size Gaylord has looked at on the device and not
+complained about is not a finding. A phone's pixels are denser than an iframe's; "n px in the iframe" says nothing about
+legibility in the hand. Phone type sizes change on his word (as the ribbon did), never on my measurement alone.
