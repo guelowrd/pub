@@ -257,6 +257,16 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     return Math.min(1, l);
   };
   const pattern = (im: CanvasImageSource, rep = "repeat") => { let p = patterns.get(im); if (!p) { p = ctx.createPattern(im, rep)!; patterns.set(im, p); } return p; };
+  // a tile drawn over [u0,u1] x [v0,v1] of tile space under the current transform, split at the tile's edges: what a
+  // pattern fill paints, as drawImage calls (WebKit's canvas rasterised transformed pattern fills at ~1 ms each; the
+  // frontage and the tunnel made 500 a frame and held an iPhone at 2 fps)
+  const tiled = (im: CanvasImageSource, u0: number, u1: number, v0: number, v1: number) => {
+    const tw = (im as HTMLCanvasElement).width, th = (im as HTMLCanvasElement).height;
+    for (let k = Math.floor(u0 / tw); k * tw < u1; k++) for (let j = Math.floor(v0 / th); j * th < v1; j++) {
+      const x0 = Math.max(u0, k * tw), x1 = Math.min(u1, (k + 1) * tw), y0 = Math.max(v0, j * th), y1 = Math.min(v1, (j + 1) * th);
+      ctx.drawImage(im, x0 - k * tw, y0 - j * th, x1 - x0, y1 - y0, x0, y0, x1 - x0, y1 - y0);
+    }
+  };
   const tunnel = (n: number, c1: number, c2: number, hw: number, to: District) => {
     const z1 = (i0 + n) * SEG, light = lightAt(z1), tint = COLOR[to];
     const l1 = c1 - hw - WALK, r1 = c1 + hw + WALK, l2 = c2 - hw - WALK, r2 = c2 + hw + WALK;
@@ -284,8 +294,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
       const ya = sy[n], yb = sy[n + 1], ta = ya - TUN_TEX * sc[n], tb = yb - TUN_TEX * sc[n + 1], hgt = TUN_TEX * (sc[n] + sc[n + 1]) / 2;
       const a = (xb - xa) / 640, b = (yb - ya) / 640;
       poly([[xa, ya], [xa, ta], [xb, tb], [xb, yb]]);
-      if (wall) { const pat = pattern(wall); pat.setTransform({ a, b, c: 0, d: hgt / 1024, e: xa - u0 * a, f: ya - hgt - u0 * b }); ctx.fillStyle = pat; } else ctx.fillStyle = "#2a2a3e";
-      ctx.fill();
+      if (wall) { ctx.save(); ctx.clip(); ctx.transform(a, b, 0, hgt / 1024, xa - u0 * a, ya - hgt - u0 * b); tiled(wall, u0, u0 + 640, 0, 1024); ctx.restore(); } else { ctx.fillStyle = "#2a2a3e"; ctx.fill(); }
       ctx.fillStyle = "#141028"; poly([[xa, ta], [xa, top1], [xb, top2], [xb, tb]]); ctx.fill();
       if (light < 1) { ctx.fillStyle = shade; poly([[xa, ya], [xa, top1], [xb, top2], [xb, yb]]); ctx.fill(); }
       // the light strip along the wall, one continuous band in the destination's colour that pulses with the music
@@ -297,9 +306,8 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     poly([[xl, top1], [xr, top1], [X(n + 1, r2), top2], [X(n + 1, l2), top2]]);
     if (ceiling) {
       const su = (top2 - top1) / 640, sv = (xr - xl) / ((r1 - l1) / 8 * 1024);
-      const pat = pattern(ceiling); pat.setTransform({ a: 0, b: su, c: sv, d: 0, e: xl, f: top1 - u0 * su }); ctx.fillStyle = pat;
-    } else ctx.fillStyle = "#1c1838";
-    ctx.fill();
+      ctx.save(); ctx.clip(); ctx.transform(0, su, sv, 0, xl, top1 - u0 * su); tiled(ceiling, u0, u0 + 640, 0, (r1 - l1) / 8 * 1024); ctx.restore();
+    } else { ctx.fillStyle = "#1c1838"; ctx.fill(); }
     if (light < 1) { ctx.fillStyle = shade; ctx.fill(); }
   };
   // the district's material over a slice, in world space: the tile repeats every `metres` along x and z, pinned to the
@@ -307,7 +315,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
   // fading out over 70 segments so the far road stays clean
   const material = (n: number, l1: number, r1: number, l2: number, r2: number, file: string, metres: number, alpha: number) => {
     const fade = 1 - n / 70, im = img(file);
-    if (fade <= 0 || !im || zAt[n + 1] <= zAt[n]) return;
+    if (low || fade <= 0 || !im || zAt[n + 1] <= zAt[n]) return; // the grain is a pattern fill a slice: 20 ms a frame on an iPhone, and invisible at phone size
     const z1 = zAt[n], rate = (sy[n] - sy[n + 1]) / (zAt[n + 1] - z1), k = sc[n] * metres / 512;
     const pat = pattern(im);
     pat.setTransform({ a: k, b: 0, c: 0, d: -rate * metres / 512, e: X(n, 0), f: sy[n] + z1 * rate });
@@ -500,12 +508,9 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
           ctx.save();
           ctx.beginPath(); ctx.moveTo(xa, bn); ctx.lineTo(xa, ya - hN * hi); ctx.lineTo(xb, yb - hF * hi); ctx.lineTo(xb, bf); ctx.clip();
           ctx.transform(a, b, 0, dv, xa - a * u0, bn - b * u0 - dv * v2);
-          // the slice runs SEG metres of tile from u0, toward the far end (down the tile on the left side); split where it wraps
+          // the slice runs SEG metres of tile from u0, toward the far end (down the tile on the left side)
           const du = SEG * ppm, us = side > 0 ? u0 : u0 - du;
-          for (let k = Math.floor(us / 2048); k * 2048 < us + du; k++) {
-            const x0 = Math.max(us, k * 2048), x1 = Math.min(us + du, (k + 1) * 2048);
-            ctx.drawImage(tile, x0 - k * 2048, v1, x1 - x0, v2 - v1, x0, v1, x1 - x0, v2 - v1);
-          }
+          tiled(tile, us, us + du, v1, v2);
           ctx.restore();
         }
         if (foot) { ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.beginPath(); ctx.moveTo(X(n, side * (x - 3)), ya); ctx.lineTo(xa, ya); ctx.lineTo(xb, yb); ctx.lineTo(X(n + 1, side * (x - 3)), yb); ctx.fill(); }

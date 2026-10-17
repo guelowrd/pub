@@ -39,6 +39,9 @@ const run = (name, f) => new Promise((done) => {
   say(`art loaded: ${(performance.now() - t).toFixed(0)} ms`);
   const s = newSim(7, song); setSong(STATIONS[song].id); extend(s);
   for (let i = 0; i < 3 * 120; i++) step(s, inp, STEP, extend); // 3 s in, the car moving
+  // ?where=fork parks the car 100 m before the first fork's mouth (both branches and the structure in view); ?where=tunnel 40 m inside
+  const where = new URLSearchParams(location.search).get("where");
+  if (where) { const fk = s.forks[0], goal = where === "tunnel" ? fk.mouth + 40 : fk.mouth - 100; let guard = 0; while (s.z < goal && guard++ < 60000) step(s, inp, STEP, extend); say(`parked at ${Math.round(s.z)} m, mouth ${Math.round(fk.mouth)} m`); }
   counting = true; draw(ctx, s, cv.width, cv.height); counting = false;
   say(`low tier ${location.search.includes("low") ? "ON" : "off"}, one frame: ` + Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(", "));
   for (const kind of ["", "pattern", "frontage", "materials", "skew", "flip", "tiny"]) { off = kind; await run(kind ? `without ${kind}` : "full draw", () => draw(ctx, s, cv.width, cv.height)); }
