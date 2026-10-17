@@ -203,6 +203,7 @@ export default function App() {
       html("fork", f ? side(f.left, true) + side(f.right, false) : "");
       const text = s.callout?.text ?? "";
       html("callout", text.replace(/\+(\d+)|X(\d[\d.]*)|AGE (\d+)/g, (_, award, mult, age) => award ? `<span class="num">+${fmt(Number(award))}</span>` : mult ? `<span class="num">x${mult}</span>` : `AGE <span class="num">${age}</span>`));
+      node("callout").classList.toggle("high", /DROP OFF/.test(text));
       node("callout").style.color = /WRECK|SPIN|BAILED/.test(text) ? "#ff40bd" : /CRAZY/.test(text) ? "#78ffcb" : /^\+|GROUP/.test(text) ? "#ffe564" : /DROP OFF/.test(text) && dest ? COLOR[dest] : "#fff3f4";
     };
     raf = requestAnimationFrame(frame);
