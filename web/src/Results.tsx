@@ -77,6 +77,10 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
       const riders = s.stops.filter((o) => o.taken && o.rider).map((o) => o.rider!).sort((p, q) => agePoints(q.age) - agePoints(p.age));
       keys = [["SHARE ON X", () => window.open(links.x, "_blank", "noopener")], ["COPY LINK", () => void navigator.clipboard?.writeText(links.url).then(() => setNote("LINK COPIED"), () => setNote("COPY FAILED"))], ["SAVE CARD", () => void saveCard(posted.score, STATIONS[posted.song].title, riders).catch(() => setNote("COULD NOT SAVE"))]]
         .map(([label, onClick], i) => ({ kind: "share" as const, rect: [a[0] + i * (w + gap), a[1], w, a[3]], label: label as string, onClick: onClick as () => void }));
+    } else if (trouble?.t.kind === "funds") {
+      // no Gamecoins: the faucet key right here, so the record is not lost to a trip through the menu (Gaylord's phone, 2026-10-17)
+      status = `${trouble.t.title.toUpperCase()}\nGET GC SENDS 10 TO YOUR WALLET. TAKE THEM THERE, THEN POST.`;
+      keys = [["GET GC", () => void chain?.gamecoins().then((m) => m && setNote(m))], ["POST IT", () => { chain?.dismiss(); post(); }]].map(([label, onClick], i) => ({ kind: "share" as const, rect: G.share[i], label: label as string, onClick: onClick as () => void }));
     } else if (trouble) { status = trouble.t.title.toUpperCase(); keys = [postKey("TRY AGAIN", false, () => { const r = trouble.retry; chain?.dismiss(); r ? r() : post(); })]; }
     else if (busy) { status = busy.stage === "connect" ? "CONNECTING" : busy.stage === "wallet" ? "CHECK WALLET" : busy.stage === "prepare" ? "GETTING READY" : "POSTING"; keys = [postKey(busy.stage === "network" ? "POSTING" : "POST IT", true)]; if (status === "POSTING") status = null; } // the key says it
     else if (!chain?.ready) { status = "LOADING THE CHAIN"; keys = [postKey("POST IT", true)]; }

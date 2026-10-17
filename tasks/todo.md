@@ -733,3 +733,8 @@ Decided: tracks 1 to 5 open for everyone; track n from 6 up needs n-5 records po
 - [x] Fork cue: the HUD fork line on every screen size, the side a rider wants bright with blinking arrows and the count, the other side dim → verify: Chrome, two riders for DOWNTOWN: << DOWNTOWN / DROP OFF x2 blinking, CASINO STRIP >> dim
 - [x] Tunnel warning: the radar says DROP OFF IN n M with the venue's icon when a rider aboard wants the bore's district → verify: Chrome, in the bore: DROP OFF / IN 180 M with the icon
 - [x] Bays light up: the bay stripe pulses; bright for a drop bay a rider aboard wants and for a free pickup, faint otherwise → verify: Chrome, the downtown bay pulsing yellow past the tunnel; 82 tests pass
+
+## 2026-10-17, portrait is a real way to play; no Gamecoins must not strand a record (Gaylord's iPhone screenshots)
+- [x] The splash's TURN YOUR PHONE line removed: portrait is laid out (scene, meter and radar side by side, pad) and plays fine → verify: `web/bench/phones.html` (390x844 and 844x390 iframes of the dev server): splash, menu, HUD with the fork cue, results all fit in portrait; landscape on the real phone is Gaylord's check (an iframe has no coarse pointer, so the landscape HUD rules do not apply there)
+- [x] Results, "NOT ENOUGH GAMECOINS" (trouble kind funds): two keys in the share row, GET GC (the faucet's 10, the note says to take them in the wallet) and POST IT, instead of TRY AGAIN alone; the record stays on screen → verify: tsc, 82 tests; the live state needs a wallet with no GC
+- [x] WALLET menu: an ADDRESS row, ENTER copies it (for a faucet or a friend)

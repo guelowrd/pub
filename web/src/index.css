@@ -70,10 +70,6 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
   .rail .radar-box { position: absolute; right: calc(26 * var(--u)); top: calc(190 * var(--u)); width: calc(228 * var(--u)); }
   .slots > div { min-height: calc(100 * var(--u)); } .slots > div > b { font-size: calc(18 * var(--u)); } .slots > div > em { font-size: calc(12 * var(--u)); } .face { width: calc(42 * var(--u)); height: calc(42 * var(--u)); } /* a filled seat no taller than an empty one */
 }
-/* a phone held upright: the game is laid out for landscape, say so on the splash */
-@media (pointer: coarse) and (max-aspect-ratio: 1/1) {
-  .splash::after { content: "TURN YOUR PHONE: THE GAME IS PLAYED IN LANDSCAPE"; position: absolute; left: 0; right: 0; bottom: calc(80 * var(--u)); text-align: center; font-size: calc(40 * var(--u)); letter-spacing: .04em; color: #ffe564; text-shadow: 0 0 calc(10 * var(--u)) #000, 0 0 calc(3 * var(--u)) #000; }
-}
 .overlay { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(8,12,36,.85); text-transform: uppercase; }
 .overlay.dim { background: #060b16e6; }
 .pause { width: calc(390 * var(--u)); }

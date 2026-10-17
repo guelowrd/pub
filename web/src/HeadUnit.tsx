@@ -195,7 +195,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       ["STATUS", !chain?.installed ? "NO BREAD WALLET" : me ? "CONNECTED" : chain.connecting ? chain.walletStatus || "CONNECTING" : "NOT CONNECTED"],
       ["BALANCE", chain?.balance != null ? gc(chain.balance) : me ? "ENTER TO READ" : "--", me ? () => void chain?.readBalance() : undefined],
       ["NETWORK", "MIDEN TESTNET"],
-      ...(me ? [["PLAYER", chain!.nameOf(me)], ["GAMECOINS", "GET 10", () => void chain?.gamecoins().then((m) => m && setNote(m))], ["DISCONNECT", "ENTER", () => void chain?.disconnect()]] as [string, string, (() => void)?][] : []),
+      ...(me ? [["PLAYER", chain!.nameOf(me)], ["ADDRESS", `${chain!.address!.slice(0, 7)}…${chain!.address!.slice(-5)} COPY`, () => void navigator.clipboard?.writeText(chain!.address!).then(() => setNote("ADDRESS COPIED"), () => setNote("COPY FAILED"))], ["GAMECOINS", "GET 10", () => void chain?.gamecoins().then((m) => m && setNote(m))], ["DISCONNECT", "ENTER", () => void chain?.disconnect()]] as [string, string, (() => void)?][] : []),
     ], "mono", AMBER);
     if (!me && chain?.installed && !chain.connecting) { word = "connect"; go = () => void chain.connect(); }
   } else {
