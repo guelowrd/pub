@@ -678,6 +678,7 @@ Open: the drawn key word is whiter and heavier than the painted legends (the fon
 
 ## 2026-10-17, link previews (Gaylord: "make sure game has a preview / thumbnail on X / TG / slack etc")
 - [x] `og:url`, `og:image`, `twitter:image` absolute via `%SITE_URL%` filled at build (SITE_URL, else Vercel's production domain, else relative for a local build); JPEG card `art/share/og.jpg` (1200 x 630, the designer's share background and title with a four-line tagline) instead of the empty-box template webp, which nothing else used. Build checked with SITE_URL=https://example.test.
+- [x] Card redone (Gaylord: "more punch"): the splash scene `art/title-scene.webp` at 1200 wide, cropped 35 px down (logo and sun kept), the middle car pose from `car-poses.webp` at 460 wide bottom right, a dark fade from the lower left, three lines in Chakra Petch SemiBold 52 px (yellow, cyan, pink) with a 5 px dark stroke and a soft shadow: "Drive & pick up boomers. Post your record. Challenge your rivals." Composed with ImageMagick, JPEG quality 88 (240 KB). The share PNGs next to it stay: `share.ts` draws the in-game share card from them.
 - Needs the deploy to be seen: X, Telegram and Slack fetch the card from the live address; after the first deploy, paste the URL in a DM to each to confirm, and use the X card validator or Telegram's @WebpageBot to refresh a cached preview.
 
 ## 2026-10-17, night audit (Gaylord: "do a thorough audit: ponytail, visual, everything, and fix the obvious things")
