@@ -512,6 +512,7 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
       for (const side of [1, -1] as const) {
         if (bare(z1, side)) continue;
         const xa = X(n, side * x), xb = X(n + 1, side * x), ya = sy[n], yb = sy[n + 1];
+        if ((xa < 0 && xb < 0) || (xa > w && xb > w)) continue; // the slice is off the screen's side (the nearest ones span thousands of px there)
         const a = side * (xb - xa) / (SEG * ppm), u0 = side > 0 ? u : 2048 - u;
         for (let j = 0; j < strips; j++) {
           const v1 = 512 * j / strips, v2 = 512 * (j + 1) / strips, lo = 1 - v2 / 512;
@@ -738,11 +739,14 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
       const { k, left, top, a } = frame(n, f), name = FORK_STRUCT[here.district], body = img(lit(`fork-${name}.webp`, hour));
       if (body && a > 0) {
         ctx.save(); ctx.globalAlpha = a;
-        ctx.drawImage(body, left, top, 2048 * k, 1024 * k);
+        // only the on-screen part: near the mouth the structure spans several screens, and WebKit paid for the hidden part
+        const sx0 = Math.max(0, -left / k), sx1 = Math.min(2048, (w - left) / k), sy0 = Math.max(0, -top / k), sy1 = Math.min(1024, (h - top) / k);
+        const shown = (im: CanvasImageSource, iw: number) => { const q = iw / 2048; if (sx1 > sx0 && sy1 > sy0) ctx.drawImage(im, sx0 * q, sy0 * q, (sx1 - sx0) * q, (sy1 - sy0) * q, left + sx0 * k, top + sy0 * k, (sx1 - sx0) * k, (sy1 - sy0) * k); };
+        shown(body, 2048);
         ctx.globalCompositeOperation = "lighter";
         for (const [side, to] of [["left", f.left], ["right", f.right]] as const) {
           const trim = tintMask(`fork-${name}-${side}.png`, COLOR[to], 1024, 512);
-          if (trim) ctx.drawImage(trim, left, top, 2048 * k, 1024 * k);
+          if (trim) shown(trim, 1024);
         }
         ctx.restore();
       }

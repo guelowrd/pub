@@ -722,3 +722,5 @@ Found and done (03:40):
   transformed slice of the decoded image at ~0.05 ms, of a canvas for free), the strips unclipped with a step's overlap
   onto the one above (a clipped image costs by its area), the tunnel walls and ceiling through the same tiled() helper, the
   fork trims tinted ahead one a frame (the 15 ms hitch at the mouth). Open road 17 ms on the iPhone, tunnel 17, downtown 18.
+- [x] The fork structure drawn only where it is on screen (near the mouth it spans several screens), frontage slices wholly
+  off a side skipped. Gaylord on the phone after the previous round: "very playable now"; this round not yet measured there.
