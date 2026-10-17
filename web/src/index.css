@@ -3,7 +3,6 @@
 @font-face { font-family: "Share Tech Mono"; src: url("/fonts/ShareTechMono-Regular.woff") format("woff"); font-weight: 400; font-display: swap; }
 @font-face { font-family: "PUB Painted Pixel"; src: url("/fonts/PUB-Painted-Pixel.woff") format("woff"); font-weight: 400; font-display: swap; } /* the font pass (PUB-Painted-Type): headings, names, metadata, counter */
 @font-face { font-family: "PUB Painted Matrix"; src: url("/fonts/PUB-Painted-Matrix.woff") format("woff"); font-weight: 400; font-display: swap; } /* LCD line, scores, clocks, the red key's word */
-@font-face { font-family: "PUB Stereo LCD"; src: url("/fonts/PUBStereoLCD-Demi.woff") format("woff"); font-weight: 600; font-display: swap; } /* the menu's LCD lettering (the designer's dot-matrix derivative, Grand Prix pack) */
 * { box-sizing: border-box; margin: 0; }
 html, body, #root { height: 100%; background: #080c24; color: #fff3f4; font-family: "Chakra Petch", ui-sans-serif, sans-serif; font-weight: 600; overflow: hidden; }
 #root { display: flex; flex-direction: column; align-items: center; justify-content: center; }
@@ -111,12 +110,10 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .gp-shade { position: absolute; left: 0; right: 0; top: 62%; bottom: 0; background: linear-gradient(#080e1700, #080e17c8 45%, #080e17f0); }
 .gp-text { position: absolute; white-space: nowrap; line-height: 1; overflow: hidden; }
 .gp-para { position: absolute; line-height: 1.3; }
-.gp-mono { font-family: "Share Tech Mono", monospace; font-weight: 400; font-variant-numeric: tabular-nums; }
-.gp-lcd { font-family: "PUB Stereo LCD", monospace; font-weight: 600; font-variant-numeric: tabular-nums; }
+.gp-mono, .gp-lcd { font-family: "PUB Painted Matrix", monospace; font-weight: 400; font-variant-numeric: tabular-nums; }
+.gp-count { font-family: "PUB Painted Pixel", sans-serif; font-weight: 400; }
 .gp-plaque { filter: brightness(.55) saturate(.5); } /* the painted plaque reads as a lit key; dimmed so no one presses it */
-.gp-cp { font-family: "Chakra Petch", sans-serif; font-weight: 600; }
-/* ?type=painted: the font pass on trial. The painted faces are weight 400 */
-.gp-painted .gp-cp { font-family: "PUB Painted Pixel", sans-serif; font-weight: 400; } .gp-painted .gp-mono { font-family: "PUB Painted Matrix", monospace; font-weight: 400; } .gp-painted .gp-lcd { font-family: "PUB Painted Matrix", monospace; font-weight: 400; } .gp-painted .gp-count { font-family: "PUB Painted Pixel", sans-serif; font-weight: 400; }
+.gp-cp { font-family: "PUB Painted Pixel", sans-serif; font-weight: 400; }
 /* the red key: the dark lens, the word's face over it (60 ms out, 40 ms dark, 120 ms in), one scan along the atlas on a change */
 .gp-key.down { transform: translateY(2px); }
 /* the red key's word: closes to its centreline in 60 ms, opens in 80 ms, a glint settles over the last 40 ms (the kit's motion contract) */

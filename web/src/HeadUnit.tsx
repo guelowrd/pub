@@ -22,16 +22,13 @@ const MODES: Mode[] = ["solo", "challenge", "my-runs", "leaderboards", "wallet",
 // the boards, one a page (GQ's, the LOSERBOARD last)
 const BOARDS: [keyof ReturnType<typeof boards>, string][] = [["records", "BEST RECORDS"], ["coins", "MOST GAMECOINS WON"], ["defended", "RIVALS BEATEN"], ["smashed", "RECORDS SMASHED"], ["losers", "LOSERBOARD"]];
 type Word = "drive" | "shot" | "collect" | "connect" | "wait";
-// The painted concept's lettering has no font (the painted pack's own limit). Until the font pass: Chakra Petch for words
-// and Share Tech Mono for numbers on the TV (Gaylord's pick), PUB Stereo LCD (the designer's dot-matrix derivative) on the
-// radio's LCD line and the red key's word.
-// ?type=painted puts the font pass (PUB Painted Pixel for words and the counter, PUB Painted Matrix for numbers and the LCD) on trial;
-// K scales each CSS size so the cap height stays what the stand-in gave it (the pack: a CSS size is not a cap height)
-const PAINTED = new URLSearchParams(location.search).get("type") === "painted";
+// The font pass (PUB-Painted-Type, Gaylord 2026-10-17: "much better"): PUB Painted Pixel for words and the counter, PUB Painted
+// Matrix for numbers, the LCD line and the red key's word. The sizes in menu.json were set against the stand-ins (Chakra Petch,
+// Share Tech Mono, PUB Stereo LCD); K keeps the cap heights they gave (caps at 100 px: the stand-ins and Pixel 70, Matrix 64.6, Stereo LCD 66.7)
 type Font = "cp" | "mono" | "count";
-const FAMILY: Record<Font, string> = PAINTED ? { cp: "PUB Painted Pixel", mono: "PUB Painted Matrix", count: "PUB Painted Pixel" } : { cp: "Chakra Petch", mono: "Share Tech Mono", count: "Share Tech Mono" };
-const K: Record<Font | "lcd", number> = { cp: 1, mono: PAINTED ? 1.084 : 1, count: 1, lcd: PAINTED ? 1.033 : 1 }; // measured caps at 100 px: Chakra Petch, Share Tech Mono and Pixel 70, Matrix 64.6, Stereo LCD 66.7
-const LCD = PAINTED ? "PUB Painted Matrix" : "PUB Stereo LCD";
+const FAMILY: Record<Font, string> = { cp: "PUB Painted Pixel", mono: "PUB Painted Matrix", count: "PUB Painted Pixel" };
+const K: Record<Font | "lcd", number> = { cp: 1, mono: 1.084, count: 1, lcd: 1.033 };
+const LCD = "PUB Painted Matrix";
 // the LCD's one line per mode (the pack's copy)
 const PURPOSE: Record<Mode, string> = { solo: "PICK A STAGE AND DRIVE", challenge: "BEAT A CHAMPION", "my-runs": "YOUR RUNS AND WINNINGS", leaderboards: "BEST AND WORST PLAYERS", wallet: "YOUR WALLET AND COINS", system: "SET UP YOUR GAME" };
 // the pack's palette
@@ -307,7 +304,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const action = R.controls.find((c) => c.id === "action")!, cap = box([0, 0, action.rect[2], action.rect[3]]);
 
   return (
-    <div className={`gp-screen${PAINTED ? " gp-painted" : ""}`} style={{ left: px(left), top: px(top), width: px(G.canvas[0]), height: px(G.canvas[1]), transform: `scale(${scale})` }}>
+    <div className="gp-screen" style={{ left: px(left), top: px(top), width: px(G.canvas[0]), height: px(G.canvas[1]), transform: `scale(${scale})` }}>
       {/* the TV: the content clipped by the tube's curve, the bezel, the glass over everything */}
       <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden="true">
         <clipPath id={`gp-tube-${layout}`} clipPathUnits="userSpaceOnUse"><path transform={`scale(${TV.size[0] / TV.native[0]} ${TV.size[1] / TV.native[1]})`} d={TV.path} /></clipPath>
