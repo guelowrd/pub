@@ -144,7 +144,6 @@ export function withTimeout<T>(p: Promise<T>, ms: number, what: string): Promise
   return Promise.race([p, timeout]).finally(() => clearTimeout(timer));
 }
 
-/** The outcome line after Bread accepted a request: only a chain-confirmed effect is "confirmed". */
 /** The outcome line once the chain shows the effect: "YOU WIN! DONE!" */
 export const doneText = (action: string) => `${/[.!?]$/.test(action) ? action : `${action}.`} DONE!`;
 
