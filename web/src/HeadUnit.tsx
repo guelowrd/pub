@@ -348,7 +348,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
               {brand(TV.brand, "right")}
               {text(rev.label, TV.review.champion[0], TV.review.champion[1], 24 * u, "cp", CYAN)}
               {text(score(rev.score), TV.review.score[0], TV.review.score[1], TV.review.scoreS, "mono", AMBER)}
-              {rev.line && text(rev.line, TV.review.score[0], TV.review.score[1] + 66 * u, 28 * u, "cp", rev.tone === "pink" ? PINK : WHITE)}
+              {rev.line && text(rev.line, TV.review.score[0], TV.review.score[1] + Math.min(66 * u, (TV.review.stage[1] - TV.review.score[1]) * 0.52), 28 * u, "cp", rev.tone === "pink" ? PINK : WHITE)} {/* on phones the stage sits 44 px under the score: the line halfway, not on the stage */}
               {text(songOf(rev.song), TV.review.stage[0], TV.review.stage[1], TV.review.stageS, "cp", WHITE)}
               {cond(rev.song, TV.review.conditions)}
               {rev.left !== undefined && text(`TIME LEFT ${clock(rev.left)}`, TV.review.expiry[0], TV.review.expiry[1], TV.review.expiryS, "mono", CYAN)}
