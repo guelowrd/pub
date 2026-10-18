@@ -8,12 +8,12 @@ import { useMiden } from "@miden-sdk/react";
 import { useMidenFiWallet } from "@miden-sdk/miden-wallet-adapter-react";
 import { LOCAL_WALLET, useLocalWallet } from "./localWallet";
 import { GAMECOIN_GRANT, gamecoinRefusal, GRANT_PENDING_MS, useGamecoin } from "./gamecoin";
-import { RECORD_LIFETIME_BLOCKS, STAKE } from "./config";
+import { RECORD_LIFETIME_BLOCKS, STAKE, SUBMIT_TIMEOUT_MS } from "./config";
 import { accountFelts, bech32Of, fetchChallengeNote, knownNote, listChallengeNotes, loadScripts, parseAccountId, syncNotes, wordFromHex, type ChallengeNote, type Client } from "./chain";
 import { keyOf, lettersBackward, nicknames, playersInOrder } from "./hub";
-import { collect as collectNotes, gcBalance, postRecord, postShot, setSubmitAttemptListener, setSubmitStageListener, settle as settleNotes, waitFor, type Submitted } from "./bread";
+import { collect as collectNotes, gcBalance, postRecord, postShot, setBalanceListener, setPendingListener, setSubmitAttemptListener, setSubmitStageListener, settle as settleNotes, waitFor, type Submitted } from "./bread";
 import { shotDeadline, shotStorage, ZERO_WORD, type AccountFelts, type ChallengeStorage } from "./notes";
-import { blockToMs, claimVerdict, explain, fmtGamecoin, myOpenShotsOn, NOT_FINISHED, doneText, settlePlan, SHOT_LOST, shotRefusal, withTimeout, type Trouble } from "./flow";
+import { blockToMs, claimVerdict, explain, fmtGamecoin, myOpenShotsOn, NOT_FINISHED, doneText, settlePlan, SHOT_LOST, shotRefusal, WALLET_SILENT, withTimeout, type Trouble } from "./flow";
 import { decodeGame, encodeGame, genuine, newGame, pubAnswer } from "./game";
 import type { Event } from "../game/sim";
 
@@ -115,11 +115,12 @@ export function useChain(): ChainApi {
   }, [isReady, refresh]);
 
   // Bread opens a popup for every asset read (it asks before sharing them): read on the player's request only; the
-  // local test wallet has no popup, so it reads on its own
+  // local test wallet has no popup, so it reads on its own. Every read (a post's check included) lands in `balance`.
+  useEffect(() => { setBalanceListener(setBalance); }, []);
   const readBalance = useCallback(async () => {
     if (!walletRef.current.connected) return setBalance(null);
     try {
-      setBalance(await gcBalance(walletRef.current));
+      await gcBalance(walletRef.current);
     } catch (e) {
       console.warn("[pub] balance", e);
     }
@@ -160,10 +161,12 @@ export function useChain(): ChainApi {
       return posted ? records.every((r) => !!r) : records.every((r) => !!r?.consumed);
     };
     const again = (attempt?: S) => () => void run(text, posted, fn, attempt);
+    let stage: Stage = "prepare", pending = previous; // what the request will make, known before the wallet has it
     setTrouble(null);
     setBusy({ text, stage: previous ? "network" : "prepare", since: Date.now() });
     setSubmitAttemptListener((attempt) => live() && setBusy((b) => (b ? { ...b, text: attempt > 1 ? `${text} (TRY ${attempt})` : text } : b)));
-    setSubmitStageListener((stage) => live() && setBusy((b) => (b ? { ...b, stage, since: Date.now() } : b)));
+    setSubmitStageListener((s) => { stage = s; if (live()) setBusy((b) => (b ? { ...b, stage: s, since: Date.now() } : b)); });
+    setPendingListener((s) => { if (live()) pending = s as S; });
     try {
       await needWallet();
       if (previous && client) {
@@ -171,7 +174,9 @@ export function useChain(): ChainApi {
         if (await runExclusive(() => landed(previous.noteIds))) return previous;
         setBusy({ text, stage: "prepare", since: Date.now() });
       }
-      const submitted = await fn();
+      // a wallet popup left open, or a node that never answers, used to hold the screen for good: past the cap the player
+      // is told, and Try again first looks whether the request landed anyway
+      const submitted = await withTimeout(fn(), SUBMIT_TIMEOUT_MS, text).catch((e) => { throw stage === "wallet" && /timed out after/.test(String(e)) ? new Error(WALLET_SILENT) : e; });
       setBusy({ text, stage: "network", since: Date.now() });
       const seen = client ? await waitFor(client, runExclusive, () => landed(submitted.noteIds)) : false;
       if (!live()) return null;
@@ -180,7 +185,7 @@ export function useChain(): ChainApi {
       return null;
     } catch (e) {
       if (!live()) return null;
-      oops(e, again(previous));
+      oops(e, again(pending));
       return null;
     } finally {
       if (live()) {
@@ -258,10 +263,11 @@ export function useChain(): ChainApi {
       await withTimeout(mint(address), 180_000, "Getting Gamecoins");
       lastGrant.current = { to: address, at: Date.now() };
       if (LOCAL_WALLET) await local.claim();
+      else setBalance(null); // unknown until Bread takes the note: the results screen offers POST IT again
       if (token.current !== mine) return null;
       return `${fmtGamecoin(GAMECOIN_GRANT).toUpperCase()} FOR YOU. OPEN YOUR WALLET TO TAKE THEM.`;
     } catch (e) {
-      if (token.current === mine) oops(e);
+      if (token.current === mine) oops(e, () => void gamecoins());
       return null;
     } finally {
       if (token.current === mine) {

@@ -4,7 +4,7 @@ import type { ChallengeNote } from "../chain";
 import type { ChallengeStorage, Word4 } from "../notes";
 import { GC_FAUCET, MIN_SHOT_WINDOW_BLOCKS, SCORE_MAX } from "../config";
 import { encodeGame, newGame, RULES_VERSION } from "../game";
-import { acceptNote, blocksToClock, claimVerdict, explain, fmtGamecoin, fmtGc, isChainBehind, myOpenShotsOn, NOT_FINISHED, noteKind, doneText, recordLinks, settlePlan, shotRefusal, submitWithRetry, withTimeout } from "../flow";
+import { acceptNote, blocksToClock, claimVerdict, explain, fmtGamecoin, isChainBehind, myOpenShotsOn, NOT_FINISHED, WALLET_SILENT, noteKind, doneText, recordLinks, settlePlan, shotRefusal, submitWithRetry, withTimeout } from "../flow";
 
 const champion = { suffix: 1n, prefix: 2n };
 const me = { suffix: 3n, prefix: 4n };
@@ -144,6 +144,7 @@ describe("plain words for failures", () => {
     expect(explain(new Error("You need 1 Gamecoin and your wallet holds 0 Gamecoins. Get Gamecoins first."))).toMatchObject({ kind: "funds" });
     expect(explain(Object.assign(new Error("the Miden client synced to block 1"), { name: "ChainBehindBoundBlockError" })).kind).toBe("out-of-step");
     expect(explain(new Error(NOT_FINISHED))).toEqual({ kind: "not-finished", title: NOT_FINISHED });
+    expect(explain(new Error(WALLET_SILENT))).toEqual({ kind: "not-finished", title: WALLET_SILENT });
     expect(explain(new Error("fetch failed"))).toMatchObject({ kind: "network", detail: "fetch failed" });
     expect(explain(new Error("assertion failed with error code: 123")).kind).toBe("refused");
     expect(explain(new Error("This record's course does not match")).kind).toBe("refused");
@@ -186,10 +187,10 @@ describe("submitting through Bread", () => {
 });
 
 describe("Gamecoin in words", () => {
-  it("spells the token out, singular and plural, and short for the head unit", () => {
+  it("spells the token out, singular and plural", () => {
     expect(fmtGamecoin(1_000_000n)).toBe("1 Gamecoin");
     expect(fmtGamecoin(10_000_000n)).toBe("10 Gamecoins");
-    expect(fmtGc(2_500_000n)).toBe("2.5 GC");
+    expect(fmtGamecoin(2_500_000n)).toBe("2.5 Gamecoins");
   });
   it("shares a record as a ?record= link, inside the X post too, with the expiry in UTC and the song", () => {
     vi.stubGlobal("location", { origin: "http://pub", pathname: "/" });

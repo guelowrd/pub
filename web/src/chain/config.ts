@@ -27,6 +27,8 @@ export const CLAIM_FUZZ = 64;
 
 export const NETWORK_POLL_INTERVAL_MS = 2_500;
 export const NETWORK_POLL_TIMEOUT_MS = 120_000;
+// Building a request and getting the wallet's answer: past this the player is told, with Try again (a wallet popup left open hung the game for good).
+export const SUBMIT_TIMEOUT_MS = 120_000;
 
 // Miden SDK configuration, overridable through environment variables
 export const MIDEN_RPC_URL = import.meta.env.VITE_MIDEN_RPC_URL ?? "testnet";

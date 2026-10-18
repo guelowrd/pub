@@ -103,12 +103,12 @@ describe("history", () => {
     ];
     const rows = history(notes, ME, 2000, name).map((h) => [h.result, h.context, h.score, h.detail, h.money, h.note, h.tone, h.moneyTone]);
     expect(rows).toEqual([
-      ["Defended", "", 6800, "2 tries lost", "1 GC won", "Your Gamecoin back.", "mint", "mint"],
-      ["Taken back", "", 3900, "Nobody tried.", "1 GC back", "", "", ""],
-      ["You lost", "MUD's record: ", 8400, "", "1 GC lost", "Went to MUD.", "pink", "pink"],
-      ["You won", "KQX's record: ", 5500, "Prize already taken.", "1 GC back", "", "mint", ""],
-      ["You won", "MUD's record: ", 6200, "", "1 GC won", "Your Gamecoin back.", "mint", "mint"],
-      ["Beaten", "KQX beat ", 4100, "1 try lost", "1 GC lost", "Prize went to KQX.", "pink", "pink"],
+      ["Defended", "", 6800, "2 tries lost", "1 Gamecoin won", "Your Gamecoin back.", "mint", "mint"],
+      ["Taken back", "", 3900, "Nobody tried.", "1 Gamecoin back", "", "", ""],
+      ["You lost", "MUD's record: ", 8400, "", "1 Gamecoin lost", "Went to MUD.", "pink", "pink"],
+      ["You won", "KQX's record: ", 5500, "Prize already taken.", "1 Gamecoin back", "", "mint", ""],
+      ["You won", "MUD's record: ", 6200, "", "1 Gamecoin won", "Your Gamecoin back.", "mint", "mint"],
+      ["Beaten", "KQX beat ", 4100, "1 try lost", "1 Gamecoin lost", "Prize went to KQX.", "pink", "pink"],
     ]);
   });
 
@@ -118,8 +118,8 @@ describe("history", () => {
     const notes = [theirs, shot(theirs, ME, 450), shot(theirs, ME, 900), mine, shot(mine, ME, 300)];
     const rows = history(notes, ME, 600, name).map((h) => [h.result, h.at, h.money, h.note]);
     expect(rows).toEqual([
-      ["You lost", 450, "1 GC lost", "MUD can take the coin."],
-      ["You lost", 300, "1 GC lost", "Locked: this shot was at your own record."],
+      ["You lost", 450, "1 Gamecoin lost", "MUD can take the coin."],
+      ["You lost", 300, "1 Gamecoin lost", "Locked: this shot was at your own record."],
     ]);
   });
 
@@ -129,8 +129,8 @@ describe("history", () => {
     const notes = [beaten, shot(beaten, MUD, 200, { consumedAt: 280 }), shot(beaten, KQX, 400, { consumedAt: 300 }), defended, shot(defended, MUD, 300)];
     const rows = history(notes, ME, 2000, name).map((h) => [h.result, h.detail, h.money, h.note]);
     expect(rows).toEqual([
-      ["Defended", "1 try lost", "1 GC back", ""],
-      ["Beaten", "1 try lost", "1 GC won, 1 GC lost", "Prize went to KQX."],
+      ["Defended", "1 try lost", "1 Gamecoin back", ""],
+      ["Beaten", "1 try lost", "1 Gamecoin won, 1 lost", "Prize went to KQX."],
     ]);
   });
 });

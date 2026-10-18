@@ -3,7 +3,7 @@
 // from GeoQuizz without its maps and languages.
 
 import type { ChallengeNote } from "./chain";
-import { fmtGc, sameAccount as same, toGc } from "./flow";
+import { fmtGamecoin, sameAccount as same, toGc } from "./flow";
 import { isShotAt, noteDeadline, shotDeadline, type AccountFelts } from "./notes";
 import { CLAIM_FUZZ } from "./config";
 
@@ -117,7 +117,7 @@ export function history(notes: ChallengeNote[], me: AccountFelts, height: number
       const who = name(n.storage.champion);
       // the shot script serves its rival first: a shot at my own record stays locked past its deadline
       const note = same(n.storage.champion, me) ? "Locked: this shot was at your own record." : `${who} can take the coin.`;
-      items.push({ id: n.id, kind: "shot", at: shotDeadline(n.storage), score: n.storage.target, result: "You lost", context: `${who}'s record: `, detail: "", money: `${fmtGc(n.amount)} lost`, note, tone: "pink", moneyTone: "pink" });
+      items.push({ id: n.id, kind: "shot", at: shotDeadline(n.storage), score: n.storage.target, result: "You lost", context: `${who}'s record: `, detail: "", money: `${fmtGamecoin(n.amount)} lost`, note, tone: "pink", moneyTone: "pink" });
       continue;
     }
     if (n.consumedAt === undefined) continue;
@@ -131,20 +131,20 @@ export function history(notes: ChallengeNote[], me: AccountFelts, height: number
         const w = winner(n, notes, height);
         const who = w ? name(w) : "Someone";
         // the prize is lost either way; what earlier losers paid stands next to it, never instead of it
-        const money = won > 0n ? { money: `${fmtGc(won)} won, ${fmtGc(n.amount)} lost`, moneyTone: "" as const } : { money: `${fmtGc(n.amount)} lost`, moneyTone: "pink" as const };
+        const money = won > 0n ? { money: `${fmtGamecoin(won)} won, ${toGc(n.amount)} lost`, moneyTone: "" as const } : { money: `${fmtGamecoin(n.amount)} lost`, moneyTone: "pink" as const };
         items.push({ ...base, result: "Beaten", context: `${who} beat `, detail: tries, tone: "pink", note: `Prize went to ${who}.`, ...money });
       } else if (lost > 0) {
-        const money = won > 0n ? { money: `${fmtGc(won)} won`, moneyTone: "mint" as const, note: "Your Gamecoin back." } : { money: `${fmtGc(n.amount)} back`, moneyTone: "" as const };
+        const money = won > 0n ? { money: `${fmtGamecoin(won)} won`, moneyTone: "mint" as const, note: "Your Gamecoin back." } : { money: `${fmtGamecoin(n.amount)} back`, moneyTone: "" as const };
         items.push({ ...base, result: "Defended", detail: tries, tone: "mint", ...money });
-      } else items.push({ ...base, result: "Taken back", detail: shotsAt(n, notes).length === 0 ? "Nobody tried." : "", money: `${fmtGc(n.amount)} back`, tone: "", moneyTone: "" });
+      } else items.push({ ...base, result: "Taken back", detail: shotsAt(n, notes).length === 0 ? "Nobody tried." : "", money: `${fmtGamecoin(n.amount)} back`, tone: "", moneyTone: "" });
     } else if (n.kind === "shot" && same(n.storage.rival, me)) {
       const who = name(n.storage.champion);
       const record = recordOf(n, notes);
       const shot = { ...base, context: `${who}'s record: ` };
-      if (shotOutcome(n, height) === "lost") items.push({ ...shot, result: "You lost", money: `${fmtGc(n.amount)} lost`, note: `Went to ${who}.`, tone: "pink", moneyTone: "pink" });
+      if (shotOutcome(n, height) === "lost") items.push({ ...shot, result: "You lost", money: `${fmtGamecoin(n.amount)} lost`, note: `Went to ${who}.`, tone: "pink", moneyTone: "pink" });
       // the prize comes with the shot in one transaction: same block
-      else if (record && record.consumedAt === n.consumedAt) items.push({ ...shot, result: "You won", money: `${fmtGc(record.amount)} won`, note: "Your Gamecoin back.", tone: "mint", moneyTone: "mint" });
-      else items.push({ ...shot, result: "You won", detail: record && record.consumedAt !== undefined && record.consumedAt < n.consumedAt ? "Prize already taken." : "", money: `${fmtGc(n.amount)} back`, tone: "mint", moneyTone: "" });
+      else if (record && record.consumedAt === n.consumedAt) items.push({ ...shot, result: "You won", money: `${fmtGamecoin(record.amount)} won`, note: "Your Gamecoin back.", tone: "mint", moneyTone: "mint" });
+      else items.push({ ...shot, result: "You won", detail: record && record.consumedAt !== undefined && record.consumedAt < n.consumedAt ? "Prize already taken." : "", money: `${fmtGamecoin(n.amount)} back`, tone: "mint", moneyTone: "" });
     }
   }
   return items.sort((a, b) => b.at - a.at);

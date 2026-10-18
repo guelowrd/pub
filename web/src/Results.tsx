@@ -68,8 +68,12 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
     else { heading = "CHECKING RESULT"; status = trouble ? trouble.t.title.toUpperCase() : busy ? busy.text : `SCORE TO BEAT ${fmt(shot.target)}`; }
   } else {
     footer = [{ kind: "footer", rect: G.footer[0], label: "SAME RUN", onClick: onSame }, { kind: "footer", rect: G.footer[1], label: "NEW RUN", onClick: onNew }];
-    const post = () => { chain?.dismiss(); void chain?.post(s.seed, station, s.score).then((p) => p && setPosted(p)); };
+    const post = () => { chain?.dismiss(); void chain?.post(s.seed, station, s.score).then((p) => { if (p) { setPosted(p); setNote(null); } }); };
     const postKey = (label: string, disabled = false, onClick = post): KeyDef => ({ kind: "post", rect: G.action, label, disabled, onClick });
+    const grant = () => void chain?.gamecoins().then((m) => m && setNote(m));
+    // no Gamecoins (the post's own check, or a balance read before): the faucet key in place of POST IT, the record stays on
+    // screen until the coins are in (Gaylord's phone, 2026-10-17; 2026-10-18: no POST IT while the wallet is known empty)
+    const needCoins = () => { heading = "NEED GAMECOINS"; color = YELLOW; status = "A POST COSTS 1 GAMECOIN. GET 10 FREE,\nOPEN YOUR WALLET TO TAKE THEM, THEN POST."; keys = [postKey("GET GAMECOINS", false, grant)]; };
     if (posted) {
       heading = "RECORD POSTED"; color = MINT; status = note;
       const links = recordLinks(posted.recordId, posted.score, posted.expiresAt, STATIONS[posted.song].title);
@@ -78,15 +82,17 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
       const riders = s.stops.filter((o) => o.taken && o.rider).map((o) => o.rider!).sort((p, q) => agePoints(q.age) - agePoints(p.age));
       keys = [["SHARE ON X", () => window.open(links.x, "_blank", "noopener")], ["COPY LINK", () => void navigator.clipboard?.writeText(links.url).then(() => setNote("LINK COPIED"), () => setNote("COPY FAILED"))], ["SAVE CARD", () => void saveCard(posted.score, STATIONS[posted.song].title, riders).catch(() => setNote("COULD NOT SAVE"))]]
         .map(([label, onClick], i) => ({ kind: "share" as const, rect: [a[0] + i * (w + gap), a[1], w, a[3]], label: label as string, onClick: onClick as () => void }));
-    } else if (trouble?.t.kind === "funds") {
-      // no Gamecoins: the faucet key right here, so the record is not lost to a trip through the menu (Gaylord's phone, 2026-10-17)
-      status = `${trouble.t.title.toUpperCase()}\nGET GC SENDS 10 TO YOUR WALLET. TAKE THEM THERE, THEN POST.`;
-      keys = [["GET GC", () => void chain?.gamecoins().then((m) => m && setNote(m))], ["POST IT", () => { chain?.dismiss(); post(); }]].map(([label, onClick], i) => ({ kind: "share" as const, rect: G.share[i], label: label as string, onClick: onClick as () => void }));
-    } else if (trouble) { status = trouble.t.title.toUpperCase(); keys = [postKey("TRY AGAIN", false, () => { const r = trouble.retry; chain?.dismiss(); r ? r() : post(); })]; }
-    else if (busy) { status = busy.stage === "connect" ? "CONNECTING" : busy.stage === "wallet" ? "CHECK WALLET" : busy.stage === "prepare" ? "GETTING READY" : "POSTING"; keys = [postKey(busy.stage === "network" ? "POSTING" : "POST IT", true)]; if (status === "POSTING") status = null; } // the key says it
+    } else if (trouble?.t.kind === "funds") needCoins();
+    else if (trouble) { status = trouble.t.title.toUpperCase(); keys = [postKey("TRY AGAIN", false, () => { const r = trouble.retry; chain?.dismiss(); r ? r() : post(); })]; }
+    else if (busy) { // the key says what is being sent (a post, or the faucet's Gamecoins), the status the step before it
+      const coins = /GAMECOINS/.test(busy.text);
+      if (coins) heading = "NEED GAMECOINS";
+      status = busy.stage === "connect" ? "CONNECTING" : busy.stage === "wallet" ? "CHECK WALLET" : busy.stage === "prepare" ? "GETTING READY" : null;
+      keys = [postKey(busy.stage !== "network" ? "POST IT" : coins ? "GETTING GAMECOINS" : "POSTING", true)];
+    }
     else if (!chain?.ready) { status = "LOADING THE CHAIN"; keys = [postKey("POST IT", true)]; }
     else if (!chain.me) { status = null; keys = [postKey("CONNECT", false, () => void chain.connect())]; } // the key says it
-    else if (chain.balance != null && chain.balance < STAKE) { status = "NEED GAMECOINS"; keys = [postKey("GET GC", false, () => void chain.gamecoins().then((m) => m && setNote(m)))]; }
+    else if (chain.balance != null && chain.balance < STAKE) needCoins();
     else { status = note ?? TERMS; keys = [postKey("POST IT")]; }
   }
 

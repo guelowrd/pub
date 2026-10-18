@@ -65,14 +65,20 @@ function balanceOf(assets: Assets, faucet: string): bigint {
   return assets.filter((a) => parseAccountId(a.faucetId).toString() === id).reduce((sum, a) => sum + BigInt(a.amount), 0n);
 }
 
+/** Every balance read goes to the UI too: the results screen offers Gamecoins instead of POST IT once the wallet is known empty. */
+let onBalance: (b: bigint) => void = () => {};
+export const setBalanceListener = (fn: typeof onBalance) => (onBalance = fn);
+
 /** The wallet's own view of its Gamecoin balance. */
 export async function gcBalance(wallet: Wallet): Promise<bigint> {
-  return balanceOf(await walletAssets(wallet), GC_FAUCET);
+  const balance = balanceOf(await walletAssets(wallet), GC_FAUCET);
+  onBalance(balance);
+  return balance;
 }
 
 /** Throws a readable error (flow.ts explain) when the wallet holds less than `needed` Gamecoin. */
 async function requireGc(wallet: Wallet, needed: bigint): Promise<void> {
-  const balance = balanceOf(await walletAssets(wallet), GC_FAUCET);
+  const balance = await gcBalance(wallet);
   if (balance < needed) throw new Error(`You need ${fmtGamecoin(needed)} and your wallet holds ${fmtGamecoin(balance)}. Get Gamecoins first.`);
 }
 
@@ -114,6 +120,9 @@ export const setSubmitAttemptListener = (fn: typeof onSubmitAttempt) => (onSubmi
 /** Progress callback for the UI: "prepare" while the request is built, "wallet" once the wallet has it. */
 let onSubmitStage: (stage: "prepare" | "wallet") => void = () => {};
 export const setSubmitStageListener = (fn: typeof onSubmitStage) => (onSubmitStage = fn);
+/** What the request will make, before the wallet has it: a Try again after a wallet that never answered looks for these first. */
+let onPending: (s: Submitted) => void = () => {};
+export const setPendingListener = (fn: typeof onPending) => (onPending = fn);
 
 /**
  * Builds the request from a fresh builder and submits it to Bread. Bread 1.17.2 runs it at its own
@@ -158,6 +167,7 @@ export async function postRecord(client: Client, wallet: Wallet, storage: Challe
   // hence the same note id)
   const make = () => buildChallengeNote(parseAccountId(wallet.address!), record, felts, GC_FAUCET, amount, serial);
   const noteId = make().id().toString();
+  onPending({ txId: "", noteIds: [noteId] });
   const txId = await submit(client, wallet, (b) => {
     const notes = new NoteArray();
     notes.push(make());
@@ -178,6 +188,7 @@ export async function postShot(client: Client, wallet: Wallet, record: Challenge
   const serial = randomWord();
   const make = () => buildChallengeNote(parseAccountId(wallet.address!), shot, felts, record.faucet, record.storage.minStake, serial);
   const noteId = make().id().toString();
+  onPending({ txId: "", noteIds: [noteId], deadline } as Submitted);
   const txId = await submit(client, wallet, (b) => {
     const notes = new NoteArray();
     notes.push(make());
@@ -212,6 +223,7 @@ export async function settle(client: Client, wallet: Wallet, shots: ChallengeNot
     }
     return b.extendAdviceMap(advice).build();
   };
+  onPending({ txId: "", noteIds: ids });
   return { txId: await submit(client, wallet, build, ids, files), noteIds: ids };
 }
 
@@ -224,6 +236,7 @@ export async function collect(client: Client, wallet: Wallet, notes: ChallengeNo
     for (const input of inputs) b = b.withExplicitInputNote(input, wordFromFelts(ZERO_WORD));
     return b.build();
   };
+  onPending({ txId: "", noteIds: ids });
   return { txId: await submit(client, wallet, build, ids, files), noteIds: ids };
 }
 

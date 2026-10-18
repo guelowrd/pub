@@ -13,7 +13,7 @@ import { need, unlocked } from "./game/unlock";
 import { NAME } from "./game/sim";
 import { audio } from "./audio";
 import type { ChainApi, ChallengeNote } from "./chain/ChainHost";
-import { blocksToClock as clock, fmtGc as gc, sameAccount as same, sameWord } from "./chain/flow";
+import { blocksToClock as clock, fmtGamecoin, sameAccount as same, sameWord } from "./chain/flow";
 import { boards, history, owed as owedNotes } from "./chain/hub";
 import { noteDeadline } from "./chain/notes";
 
@@ -21,7 +21,7 @@ type Mode = "solo" | "challenge" | "my-runs" | "leaderboards" | "wallet" | "syst
 const MODES: Mode[] = ["solo", "challenge", "my-runs", "leaderboards", "wallet", "system"];
 // the boards, one a page (GQ's, the LOSERBOARD last)
 const BOARDS: [keyof ReturnType<typeof boards>, string][] = [["records", "BEST RECORDS"], ["coins", "MOST GAMECOINS WON"], ["defended", "RIVALS BEATEN"], ["smashed", "RECORDS SMASHED"], ["losers", "LOSERBOARD"]];
-type Word = "drive" | "shot" | "collect" | "connect" | "wait";
+type Word = "drive" | "shot" | "collect" | "connect" | "gamecoins" | "wait";
 // The font pass (PUB-Painted-Type, Gaylord 2026-10-17: "much better"): PUB Painted Pixel for words and the counter, PUB Painted
 // Matrix for numbers, the LCD line and the red key's word. The sizes in menu.json were set against the stand-ins (Chakra Petch,
 // Share Tech Mono, PUB Stereo LCD); K keeps the cap heights they gave (caps at 100 px: the stand-ins and Pixel 70, Matrix 64.6, Stereo LCD 66.7)
@@ -46,6 +46,7 @@ type Run = { key: string; kind: "record" | "shot"; score: number; state: string;
 const score = (n: number) => String(n).padStart(5, "0");
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const songOf = (i: number) => STATIONS[i]?.title ?? `SONG ${i}`;
+const gc = (v: bigint) => fmtGamecoin(v).toUpperCase(); // spelled out on the TV (Gaylord 2026-10-18: GC was unclear)
 // the TV's painting of a stage: the district at its hour, rain or not
 const previewOf = (st: Station) => `${ART}stage/${st.district}-${st.time}${st.rain ? "-rain" : ""}.png`;
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -129,6 +130,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     ...history(notes, me, height, (a) => chain!.nameOf(a)).map((h): Run => { const n = notes.find((x) => x.id === h.id); return { key: h.id, kind: h.kind, score: h.score, state: h.result.replace(/^You /, "").toUpperCase(), line: h.money.toUpperCase(), tone: h.tone, song: n ? songIn(n) : 0, label: h.kind === "shot" ? `CHAMPION ${h.context.split("'")[0]}` : "YOUR SCORE" }; }),
   ] : [];
   const best = boards(notes, height, me);
+  const grant = () => void chain?.gamecoins().then((m) => m && setNote(m)); // the faucet's 10, from WALLET, an empty MY RUNS and LEADERBOARDS
 
   // what the mode shows on the TV, and what the keys do there
   const cur = cursor[mode] ?? 0;
@@ -172,7 +174,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       if (o.word === "collect") { word = "collect"; go = () => void chain?.collect(owed).then((ok) => ok && setNote("COINS RECEIVED")); } // everything owed, one transaction
       else if (o.word === "drive") { word = "drive"; go = () => onShot(o.shots!, o.record!); }
     } else if (loading) status = ["LOADING"];
-    else if (!runs.length) status = ["NO RUNS YET"];
+    else if (!runs.length) { status = ["NO RUNS YET", "A POST COSTS 1 GAMECOIN. GET 10 FREE WITH THE RED KEY"]; word = "gamecoins"; go = grant; }
     else {
       list(runs.length); count = `${runs.length} RUNS`;
       rows = runs.map((r, i) => ({ key: r.key, cells: [cell(r.kind.toUpperCase(), C["my-runs"].type, C["my-runs"].typeS, "cp", i === at ? AMBER : WHITE), cell(score(r.score), C["my-runs"].scoreR, C["my-runs"].scoreS, "mono", AMBER, true), cell(r.state, C["my-runs"].stateR, C["my-runs"].stateS, "cp", i === at ? AMBER : TONE[r.state] ?? WHITE, true)] }));
@@ -189,6 +191,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       const top = b.top.filter((r) => !seen.has(`${r.who.prefix}:${r.who.suffix}`) && seen.add(`${r.who.prefix}:${r.who.suffix}`)).slice(0, b.mine ? N - 1 : N); // one row per player
       rows = [...top, ...(b.mine ? [b.mine] : [])].map((r) => ({ key: r.key, cells: [cell(`${pad2(r.rank)} ${chain?.nameOf(r.who) ?? "???"}`, C.leaderboards.name, C.challenge.nicknameS, "cp", same(me, r.who) ? AMBER : WHITE), cell(key === "records" ? score(r.value) : String(r.value), C.leaderboards.scoreR, C.leaderboards.scoreS, "mono", AMBER, true)] }));
       footer = [cell(title, TV.safe[0], 24 * u, "cp", key === "losers" ? PINK : CYAN, false, undefined, TV.detail), ...(rows.length ? [] : [cell("NO ONE YET", C.leaderboards.name, C.challenge.nicknameS, "cp", WHITE, false, undefined, TV.rows.baselines[0])])];
+      if (me && !runs.length) { word = "gamecoins"; go = grant; } // a newcomer's way onto the boards
     }
   } else if (mode === "wallet") {
     heading = "WALLET";
@@ -196,7 +199,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       ["STATUS", !chain?.installed ? "NO BREAD WALLET" : me ? "CONNECTED" : chain.connecting ? chain.walletStatus || "CONNECTING" : "NOT CONNECTED"],
       ["BALANCE", chain?.balance != null ? gc(chain.balance) : me ? "ENTER TO READ" : "--", me ? () => void chain?.readBalance() : undefined],
       ["NETWORK", "MIDEN TESTNET"],
-      ...(me ? [["PLAYER", chain!.nameOf(me)], ["ADDRESS", `${chain!.address!.slice(0, 7)}…${chain!.address!.slice(-5)} COPY`, () => void navigator.clipboard?.writeText(chain!.address!).then(() => setNote("ADDRESS COPIED"), () => setNote("COPY FAILED"))], ["GAMECOINS", "GET 10", () => void chain?.gamecoins().then((m) => m && setNote(m))], ["DISCONNECT", "ENTER", () => void chain?.disconnect()]] as [string, string, (() => void)?][] : []),
+      ...(me ? [["PLAYER", chain!.nameOf(me)], ["ADDRESS", `${chain!.address!.slice(0, 7)}…${chain!.address!.slice(-5)} COPY`, () => void navigator.clipboard?.writeText(chain!.address!).then(() => setNote("ADDRESS COPIED"), () => setNote("COPY FAILED"))], ["GAMECOINS", "GET 10", grant], ["DISCONNECT", "ENTER", () => void chain?.disconnect()]] as [string, string, (() => void)?][] : []),
     ], "mono", AMBER);
     if (!me && chain?.installed && !chain.connecting) { word = "connect"; go = () => void chain.connect(); }
   } else {

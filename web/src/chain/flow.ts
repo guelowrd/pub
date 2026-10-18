@@ -79,6 +79,8 @@ export function settlePlan(shots: ChallengeNote[], record: ChallengeNote | undef
  * and can still fail afterwards in its own queue, without telling the dApp.
  */
 export const NOT_FINISHED = "It did not go through yet. Nothing is spent until it does, so try again.";
+/** The wallet took too long: a popup left open, or none. Try again looks whether it landed after all before sending again. */
+export const WALLET_SILENT = "Your wallet did not answer. Open it, then try again.";
 
 /** A block count as m:ss, at testnet's ~3 s per block. */
 export const blocksToClock = (blocks: number) => secondsToClock(Math.max(0, blocks) * BLOCK_SECONDS);
@@ -118,6 +120,7 @@ export function explain(e: unknown): Trouble {
   const raw = message(e);
   const trouble = (kind: TroubleKind, title: string, withDetail = true): Trouble => (withDetail && raw && raw !== title ? { kind, title, detail: raw } : { kind, title });
   if (raw.includes(NOT_FINISHED)) return trouble("not-finished", NOT_FINISHED, false);
+  if (raw.includes(WALLET_SILENT)) return trouble("not-finished", WALLET_SILENT, false);
   if (/NOT_GRANTED|reject|declin|denied|cancel/i.test(raw)) return trouble("said-no", "You said no in your wallet. Nothing was sent.");
   if (/WalletNotReady|not installed/i.test(raw)) return trouble("no-wallet", "No Bread wallet found. Install it, then try again.");
   if (/WalletNotConnected|not connected|WalletDisconnected/i.test(raw)) return trouble("no-wallet", "Connect your wallet first.");
@@ -169,9 +172,6 @@ export function fmtGamecoin(v: bigint): string {
   const n = toGc(v);
   return `${n.toLocaleString("en-US", { maximumFractionDigits: GC_DECIMALS })} ${n === 1 ? "Gamecoin" : "Gamecoins"}`;
 }
-
-/** "1 GC", "2.5 GC": for keys and the HISTORY state column, where "Gamecoin" has no room (Gaylord: spell it out elsewhere). */
-export const fmtGc = (v: bigint) => `${toGc(v).toLocaleString("en-US", { maximumFractionDigits: GC_DECIMALS })} GC`;
 
 /** A moment in UTC, for readers anywhere: 13 Oct 14:05 UTC. */
 function utcLabel(ms: number): string {
