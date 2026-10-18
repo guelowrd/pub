@@ -115,3 +115,6 @@ phone the same flow has a review screen, a Bread popup to find, proving and a sl
   stretch a game rule to absorb a UX failure. And players never read mechanics: no chain, notes, blocks, proving; they POST and SHARE, or
   TAKE A SHOT and WIN or LOSE; waiting steps are flavour, never something a player must understand to act.
 - To simulate "no wallet", hide it before the adapter is built, never after: the wallet adapter detects Bread once at load, and deleting the injected object later leaves readyState Installed while connects fail, so the provider loops between a named and a null wallet and every state derived from it flickers. A different origin the content script does not match (here http://[::1]:5180/) is the honest test.
+
+## Composition is Gaylord's (2026-10-18)
+Eight layout variations of the record card and none landed; Gaylord: "Your sense of positioning and design isn't great. Can you please give me the assets I'll do it myself." When a visual needs composing (where things sit, how big), build the layers and hand them over as separate transparent PNGs with the fonts and colours, then implement the layout he returns. Measuring alignment is my job; choosing it is his.
