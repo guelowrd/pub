@@ -867,3 +867,10 @@ Then the phone layout of the main ones.
 - The share link is `/r?record=ID&t=<track id>&s=<score>`; the game only reads `record`. No or bad score: "CAN YOU BEAT MY SCORE?".
   It needs its own path: Vercel serves the static page for `/` before any rewrite, whatever the query (a `has` query rewrite on `/` never ran, 2026-10-18).
 - Gaylord may ask the designer agent for the first 16 standing characters at 2x (cells 512 x 768): they are the soft ones on the card.
+
+## LEADERBOARDS: ten rows a page (2026-10-19)
+- Gaylord: "leaderboards must have 10 rows per page, with possibility to scroll". The screen is now two levels like CHALLENGE: the five
+  boards as a list (how many players on each), ENTER opens one; a board shows ten rows a page in smaller type, PREV / NEXT turn the
+  pages ("02 / 04" top right), BACK returns to the list. My row closes every page I am not on (pages of nine then, no rank skipped).
+- BEST RECORDS ranks players by their best record (one row each); every board keeps a hundred rows (hub.ts). Before, a fourth row read "08".
+- A 503 from the faucet reads "THE GAMECOIN FAUCET IS DOWN. TRY AGAIN LATER." (was the network line).

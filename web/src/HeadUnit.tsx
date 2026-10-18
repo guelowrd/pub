@@ -20,7 +20,8 @@ import { noteDeadline } from "./chain/notes";
 type Mode = "solo" | "challenge" | "my-runs" | "leaderboards" | "wallet" | "system";
 const MODES: Mode[] = ["solo", "challenge", "my-runs", "leaderboards", "wallet", "system"];
 // the boards, one a page (GQ's, the LOSERBOARD last)
-const BOARDS: [keyof ReturnType<typeof boards>, string][] = [["records", "BEST RECORDS"], ["coins", "MOST GAMECOINS WON"], ["defended", "RIVALS BEATEN"], ["smashed", "RECORDS SMASHED"], ["losers", "LOSERBOARD"]];
+type BoardKey = keyof ReturnType<typeof boards>;
+const BOARDS: [BoardKey, string][] = [["records", "BEST RECORDS"], ["coins", "MOST GAMECOINS WON"], ["defended", "RIVALS BEATEN"], ["smashed", "RECORDS SMASHED"], ["losers", "LOSERBOARD"]];
 type Word = "drive" | "shot" | "collect" | "connect" | "gamecoins" | "get bread" | "wait";
 // The font pass (PUB-Painted-Type, Gaylord 2026-10-17: "much better"): PUB Painted Pixel for words and the counter, PUB Painted
 // Matrix for numbers, the LCD line and the red key's word. The sizes in menu.json were set against the stand-ins (Chakra Petch,
@@ -94,6 +95,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const [cursor, setCursor] = useState<Record<string, number>>({}); // the row (or page) per mode, kept across mode changes
   const [review, setReview] = useState<ChallengeNote | null>(null); // CHALLENGE: the record under review
   const [opened, setOpened] = useState<string | null>(null); // MY RUNS: the run opened, by key
+  const [board, setBoard] = useState<BoardKey | null>(null); // LEADERBOARDS: the board opened
   const [note, setNote] = useState<string | null>(null); // a line of our own on the TV (coins received, best cleared)
   const [pressed, setPressed] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
@@ -134,9 +136,11 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const getBread = () => void window.open(BREAD_URL, "_blank", "noopener"); // no Bread here: the red key opens its page
 
   // what the mode shows on the TV, and what the keys do there
-  const cur = cursor[mode] ?? 0;
+  const cursorKey = board ? `leaderboards/${board}` : mode, cur = cursor[cursorKey] ?? 0; // a board keeps its own page
   let word: Word | null = null, go: (() => void) | null = null, enter: (() => void) | null = null;
-  let heading = "", count = "", rows: Row[] = [], total = 0, at = 0, start = 0, selected = -1, footer: Cell[] = [], status: [string, string?] | null = null, rev: Review | null = null;
+  let heading = "", count = "", rows: Row[] = [], total = 0, at = 0, start = 0, selected = -1, footer: Cell[] = [], status: [string, string?] | null = null, rev: Review | null = null, baselines = TV.rows.baselines;
+  // a board's page: ten rows between the heading and the footer, smaller type (Gaylord 2026-10-19: ten rows a page, scrolling)
+  const DENSE = 10, denseTop = TV.heading[1] + 44 * u, denseStep = (TV.detail - 46 * u - denseTop) / (DENSE - 1), dense = Array.from({ length: DENSE }, (_, i) => denseTop + i * denseStep), denseS = Math.max(11, 22 * u);
   const list = (n: number) => { total = n; at = Math.min(cur, Math.max(0, n - 1)); start = Math.min(Math.max(0, at - N + 1), Math.max(0, n - N)); selected = at; };
   const kv = (pairs: [string, string, (() => void)?][], valueFont: Font, valueColor: string) => {
     list(pairs.length); if (pairs.length > N) count = `${pad2(at + 1)} / ${pad2(pairs.length)}`; // more rows than the TV shows: say where the cursor is
@@ -186,12 +190,16 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   } else if (mode === "leaderboards") {
     heading = "LEADERBOARDS";
     if (loading) status = ["LOADING"];
-    else { // PREV / NEXT turn the pages, one board a page, no row is selected; my row closes the page when I am not in its top
-      const page = Math.min(cur, BOARDS.length - 1), [key, title] = BOARDS[page], b = best[key], seen = new Set<string>();
-      total = BOARDS.length; at = page; count = `${pad2(page + 1)} / ${pad2(BOARDS.length)}`;
-      const top = b.top.filter((r) => !seen.has(`${r.who.prefix}:${r.who.suffix}`) && seen.add(`${r.who.prefix}:${r.who.suffix}`)).slice(0, b.mine ? N - 1 : N); // one row per player
-      rows = [...top, ...(b.mine ? [b.mine] : [])].map((r) => ({ key: r.key, cells: [cell(`${pad2(r.rank)} ${chain?.nameOf(r.who) ?? "???"}`, C.leaderboards.name, C.challenge.nicknameS, "cp", same(me, r.who) ? AMBER : WHITE), cell(key === "records" ? score(r.value) : String(r.value), C.leaderboards.scoreR, C.leaderboards.scoreS, "mono", AMBER, true)] }));
-      footer = [cell(title, TV.safe[0], 24 * u, "cp", key === "losers" ? PINK : CYAN, false, undefined, TV.detail), ...(rows.length ? [] : [cell("NO ONE YET", C.leaderboards.name, C.challenge.nicknameS, "cp", WHITE, false, undefined, TV.rows.baselines[0])])];
+    else if (!board) { // the five boards as a list, how many players on each; ENTER opens one
+      list(BOARDS.length); if (BOARDS.length > N) count = `${pad2(at + 1)} / ${pad2(BOARDS.length)}`;
+      rows = BOARDS.map(([key, title], i) => ({ key, cells: [cell(title, C.leaderboards.name, C.challenge.nicknameS, "cp", i === at ? AMBER : key === "losers" ? PINK : WHITE), cell(String(best[key].top.length), C.leaderboards.scoreR, C.leaderboards.scoreS, "mono", AMBER, true)] }));
+      const k = BOARDS[at][0]; enter = () => setBoard(k);
+    } else { // one board, ten rows a page: PREV / NEXT turn the pages, BACK closes it. My row closes every page I am not on (nine rows then, so no rank is skipped)
+      const title = BOARDS.find(([k]) => k === board)![1], b = best[board], mine = b.top.find((r) => same(me, r.who)) ?? b.mine, per = mine ? DENSE - 1 : DENSE, pages = Math.max(1, Math.ceil(b.top.length / per));
+      total = pages; at = Math.min(cur, pages - 1); baselines = dense; if (pages > 1) count = `${pad2(at + 1)} / ${pad2(pages)}`;
+      const slice = b.top.slice(at * per, (at + 1) * per), shown = mine && !slice.includes(mine) ? [...slice, mine] : slice;
+      rows = shown.map((r) => ({ key: r.key, cells: [cell(`${pad2(r.rank)} ${chain?.nameOf(r.who) ?? "???"}`, C.leaderboards.name, denseS, "cp", same(me, r.who) ? AMBER : WHITE), cell(board === "records" ? score(r.value) : String(r.value), C.leaderboards.scoreR, denseS, "mono", AMBER, true)] }));
+      footer = [cell(title, TV.safe[0], 24 * u, "cp", board === "losers" ? PINK : CYAN, false, undefined, TV.detail), ...(rows.length ? [] : [cell("NO ONE YET", C.leaderboards.name, C.challenge.nicknameS, "cp", WHITE, false, undefined, TV.rows.baselines[0])])];
       if (me && !runs.length) { word = "gamecoins"; go = grant; } // a newcomer's way onto the boards
     }
   } else if (mode === "wallet") {
@@ -223,7 +231,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
 
   // which keys answer, by the pack's rules: a root has no BACK, ENTER opens rows only, the arrows stop at a list's ends
   // (the stages wrap), nothing but VOL and MUTE while the chain works
-  const root = !review && !opened && !note && !trouble;
+  const root = !review && !opened && !board && !note && !trouble;
   const on = (id: string): boolean => {
     if (busy) return id === "volume" || id === "mute";
     switch (id) {
@@ -235,9 +243,9 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       default: return true;
     }
   };
-  const goMode = (m: Mode) => { setMode(m); setReview(null); setOpened(null); setNote(null); chain?.dismiss(); };
-  const back = () => { if (trouble) return chain?.dismiss(); if (note) return setNote(null); if (review) return setReview(null); setOpened(null); };
-  const stepTo = (d: number) => { if (mode === "solo") return setStation((station + d + STATIONS.length) % STATIONS.length); if (total) setCursor({ ...cursor, [mode]: Math.max(0, Math.min(total - 1, at + d)) }); };
+  const goMode = (m: Mode) => { setMode(m); setReview(null); setOpened(null); setBoard(null); setNote(null); chain?.dismiss(); };
+  const back = () => { if (trouble) return chain?.dismiss(); if (note) return setNote(null); if (review) return setReview(null); if (board) return setBoard(null); setOpened(null); };
+  const stepTo = (d: number) => { if (mode === "solo") return setStation((station + d + STATIONS.length) % STATIONS.length); if (total) setCursor({ ...cursor, [cursorKey]: Math.max(0, Math.min(total - 1, at + d)) }); };
   const act = (id: string, half?: 0 | 1) => {
     if (!on(id)) return;
     if (MODES.includes(id as Mode)) return goMode(id as Mode);
@@ -333,13 +341,13 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
               {text(heading, TV.heading[0], TV.heading[1], TV.heading[2], "cp", AMBER)}
               {brand(TV.brand, "right")}
               {count && text(count, TV.count[0], TV.count[1], TV.count[2], "mono", CYAN, true)}
-              {rows.slice(start, start + N).map((row, j) => {
+              {rows.slice(start, start + baselines.length).map((row, j) => {
                 const i = start + j, r = TV.rows.sel[j];
                 return (
                   <span key={row.key}>
-                    {i === selected && <img src={`${GP}${layout}/row.png`} alt="" style={box(r)} />}
-                    {i === selected && <img src={`${GP}icons/cursor.png`} alt="" style={{ left: px(r[0] + 5 * u), top: px(r[1] + r[3] / 2 - 6 * u), width: px(12 * u), height: px(12 * u) }} />}
-                    {cells(row.cells, TV.rows.baselines[j])}
+                    {i === selected && r && <img src={`${GP}${layout}/row.png`} alt="" style={box(r)} />}
+                    {i === selected && r && <img src={`${GP}icons/cursor.png`} alt="" style={{ left: px(r[0] + 5 * u), top: px(r[1] + r[3] / 2 - 6 * u), width: px(12 * u), height: px(12 * u) }} />}
+                    {cells(row.cells, baselines[j])}
                   </span>
                 );
               })}

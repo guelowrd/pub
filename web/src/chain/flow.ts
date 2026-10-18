@@ -135,7 +135,8 @@ export function explain(e: unknown): Trouble {
   if (/not found on chain|is not public|not a record or shot|not Pick Up Boomers|Not found/i.test(raw)) return trouble("not-found", "No such record.");
   if (/course does not match/i.test(raw)) return trouble("refused", "This record is not from this game.");
   if (/assertion failed|error code/i.test(raw)) return trouble("refused", "That did not work.");
-  if (/fetch|network|timed out|timeout|deadline exceeded|unavailable|transport|ECONN|50[234]|load failed|faucet|mempool/i.test(raw))
+  if (/faucet/i.test(raw)) return trouble("network", "The Gamecoin faucet is down. Try again later."); // a 503 from the faucet is not the network (2026-10-19)
+  if (/fetch|network|timed out|timeout|deadline exceeded|unavailable|transport|ECONN|50[234]|load failed|mempool/i.test(raw))
     return trouble("network", "The network is slow right now. Try again in a moment.");
   return trouble("unknown", "Something went wrong.");
 }
