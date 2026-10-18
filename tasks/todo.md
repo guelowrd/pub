@@ -805,3 +805,41 @@ Bread, waited the 2 minutes, then read "did not go through yet, try again", whic
   Left as is: the WALLET page's NETWORK row (MIDEN TESTNET), SYSTEM's WALLET row, the terms line.
 - [x] SHOT starts the drive at once (Gaylord: yes to the gameplay option): no SHOT READY / PRESS DRIVE review, the `ready` state gone; a shot funded but not driven (reload) still shows READY with DRIVE in MY RUNS → verify: ?local=11 shot at HSW 2419, driving 5 s after SHOT, RECORD BEATEN at time-up with the waiting lines (GETTING READY, PROVING, SENDING with clocks), "2,985 POINTS. YOU WIN! DONE!", NEW RUN / MENU
 - [x] The raw error is back on the TV under the title (Gaylord: "copy-paste the error and tag @zkGaylord on X"), capped at 240 characters, selectable text, the tag line after it → verify: tsc
+
+## Screen audit, one by one (2026-10-18)
+Player's order. Each screen: screenshot to Gaylord, short suggestions, his feedback, fix, confirm, next.
+1. Loading splash (progress)
+2. Splash, CLICK TO START
+3. DRIVE root (stage dial, TUNING)
+4. DRIVE, locked stage
+5. Run HUD, first seconds
+6. Run, paused
+7. Run, last 20 s (late clock), callouts
+8. Results, no wallet installed / not connected
+9. Results, NEED GAMECOINS
+10. Results, getting Gamecoins (busy)
+11. Results, POST IT ready
+12. Results, posting (busy, waiting lines)
+13. Results, RECORD POSTED (share)
+14. Results, post trouble
+15. MY RUNS, not connected (CONNECT)
+16. MY RUNS, NO RUNS YET
+17. MY RUNS, list
+18. MY RUNS, MY RECORD opened
+19. MY RUNS, SHOT READY / TOO LATE opened
+20. MY RUNS, COLLECT
+21. CHALLENGE, list
+22. CHALLENGE, NO CHALLENGES YET
+23. CHALLENGE, review (SHOT)
+24. CHALLENGE, review of my own record / RECORD OVER
+25. CHALLENGE, shot being funded (busy)
+26. Shot run HUD
+27. Shot results, CHECKING RESULT / RECORD BEATEN while settling
+28. Shot results, settled: win / RECORD HELD / SHOT LOST
+29. LEADERBOARDS, three boards
+30. WALLET, not connected / connected
+31. SYSTEM
+32. TV trouble + note lines (ADDRESS COPIED, COINS RECEIVED)
+33. Record opened by link (?record=), POWER off
+Then the phone layout of the main ones.
+- Screens 1-3 reviewed. 3: LEADERBOARDS label read taller than the other keys (14 vs 13 px rows, half a pixel low); scaled 13/14 about its centre in all six labelled states, both packs (scratchpad apply.py). Keep CLICK TO START as is.
