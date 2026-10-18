@@ -149,11 +149,13 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
   .pad { margin-top: calc(100vw * 430 / 1280); } /* under the rail (the rail is 408 board px tall here); --u lives on .app, not here */
   .pause { width: 76%; }
   }
-/* the no-Bread card over the head unit (App.tsx BreadCard): the pause card's colours, HTML so the line can change */
+/* the no-Bread card over the head unit (App.tsx BreadCard): the pause card's colours, HTML so the line can change. Sized
+   in screen pixels, not in the unit's --u: on a phone --u is a third and the card has to read at arm's length */
 .bread-veil { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(6, 11, 22, .75); }
-.bread-card { width: min(92vw, calc(560 * var(--u))); padding: calc(26 * var(--u)) calc(30 * var(--u)); background: linear-gradient(#17262a, #0b1a1d); border: calc(3 * var(--u)) solid #171a1d; outline: calc(1.5 * var(--u)) solid #3a4652; border-radius: calc(8 * var(--u)); box-shadow: 0 0 calc(30 * var(--u)) #000a; text-align: center; }
-.bread-card h2 { margin: 0 0 .5em; font-size: calc(30 * var(--u)); letter-spacing: .04em; color: #94e6dc; }
-.bread-card p { margin: 0 0 1.3em; font-family: "Share Tech Mono", monospace; font-weight: 400; font-size: calc(15 * var(--u)); line-height: 1.5; letter-spacing: .06em; color: #91a8aa; }
-.bread-card div { display: flex; gap: calc(14 * var(--u)); justify-content: center; }
-.bread-card a, .bread-card button { font: inherit; font-size: calc(16 * var(--u)); letter-spacing: .06em; padding: calc(10 * var(--u)) calc(22 * var(--u)); border: calc(1.5 * var(--u)) solid #3a4652; border-radius: calc(6 * var(--u)); background: rgba(8, 12, 36, .7); color: #94e6dc; text-decoration: none; cursor: pointer; }
+.bread-card { width: min(92vw, 680px); padding: clamp(18px, 4vw, 32px) clamp(16px, 4vw, 36px); background: linear-gradient(#17262a, #0b1a1d); border: 3px solid #171a1d; outline: 1.5px solid #3a4652; border-radius: 8px; box-shadow: 0 0 30px #000a; text-align: center; }
+.bread-card h2 { margin: 0 0 .5em; font-size: clamp(24px, 6vw, 38px); letter-spacing: .04em; color: #94e6dc; }
+.bread-card p { margin: 0 0 1.3em; font-family: "Share Tech Mono", monospace; font-weight: 400; font-size: clamp(14px, 3.8vw, 19px); line-height: 1.5; letter-spacing: .05em; color: #91a8aa; }
+.bread-card b { font-weight: 400; color: #ffd16b; }
+.bread-card div { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; }
+.bread-card a, .bread-card button { font: inherit; font-size: clamp(14px, 3.8vw, 18px); letter-spacing: .06em; padding: .6em 1.3em; border: 1.5px solid #3a4652; border-radius: 6px; background: rgba(8, 12, 36, .7); color: #94e6dc; text-decoration: none; cursor: pointer; }
 .bread-card a { color: #ffd27a; border-color: #8a4a2a; background: #3a1812; } /* the red key's colour: the one that matters */
