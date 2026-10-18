@@ -794,3 +794,12 @@ Bread, waited the 2 minutes, then read "did not go through yet, try again", whic
 - [x] NOT_FINISHED says where to look: "Not on the chain after 2 minutes. Your wallet may have refused it: look there. Nothing is spent until it lands."
 - [x] Every wait says where it is and how long (flow.ts waiting, results and head unit): CONNECTING YOUR WALLET / GETTING READY, A FEW SECONDS / OVER TO YOUR WALLET, APPROVE IT THERE, UP TO A MINUTE / WAITING FOR THE CHAIN, USUALLY UNDER A MINUTE, with a clock since the step began (the results screen ticks while busy); the shot screen reads RECORD BEATEN from the score before the chain confirms → verify: ?local=11 post, the states PROVING 0:00..0:01 → WAITING FOR THE CHAIN 0:00..0:06 → RECORD POSTED; waiting() test
 - Not done: nothing recovers SQQ's two Gamecoins (KJS and JHT can collect them); a countdown to the shot deadline on the results screen.
+- Gaylord's calls (10:10): the window stays 6 min, one shot is one drive, a failed shot is a lost coin; no chain, notes or mechanics in anything a player reads. Done:
+  SHOT_WINDOW_BLOCKS back to 120; the shot deadline counts from the node's tip (the client's sync lagged it by 6 blocks); SHOT_DRIVE_BLOCKS 100
+  (a minute to press DRIVE, the drive, two minutes to claim); settlePlan's `again` and the results TRY AGAIN on a lost shot removed (NEW RUN);
+  a late claim reads SHOT LOST in pink, "Shot lost: too late for the claim. Your Gamecoin goes to the champion.", no retry; TRY AGAIN stays
+  only where nothing is at stake (post, collect, connect, Gamecoins, a claim with time left). Words: "Not done after 2 minutes. Check your
+  wallet, then try again." / "Your wallet was not ready." / "No such record." / "This record is not from this game." / "That did not work." /
+  "The network is slow right now." / SENDING instead of WAITING FOR THE CHAIN / LOADING instead of LOADING THE CHAIN; the raw error detail
+  no longer shows on the TV (console only); the TV reads TRY AGAIN WITH THE RED KEY under a retryable trouble. Scores in verdicts with separators.
+  Left as is: the WALLET page's NETWORK row (MIDEN TESTNET), SYSTEM's WALLET row, the terms line.

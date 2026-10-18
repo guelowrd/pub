@@ -249,7 +249,7 @@ export default function App() {
       {mode === "over" && (
         <div className="overlay dim screen">
           <Results s={s} station={station} chain={chain} posted={posted} setPosted={setPosted} shot={shot.current ? { target: shot.current.record.storage.target } : null} settled={settled}
-            onSame={() => start(seed, station)} onNew={() => { setSeed(randomSeed()); toMenu(); }} onAgain={() => driveShot(shot.current!.shots, shot.current!.record)}
+            onSame={() => start(seed, station)} onNew={() => { setSeed(randomSeed()); toMenu(); }}
             onMenu={() => { chain?.dismiss(); shot.current = null; setSeed(randomSeed()); toMenu(); }} onRetry={(r) => { chain?.dismiss(); setSettled(null); r(); }} />
         </div>
       )}

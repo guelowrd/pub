@@ -182,7 +182,7 @@ export async function postShot(client: Client, wallet: Wallet, record: Challenge
   // the record names the shot script its shots run (its own version's)
   const shot = (await loadScripts()).shots.get(wordFromFelts(record.storage.shotRoot).toHex());
   if (!shot) throw new Error("This record wants a shot script this app does not have.");
-  const deadline = (await client.getSyncHeight()) + SHOT_WINDOW_BLOCKS;
+  const deadline = (await tip()) + SHOT_WINDOW_BLOCKS; // the node's tip: the client's sync can be a few blocks behind it
   const storage = shotStorage(record.storage, me, record.idWord, deadline);
   const felts = encodeStorage(storage);
   const serial = randomWord();

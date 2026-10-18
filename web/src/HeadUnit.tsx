@@ -214,7 +214,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   }
   // the chain's say comes over the mode's own screen: what is being done, where it is and how long it takes (flow.ts waiting), the trouble after, our own note
   if (busy) { const [what, how] = waiting(busy, chain?.local); status = [(busy.stage === "connect" && chain?.walletStatus) || what, `${busy.text}. ${how}`]; word = "wait"; go = null; rev = null; }
-  else if (trouble) { status = [trouble.retry ? "TRY AGAIN" : trouble.t.title.toUpperCase(), trouble.t.detail]; rev = null; word = trouble.retry ? lastWord.current : null; go = trouble.retry ? () => { const r = trouble.retry!; chain?.dismiss(); r(); } : null; }
+  else if (trouble) { status = [trouble.t.title.toUpperCase(), trouble.retry ? "TRY AGAIN WITH THE RED KEY" : undefined]; rev = null; word = trouble.retry ? lastWord.current : null; go = trouble.retry ? () => { const r = trouble.retry!; chain?.dismiss(); r(); } : null; }
   else if (note) { status = [note]; rev = null; word = null; go = null; }
 
   // which keys answer, by the pack's rules: a root has no BACK, ENTER opens rows only, the arrows stop at a list's ends

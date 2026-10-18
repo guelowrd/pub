@@ -111,3 +111,6 @@ phone the same flow has a review screen, a Bread popup to find, proving and a sl
 - Size every chain deadline for the slowest real flow (phone + Bread), then guard the action that starts it: do not start what cannot finish in time.
 - When a wallet acknowledges before executing, the app never sees the failure: check the refusable conditions (deadline, balance) on the app side first, and tell the player to look in the wallet when the chain shows nothing.
 - A wait with no stage, no duration and no clock reads as a hang: every busy state says where it is, what to do and how long it takes.
+- Correction (Gaylord, 10:10): the window was not the problem, the retry was; one shot is one drive and a failed shot is a lost coin. Do not
+  stretch a game rule to absorb a UX failure. And players never read mechanics: no chain, notes, blocks, proving; they POST and SHARE, or
+  TAKE A SHOT and WIN or LOSE; waiting steps are flavour, never something a player must understand to act.

@@ -2,7 +2,7 @@
 // its quiz parts left out.
 
 import type { ChallengeNote } from "./chain";
-import { noteDeadline, shotDeadline, ZERO_WORD, type AccountFelts, type ChallengeStorage, type Word4 } from "./notes";
+import { noteDeadline, ZERO_WORD, type AccountFelts, type ChallengeStorage, type Word4 } from "./notes";
 import { playable } from "./game";
 import { BLOCK_SECONDS, CLAIM_FUZZ, GC_DECIMALS, GC_FAUCET, MIN_SHOT_WINDOW_BLOCKS, RECORD_LIFETIME_BLOCKS, SCORE_MAX, SHOT_DRIVE_BLOCKS, STAKE } from "./config";
 
@@ -57,31 +57,27 @@ export function acceptNote(n: { kind: "record" | "shot"; storage: ChallengeStora
   return sameAccount(n.sender, s.rival) && !sameWord(s.recordId, ZERO_WORD);
 }
 
-/** `again`: a lost shot still open, so the same course can be driven once more for free. */
-export type SettlePlan = { won: boolean; claimPrize: boolean; again: boolean; text: string };
+export type SettlePlan = { won: boolean; claimPrize: boolean; text: string };
 
 /**
- * After a drive: a win settles the open shots (and claims the prize if it is still there); a loss sends nothing to the
- * chain, the Gamecoin waits for the champion at the deadline.
+ * After a drive: a win settles the open shots (and claims the prize if it is still there); a loss sends nothing, the
+ * Gamecoin waits for the champion at the deadline. One shot is one drive: a loss is final.
  */
 export function settlePlan(shots: ChallengeNote[], record: ChallengeNote | undefined, score: number, height: number): SettlePlan {
   if (shots.length === 0) throw new Error("no shot note to settle");
   const target = shots[0].storage.target;
   const won = score > target;
   const claimPrize = won && !!record && !record.consumed && record.storage.expiryBlock > height;
-  const again = !won && height < shotDeadline(shots[0].storage);
-  const text = claimPrize ? `${score} points. You win!`
-    : won ? `${score} points. You beat it, but the prize is gone. Your Gamecoin comes back.`
-      : again ? `${score} points. Not enough.`
-        : `${score} points. Not enough. Your Gamecoin goes to the champion.`;
-  return { won, claimPrize, again, text };
+  const pts = `${score.toLocaleString("en-US")} points.`;
+  const text = claimPrize ? `${pts} You win!` : won ? `${pts} You beat it, but the prize is gone. Your Gamecoin comes back.` : `${pts} Not enough. Your Gamecoin goes to the champion.`;
+  return { won, claimPrize, text };
 }
 
 /**
  * The wallet took the request but the chain never showed its effect. Bread answers a dApp as soon as the user approves
  * and can still fail afterwards in its own queue, without telling the dApp.
  */
-export const NOT_FINISHED = "Not on the chain after 2 minutes. Your wallet may have refused it: look there. Nothing is spent until it lands.";
+export const NOT_FINISHED = "Not done after 2 minutes. Check your wallet, then try again.";
 /** The wallet took too long: a popup left open, or none. Try again looks whether it landed after all before sending again. */
 export const WALLET_SILENT = "Your wallet did not answer. Open it, then try again.";
 
@@ -110,7 +106,7 @@ export function claimVerdict(shots: { consumedAt?: number; deadline: number }[])
   if (shots.length > 0 && shots.every((s) => s.consumedAt !== undefined)) return "claimed";
   return "open";
 }
-export const SHOT_LOST = "Too late: your shot ended before the claim. The champion can take your Gamecoin.";
+export const SHOT_LOST = "Shot lost: too late for the claim. Your Gamecoin goes to the champion.";
 
 export type TroubleKind = "said-no" | "no-wallet" | "funds" | "out-of-step" | "not-finished" | "network" | "not-found" | "already-done" | "too-late" | "refused" | "unknown";
 /** What went wrong, in one plain sentence, plus the raw text for "What happened?". */
@@ -118,26 +114,27 @@ export type Trouble = { kind: TroubleKind; title: string; detail?: string };
 
 const message = (e: unknown) => (e instanceof Error ? `${e.name !== "Error" ? `${e.name}: ` : ""}${e.message}` : String(e));
 
-/** Turns any failure into words a player understands. The raw text stays in `detail`. */
+/** Turns any failure into words a player understands: no chain, notes or blocks (Gaylord, 2026-10-18). The raw text stays in `detail` for the console. */
 export function explain(e: unknown): Trouble {
   const raw = message(e);
   const trouble = (kind: TroubleKind, title: string, withDetail = true): Trouble => (withDetail && raw && raw !== title ? { kind, title, detail: raw } : { kind, title });
   if (raw.includes(NOT_FINISHED)) return trouble("not-finished", NOT_FINISHED, false);
   if (raw.includes(WALLET_SILENT)) return trouble("not-finished", WALLET_SILENT, false);
+  if (raw.includes(SHOT_LOST)) return trouble("too-late", SHOT_LOST, false);
   if (/NOT_GRANTED|reject|declin|denied|cancel/i.test(raw)) return trouble("said-no", "You said no in your wallet. Nothing was sent.");
   if (/WalletNotReady|not installed/i.test(raw)) return trouble("no-wallet", "No Bread wallet found. Install it, then try again.");
   if (/WalletNotConnected|not connected|WalletDisconnected/i.test(raw)) return trouble("no-wallet", "Connect your wallet first.");
   if (/^(\w+: )?You need .*Gamecoin/.test(raw)) return trouble("funds", "Not enough Gamecoins in your wallet. Get Gamecoins first.");
   if (/SummaryAnchorMismatch|chain anchor|ChainBehindBoundBlock|block header for block \d+ not found/i.test(raw))
-    return trouble("out-of-step", "Your wallet was out of step with the network. Try again.");
+    return trouble("out-of-step", "Your wallet was not ready. Try again.");
   if (/^Too late: /.test(raw)) return trouble("too-late", raw, false);
   if (/already been consumed|already consumed/i.test(raw)) return trouble("already-done", "This was already done.");
   if (/deadline has passed|too late|is over/i.test(raw)) return trouble("too-late", "Too late: this one is over.");
-  if (/not found on chain|is not public|not a record or shot|not Pick Up Boomers|Not found/i.test(raw)) return trouble("not-found", "That record is not on the chain.");
-  if (/course does not match/i.test(raw)) return trouble("refused", "This record's course is not one this game makes.");
-  if (/assertion failed|error code/i.test(raw)) return trouble("refused", "The game said no to this move.");
+  if (/not found on chain|is not public|not a record or shot|not Pick Up Boomers|Not found/i.test(raw)) return trouble("not-found", "No such record.");
+  if (/course does not match/i.test(raw)) return trouble("refused", "This record is not from this game.");
+  if (/assertion failed|error code/i.test(raw)) return trouble("refused", "That did not work.");
   if (/fetch|network|timed out|timeout|deadline exceeded|unavailable|transport|ECONN|50[234]|load failed|faucet|mempool/i.test(raw))
-    return trouble("network", "The Miden network is slow or busy right now. Try again in a moment.");
+    return trouble("network", "The network is slow right now. Try again in a moment.");
   return trouble("unknown", "Something went wrong.");
 }
 
@@ -159,7 +156,7 @@ export function waiting(b: { stage: "connect" | "prepare" | "wallet" | "network"
   const [what, how] = b.stage === "connect" ? (local ? ["MAKING THE TEST WALLET", "UP TO A MINUTE"] : ["CONNECTING YOUR WALLET", "APPROVE IN BREAD IF IT ASKS"])
     : b.stage === "prepare" ? ["GETTING READY", "A FEW SECONDS"]
       : b.stage === "wallet" ? (local ? ["PROVING", "UP TO A MINUTE"] : ["OVER TO YOUR WALLET", "APPROVE IT THERE. UP TO A MINUTE"])
-        : ["WAITING FOR THE CHAIN", "USUALLY UNDER A MINUTE"];
+        : ["SENDING", "USUALLY UNDER A MINUTE"];
   return [what, `${how}  ${clock}`];
 }
 

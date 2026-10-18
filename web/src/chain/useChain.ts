@@ -20,7 +20,7 @@ import type { Event } from "../game/sim";
 export type Stage = "connect" | "prepare" | "wallet" | "network";
 export type Busy = { text: string; stage: Stage; since: number };
 export type Posted = { recordId: string; score: number; song: number; expiresAt: number };
-export type Settled = { won: boolean; claimed: boolean; again: boolean; text: string };
+export type Settled = { won: boolean; claimed: boolean; text: string };
 
 export type ChainApi = {
   ready: boolean;
@@ -231,9 +231,8 @@ export function useChain(): ChainApi {
   };
 
   const settle: ChainApi["settle"] = async (shots, record, seed, song, log, dist, score) => {
-    const plan = settlePlan(shots, record, score, heightRef.current), { won, claimPrize, again } = plan, text = plan.text.toUpperCase();
-    // nothing to sign on a loss: the Gamecoin waits for the champion at the deadline; until then the shot can be driven again
-    if (!won) return { won, claimed: false, again, text };
+    const plan = settlePlan(shots, record, score, heightRef.current), { won, claimPrize } = plan, text = plan.text.toUpperCase();
+    if (!won) return { won, claimed: false, text }; // nothing to sign on a loss: the Gamecoin waits for the champion
     const submitted = await run(claimPrize ? "CLAIMING YOUR PRIZE" : "GETTING YOUR GAMECOIN BACK", false, async () => {
       // ask the chain first: a claim that already landed (or a shot already taken) needs no wallet
       const now = await Promise.all(shots.map((s) => withTimeout(fetchChallengeNote(s.id), 30_000, "Checking your shot")));
@@ -245,7 +244,7 @@ export function useChain(): ChainApi {
       if (shots.some((s) => h >= shotDeadline(s.storage))) throw new Error(SHOT_LOST);
       return client ? settleNotes(client, walletRef.current, shots, claimPrize ? record : undefined, pubAnswer(seed, song, log, dist)) : Promise.reject(new Error("client not ready"));
     });
-    return submitted ? { won, claimed: true, again: false, text: doneText(text) } : null;
+    return submitted ? { won, claimed: true, text: doneText(text) } : null;
   };
 
   const collect: ChainApi["collect"] = async (picked) => {

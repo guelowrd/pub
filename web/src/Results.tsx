@@ -35,12 +35,12 @@ function Key({ kind, rect: [x, y, w, h], label, disabled, onClick, layout }: Key
   );
 }
 
-export default function Results({ s, station, chain, posted, setPosted, shot, settled, onSame, onNew, onAgain, onMenu, onRetry }: {
+export default function Results({ s, station, chain, posted, setPosted, shot, settled, onSame, onNew, onMenu, onRetry }: {
   s: Sim; station: number; chain: ChainApi | null;
   posted: Posted | null; setPosted: (p: Posted) => void;
   /** the record shot at, if this run was a shot */
   shot: { target: number } | null; settled: Settled | null;
-  onSame: () => void; onNew: () => void; onAgain: () => void; onMenu: () => void; onRetry: (retry: () => void) => void;
+  onSame: () => void; onNew: () => void; onMenu: () => void; onRetry: (retry: () => void) => void;
 }) {
   const { layout, scale, left, top } = useFit(geometry);
   const G = geometry[layout] as Geometry;
@@ -64,12 +64,14 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
   let heading = "POST YOUR RECORD", color = CYAN, status: string | null = TERMS, keys: KeyDef[] = [], footer: KeyDef[];
   if (shot) {
     const left = (label: string, onClick?: () => void) => ({ kind: "footer" as const, rect: G.footer[0], label, disabled: !onClick, onClick });
-    footer = [settled?.again ? left("TRY AGAIN", onAgain) : settled?.won ? left("NEW RUN", onNew) : trouble?.retry ? left("TRY AGAIN", () => onRetry(trouble.retry!)) : left("TRY AGAIN"),
+    // one shot is one drive: a verdict (or a lost shot) closes with NEW RUN; a claim that failed with time left offers TRY AGAIN
+    const lost = trouble?.t.kind === "too-late";
+    footer = [settled || lost ? left("NEW RUN", onNew) : trouble?.retry ? left("TRY AGAIN", () => onRetry(trouble.retry!)) : left("TRY AGAIN"),
       { kind: "footer", rect: G.footer[1], label: "MENU", disabled: !!busy, onClick: onMenu }];
     if (settled) { heading = settled.won ? "RECORD BEATEN" : "RECORD HELD"; color = settled.won ? MINT : PINK; status = settled.text; }
     else { // the score tells the verdict before the chain does; the wait says where it is and how long it takes
       const won = s.score > shot.target;
-      heading = won ? "RECORD BEATEN" : "CHECKING RESULT"; if (won) color = MINT;
+      heading = lost ? "SHOT LOST" : won ? "RECORD BEATEN" : "CHECKING RESULT"; color = lost ? PINK : won ? MINT : color;
       status = trouble ? trouble.t.title.toUpperCase() : busy ? [busy.text, ...waiting(busy, chain?.local)].join("\n") : `SCORE TO BEAT ${fmt(shot.target)}`;
     }
   } else {
@@ -96,7 +98,7 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
       status = waiting(busy, chain?.local).join("\n");
       keys = [postKey(busy.stage !== "network" ? "POST IT" : coins ? "GETTING GAMECOINS" : "POSTING", true)];
     }
-    else if (!chain?.ready) { status = "LOADING THE CHAIN"; keys = [postKey("POST IT", true)]; }
+    else if (!chain?.ready) { status = "LOADING"; keys = [postKey("POST IT", true)]; }
     else if (!chain.me) { status = null; keys = [postKey("CONNECT", false, () => void chain.connect())]; } // the key says it
     else if (chain.balance != null && chain.balance < STAKE) needCoins();
     else { status = note ?? TERMS; keys = [postKey("POST IT")]; }
