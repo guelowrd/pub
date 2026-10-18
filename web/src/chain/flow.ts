@@ -188,9 +188,10 @@ export function fmtGamecoin(v: bigint): string {
   return `${n.toLocaleString("en-US", { maximumFractionDigits: GC_DECIMALS })} ${n === 1 ? "Gamecoin" : "Gamecoins"}`;
 }
 
-/** The shareable link to a record, and the X post that carries it (Gaylord's text, 2026-10-18); `songId` is the station id, its hashtag. */
-export function recordLinks(recordId: string, songId: string) {
-  const url = `${location.origin}${location.pathname}?record=${recordId}`;
+/** The shareable link to a record and the X post that carries it (Gaylord's text, 2026-10-18). The link names the track and
+ *  the score too: the page served for it carries that record's preview card (api/share.py, api/card.py); the hashtag is the track id. */
+export function recordLinks(recordId: string, songId: string, score: number) {
+  const url = `${location.origin}${location.pathname}?record=${recordId}&t=${songId}&s=${score}`;
   const text = `Try to beat me for ${fmtGamecoin(STAKE)}\n#pickupboomers #${songId.replace(/-/g, "")} \u{1F474}\u{1F475}`;
   return { url, x: `https://x.com/intent/post?text=${encodeURIComponent(`${text}\n${url}`)}` };
 }

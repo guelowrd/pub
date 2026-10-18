@@ -206,8 +206,8 @@ describe("Gamecoin in words", () => {
   });
   it("shares a record as a ?record= link, inside the X post too, with the stake and the station as a hashtag", () => {
     vi.stubGlobal("location", { origin: "http://pub", pathname: "/" });
-    const { url, x } = recordLinks("0xabc", "midnight-chase");
-    expect(url).toBe("http://pub/?record=0xabc");
+    const { url, x } = recordLinks("0xabc", "midnight-chase", 9690);
+    expect(url).toBe("http://pub/?record=0xabc&t=midnight-chase&s=9690");
     expect(new URL(x).searchParams.get("text")).toBe(`Try to beat me for 1 Gamecoin\n#pickupboomers #midnightchase \u{1F474}\u{1F475}\n${url}`);
     vi.unstubAllGlobals();
   });

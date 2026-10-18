@@ -855,3 +855,14 @@ Then the phone layout of the main ones.
 - Gaylord: SHARE ON X did nothing on the phone. The intent link itself opens X's composer on desktop (checked). Bread's in-app browser returns null from `window.open`, so the key now falls back to opening X in the same tab when the popup is refused.
 - Post text is Gaylord's, verbatim, with the station id as the second hashtag (midnight-chase → #midnightchase):
   `Try to beat me for 1 Gamecoin` / `#pickupboomers #midnightchase 👴👵` / link on its own line. The four rotating lines, the score and the UTC expiry are gone.
+
+## Record link preview per record (2026-10-18)
+- Gaylord's layout (his mockup, measured): logo 442 wide centred at y 42; a boomer waving, 358 tall, feet at y 600, 176 px from one edge;
+  the balloon "CAN YOU BEAT <score> PTS?" (PUB Painted Pixel, pink score, drawn "?" and ",") on the other side, left edge 566, top 211,
+  tail to 55 % of the way to the head; Powered by Miden badge 226 wide at 70 % in the free bottom corner; the TV pass (bloom, scanlines
+  every third row, vignette) over everything. Boomer (48) and side come from the record id.
+- Built as Vercel Python functions with Pillow (reuses the drawing code verbatim): `web/api/card.py` draws the JPEG, `web/api/share.py`
+  serves the page with that record's preview tags for links carrying `t` (vercel.json rewrite). Assets in `web/og/` (copies of the stage
+  art, the three passenger sheets, the pixel font as TTF, the logo, the badge); everything else excluded from the bundle.
+- The share link is `?record=ID&t=<track id>&s=<score>`; the game only reads `record`. No or bad score: "CAN YOU BEAT MY SCORE?".
+- Gaylord may ask the designer agent for the first 16 standing characters at 2x (cells 512 x 768): they are the soft ones on the card.
