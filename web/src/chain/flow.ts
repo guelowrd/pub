@@ -157,8 +157,8 @@ export function waiting(b: { stage: "connect" | "prepare" | "wallet" | "network"
   const clock = secondsToClock(Math.max(0, Math.floor((Date.now() - b.since) / 1000)));
   const [what, how] = b.stage === "connect" ? (local ? ["MAKING THE TEST WALLET", "UP TO A MINUTE"] : ["CONNECTING YOUR WALLET", "APPROVE IN BREAD IF IT ASKS"])
     : b.stage === "prepare" ? ["GETTING READY", "A FEW SECONDS"]
-      : b.stage === "wallet" ? (local ? ["PROVING", "UP TO A MINUTE"] : ["OVER TO YOUR WALLET", "APPROVE IT THERE. UP TO A MINUTE"])
-        : ["SENDING", "USUALLY UNDER A MINUTE"];
+      : b.stage === "wallet" ? (local ? ["PROVING", "UP TO A MINUTE"] : ["OVER TO YOUR WALLET", "APPROVE IT THERE. USUALLY IN LESS THAN 20 SEC"])
+        : ["SENDING", "USUALLY IN LESS THAN 20 SEC"]; // Bread proves remotely (local only when that service is down), blocks every 3 s: longer means trouble (Gaylord, 2026-10-19)
   return [what, `${how}  ${clock}`];
 }
 
