@@ -17,6 +17,8 @@ FONT = lambda size: ImageFont.truetype(os.path.join(OG, "PUB-Painted-Pixel.ttf")
 QM = [".###.", "#...#", "....#", "...#.", "..#..", ".....", "..#.."]
 COMMA = [".", ".", ".", ".", ".", ".", "#", "#"]
 SHEETS = {"a": "passengers.webp", "b": "passengers-b.webp", "c": "passengers-c.webp"}  # 48 characters, 16 a sheet, by atlasIndex
+# the characters aged 40 to 85 (src/game/data/characters.json): the obviously young and the very old stay off the card (Gaylord, 2026-10-18)
+BOOMERS = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 30, 31, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 46, 47]
 
 
 def cell_of(d, f):
@@ -131,7 +133,7 @@ def card(t, s, r):
     _, _, stage = track(t)
     h = sum(ord(ch) for ch in (r or ""))
     out = BytesIO()
-    draw(stage, parse_score(s), h % 48, "left" if (h // 48) % 2 == 0 else "right").save(out, "JPEG", quality=88)
+    draw(stage, parse_score(s), BOOMERS[h % len(BOOMERS)], "left" if (h // len(BOOMERS)) % 2 == 0 else "right").save(out, "JPEG", quality=88)
     return out.getvalue()
 
 
