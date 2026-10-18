@@ -843,3 +843,4 @@ Player's order. Each screen: screenshot to Gaylord, short suggestions, his feedb
 33. Record opened by link (?record=), POWER off
 Then the phone layout of the main ones.
 - Screens 1-3 reviewed. 3: LEADERBOARDS label read taller than the other keys (14 vs 13 px rows, half a pixel low); scaled 13/14 about its centre in all six labelled states, both packs (scratchpad apply.py). Keep CLICK TO START as is.
+- Screen 4 (locked stage): wording and hidden details stay as they are (Gaylord). Added a padlock, inline SVG in the kit's line-icon style, pink, centred on the tube.

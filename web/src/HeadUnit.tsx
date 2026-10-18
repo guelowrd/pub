@@ -317,6 +317,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
             <>
               <img className={`gp-pic${lock ? " locked" : ""}`} src={preview} alt="" />
               <div className="gp-shade" />
+              {lock && <svg className="gp-lock" viewBox="0 0 32 32" style={box([TV.size[0] / 2 - TV.size[1] * 0.14, TV.size[1] / 2 - TV.size[1] * 0.14, TV.size[1] * 0.28, TV.size[1] * 0.28])}><path d="M10 14v-4a6 6 0 0 1 12 0v4" /><rect x="6.5" y="14" width="19" height="13" rx="2" /><circle cx="16" cy="20.5" r="1.5" fill="currentColor" stroke="none" /></svg>}
               {brand(TV.scene.logo, "left")}
               {text(`${pad2(station + 1)} / ${pad2(STATIONS.length)}`, TV.count[0], TV.count[1], TV.count[2], "cp", AMBER, true)}
               {text(stage.title, TV.scene.title[0], TV.scene.title[1], TV.scene.title[2], "cp", WHITE)}
