@@ -849,3 +849,4 @@ Then the phone layout of the main ones.
 - Testing without Bread in this Chrome: open http://[::1]:5180/ (the extension's content script matches only localhost, 127.0.0.1 and https).
 - Card copy (Gaylord): title NO BREAD?, "You need Bread Wallet by Miden to post your record, challenge rivals, and unlock tracks besides track #1." plus on touch screens "Already installed? Open the game from the Explore tab!"; a locked track reads GET BREAD TO UNLOCK and the red key reads GET BREAD there.
 - Card sized in screen pixels (clamp), not --u: 38/19 px on desktop, 24/15 px on a 390 px phone; "Bread Wallet by Miden" and "Explore" in amber.
+- Radio LCD line (Gaylord, phone screenshot): caps centred on the glass in all three packs (menu.json purpose baselines: desktop 137, portrait 166.7, landscape 135.4), portrait size 17.8 -> 23 so the longest line ends 24 px before the meter. The Explore sentence on the card is its own paragraph with a gap above.
