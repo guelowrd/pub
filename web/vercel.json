@@ -21,13 +21,7 @@
   ],
   "rewrites": [
     {
-      "source": "/",
-      "has": [
-        {
-          "type": "query",
-          "key": "t"
-        }
-      ],
+      "source": "/r",
       "destination": "/api/share"
     }
   ],

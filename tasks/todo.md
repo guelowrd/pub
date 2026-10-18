@@ -864,5 +864,6 @@ Then the phone layout of the main ones.
 - Built as Vercel Python functions with Pillow (reuses the drawing code verbatim): `web/api/card.py` draws the JPEG, `web/api/share.py`
   serves the page with that record's preview tags for links carrying `t` (vercel.json rewrite). Assets in `web/og/` (copies of the stage
   art, the three passenger sheets, the pixel font as TTF, the logo, the badge); everything else excluded from the bundle.
-- The share link is `?record=ID&t=<track id>&s=<score>`; the game only reads `record`. No or bad score: "CAN YOU BEAT MY SCORE?".
+- The share link is `/r?record=ID&t=<track id>&s=<score>`; the game only reads `record`. No or bad score: "CAN YOU BEAT MY SCORE?".
+  It needs its own path: Vercel serves the static page for `/` before any rewrite, whatever the query (a `has` query rewrite on `/` never ran, 2026-10-18).
 - Gaylord may ask the designer agent for the first 16 standing characters at 2x (cells 512 x 768): they are the soft ones on the card.
