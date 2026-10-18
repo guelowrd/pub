@@ -803,3 +803,5 @@ Bread, waited the 2 minutes, then read "did not go through yet, try again", whic
   "The network is slow right now." / SENDING instead of WAITING FOR THE CHAIN / LOADING instead of LOADING THE CHAIN; the raw error detail
   no longer shows on the TV (console only); the TV reads TRY AGAIN WITH THE RED KEY under a retryable trouble. Scores in verdicts with separators.
   Left as is: the WALLET page's NETWORK row (MIDEN TESTNET), SYSTEM's WALLET row, the terms line.
+- [x] SHOT starts the drive at once (Gaylord: yes to the gameplay option): no SHOT READY / PRESS DRIVE review, the `ready` state gone; a shot funded but not driven (reload) still shows READY with DRIVE in MY RUNS → verify: ?local=11 shot at HSW 2419, driving 5 s after SHOT, RECORD BEATEN at time-up with the waiting lines (GETTING READY, PROVING, SENDING with clocks), "2,985 POINTS. YOU WIN! DONE!", NEW RUN / MENU
+- [x] The raw error is back on the TV under the title (Gaylord: "copy-paste the error and tag @zkGaylord on X"), capped at 240 characters, selectable text, the tag line after it → verify: tsc

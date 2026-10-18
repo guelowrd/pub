@@ -92,7 +92,6 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const [cursor, setCursor] = useState<Record<string, number>>({}); // the row (or page) per mode, kept across mode changes
   const [review, setReview] = useState<ChallengeNote | null>(null); // CHALLENGE: the record under review
   const [opened, setOpened] = useState<string | null>(null); // MY RUNS: the run opened, by key
-  const [ready, setReady] = useState<{ shots: ChallengeNote[]; record: ChallengeNote } | null>(null); // a shot funded here: DRIVE
   const [note, setNote] = useState<string | null>(null); // a line of our own on the TV (coins received, best cleared)
   const [pressed, setPressed] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
@@ -152,9 +151,9 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     heading = "CHALLENGE";
     if (review) {
       const r = review, mine = same(me, r.storage.champion), done = over(r);
-      rev = { heading: ready ? "SHOT READY" : done ? "RECORD OVER" : "CHALLENGE", label: `CHAMPION ${champion(r)}`, score: r.storage.target, line: ready ? "PRESS DRIVE" : mine ? "YOUR OWN RECORD" : "", song: songIn(r), left: done ? undefined : r.storage.expiryBlock - height };
-      if (ready) { const rd = ready; word = "drive"; go = () => onShot(rd.shots, rd.record); }
-      else if (!done && !mine) { word = "shot"; go = () => void chain?.shoot(r).then((x) => x && setReady(x)); }
+      rev = { heading: done ? "RECORD OVER" : "CHALLENGE", label: `CHAMPION ${champion(r)}`, score: r.storage.target, line: mine ? "YOUR OWN RECORD" : "", song: songIn(r), left: done ? undefined : r.storage.expiryBlock - height };
+      // SHOT: the Gamecoin in, the drive starts at once (Gaylord 2026-10-18: no PRESS DRIVE step, the shot window is six minutes)
+      if (!done && !mine) { word = "shot"; go = () => void chain?.shoot(r).then((x) => x && onShot(x.shots, x.record)); }
     } else if (loading) status = ["LOADING"];
     else if (!records.length) status = ["NO CHALLENGES YET"];
     else {
@@ -214,7 +213,8 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   }
   // the chain's say comes over the mode's own screen: what is being done, where it is and how long it takes (flow.ts waiting), the trouble after, our own note
   if (busy) { const [what, how] = waiting(busy, chain?.local); status = [(busy.stage === "connect" && chain?.walletStatus) || what, `${busy.text}. ${how}`]; word = "wait"; go = null; rev = null; }
-  else if (trouble) { status = [trouble.t.title.toUpperCase(), trouble.retry ? "TRY AGAIN WITH THE RED KEY" : undefined]; rev = null; word = trouble.retry ? lastWord.current : null; go = trouble.retry ? () => { const r = trouble.retry!; chain?.dismiss(); r(); } : null; }
+  // the raw error shows under the title (Gaylord 2026-10-18: "copy-paste the error and tag @zkGaylord on X"), capped so it stays on the TV
+  else if (trouble) { status = [trouble.t.title.toUpperCase(), [trouble.retry ? "TRY AGAIN WITH THE RED KEY." : "", trouble.t.detail ? `${trouble.t.detail.slice(0, 240).toUpperCase()} (COPY IT AND TAG @ZKGAYLORD ON X)` : ""].filter(Boolean).join("\n") || undefined]; rev = null; word = trouble.retry ? lastWord.current : null; go = trouble.retry ? () => { const r = trouble.retry!; chain?.dismiss(); r(); } : null; }
   else if (note) { status = [note]; rev = null; word = null; go = null; }
 
   // which keys answer, by the pack's rules: a root has no BACK, ENTER opens rows only, the arrows stop at a list's ends
@@ -231,8 +231,8 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       default: return true;
     }
   };
-  const goMode = (m: Mode) => { setMode(m); setReview(null); setOpened(null); setReady(null); setNote(null); chain?.dismiss(); };
-  const back = () => { if (trouble) return chain?.dismiss(); if (note) return setNote(null); if (ready) return setReady(null); if (review) return setReview(null); setOpened(null); };
+  const goMode = (m: Mode) => { setMode(m); setReview(null); setOpened(null); setNote(null); chain?.dismiss(); };
+  const back = () => { if (trouble) return chain?.dismiss(); if (note) return setNote(null); if (review) return setReview(null); setOpened(null); };
   const stepTo = (d: number) => { if (mode === "solo") return setStation((station + d + STATIONS.length) % STATIONS.length); if (total) setCursor({ ...cursor, [mode]: Math.max(0, Math.min(total - 1, at + d)) }); };
   const act = (id: string, half?: 0 | 1) => {
     if (!on(id)) return;
