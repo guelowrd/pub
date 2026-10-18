@@ -14,8 +14,8 @@ def rewrite(html, origin, record, t, s):
     score = parse_score(s)
     url = f"{origin}/r?{urlencode({'record': record, 't': tid, 's': score if score is not None else ''})}"
     image = f"{origin}/api/card?{urlencode({'t': tid, 's': score if score is not None else '', 'r': record})}"
-    heading = f"Can you beat {score:,} pts on {title}?" if score is not None else f"Can you beat my score on {title}?"
-    alt = f"A boomer waving on {title}, asking: {heading}"
+    heading = "Can you Pick Up Boomers and beat the champion?"  # Gaylord's line, 2026-10-18
+    alt = f"A boomer waving on {title}, asking: can you beat {f'{score:,} pts' if score is not None else 'my score'}?"
     tags = {"og:url": url, "og:image": image, "twitter:image": image, "og:title": heading, "twitter:title": heading, "og:image:alt": alt, "twitter:image:alt": alt}
     for key, value in tags.items():
         html = re.sub(rf'(<meta (?:property|name)="{re.escape(key)}" content=")[^"]*(")', lambda m: m.group(1) + value.replace("&", "&amp;").replace('"', "&quot;") + m.group(2), html)
