@@ -79,6 +79,8 @@ export function settlePlan(shots: ChallengeNote[], record: ChallengeNote | undef
  */
 export const NOT_FINISHED = "Not done after 2 minutes. Check your wallet, then try again.";
 /** The wallet took too long: a popup left open, or none. Try again looks whether it landed after all before sending again. */
+/** Where Bread lives, every platform (Gaylord 2026-10-18) */
+export const BREAD_URL = "https://miden.xyz/bread";
 export const WALLET_SILENT = "Your wallet did not answer. Open it, then try again.";
 
 /** A block count as m:ss, at testnet's ~3 s per block. */

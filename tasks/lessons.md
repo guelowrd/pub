@@ -114,3 +114,4 @@ phone the same flow has a review screen, a Bread popup to find, proving and a sl
 - Correction (Gaylord, 10:10): the window was not the problem, the retry was; one shot is one drive and a failed shot is a lost coin. Do not
   stretch a game rule to absorb a UX failure. And players never read mechanics: no chain, notes, blocks, proving; they POST and SHARE, or
   TAKE A SHOT and WIN or LOSE; waiting steps are flavour, never something a player must understand to act.
+- To simulate "no wallet", hide it before the adapter is built, never after: the wallet adapter detects Bread once at load, and deleting the injected object later leaves readyState Installed while connects fail, so the provider loops between a named and a null wallet and every state derived from it flickers. A different origin the content script does not match (here http://[::1]:5180/) is the honest test.

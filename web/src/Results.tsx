@@ -9,7 +9,7 @@ import { CHARACTERS } from "./game/course";
 import { RATE, agePoints, type Rider, type Sim } from "./game/sim";
 import { STATIONS } from "./game/stations";
 import { STAKE } from "./chain/config";
-import { recordLinks, waiting } from "./chain/flow";
+import { BREAD_URL, recordLinks, waiting } from "./chain/flow";
 import { saveCard } from "./share";
 import type { ChainApi, Posted } from "./chain/ChainHost";
 import type { Settled } from "./chain/useChain";
@@ -35,11 +35,11 @@ function Key({ kind, rect: [x, y, w, h], label, disabled, onClick, layout }: Key
   );
 }
 
-export default function Results({ s, station, chain, posted, setPosted, shot, settled, onSame, onNew, onMenu, onRetry }: {
+export default function Results({ s, station, chain, posted, setPosted, shot, settled, onSame, onNew, onMenu, onRetry, noBread }: {
   s: Sim; station: number; chain: ChainApi | null;
   posted: Posted | null; setPosted: (p: Posted) => void;
   /** the record shot at, if this run was a shot */
-  shot: { target: number } | null; settled: Settled | null;
+  shot: { target: number } | null; settled: Settled | null; noBread: boolean;
   onSame: () => void; onNew: () => void; onMenu: () => void; onRetry: (retry: () => void) => void;
 }) {
   const { layout, scale, left, top } = useFit(geometry);
@@ -99,7 +99,7 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
       keys = [postKey(busy.stage !== "network" ? "POST IT" : coins ? "GETTING GAMECOINS" : "POSTING", true)];
     }
     else if (!chain?.ready) { status = "LOADING"; keys = [postKey("POST IT", true)]; }
-    else if (!chain.me) { status = null; keys = [postKey("CONNECT", false, () => void chain.connect())]; } // the key says it
+    else if (!chain.me) { status = null; keys = [noBread ? postKey("GET BREAD", false, () => void window.open(BREAD_URL, "_blank", "noopener")) : postKey("CONNECT", false, () => void chain.connect())]; } // the key says it
     else if (chain.balance != null && chain.balance < STAKE) needCoins();
     else { status = note ?? TERMS; keys = [postKey("POST IT")]; }
   }

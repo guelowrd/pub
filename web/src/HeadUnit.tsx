@@ -13,7 +13,7 @@ import { need, unlocked } from "./game/unlock";
 import { NAME } from "./game/sim";
 import { audio } from "./audio";
 import type { ChainApi, ChallengeNote } from "./chain/ChainHost";
-import { blocksToClock as clock, canDrive, fmtGamecoin, sameAccount as same, sameWord, waiting } from "./chain/flow";
+import { BREAD_URL, blocksToClock as clock, canDrive, fmtGamecoin, sameAccount as same, sameWord, waiting } from "./chain/flow";
 import { boards, history, owed as owedNotes } from "./chain/hub";
 import { noteDeadline } from "./chain/notes";
 
@@ -21,7 +21,7 @@ type Mode = "solo" | "challenge" | "my-runs" | "leaderboards" | "wallet" | "syst
 const MODES: Mode[] = ["solo", "challenge", "my-runs", "leaderboards", "wallet", "system"];
 // the boards, one a page (GQ's, the LOSERBOARD last)
 const BOARDS: [keyof ReturnType<typeof boards>, string][] = [["records", "BEST RECORDS"], ["coins", "MOST GAMECOINS WON"], ["defended", "RIVALS BEATEN"], ["smashed", "RECORDS SMASHED"], ["losers", "LOSERBOARD"]];
-type Word = "drive" | "shot" | "collect" | "connect" | "gamecoins" | "wait";
+type Word = "drive" | "shot" | "collect" | "connect" | "gamecoins" | "get bread" | "wait";
 // The font pass (PUB-Painted-Type, Gaylord 2026-10-17: "much better"): PUB Painted Pixel for words and the counter, PUB Painted
 // Matrix for numbers, the LCD line and the red key's word. The sizes in menu.json were set against the stand-ins (Chakra Petch,
 // Share Tech Mono, PUB Stereo LCD); K keeps the cap heights they gave (caps at 100 px: the stand-ins and Pixel 70, Matrix 64.6, Stereo LCD 66.7)
@@ -72,7 +72,7 @@ function Meter({ layout, m }: { layout: string; m: G["radio"]["meter"] }) {
   );
 }
 
-export default function HeadUnit({ chain, station, setStation, volume, setVolume, muted, toggleMute, onDrive, onShot, onOff, openRecord, onOpened }: {
+export default function HeadUnit({ chain, station, setStation, volume, setVolume, muted, toggleMute, onDrive, onShot, onOff, openRecord, onOpened, noBread }: {
   chain: ChainApi | null;
   station: number; setStation: (i: number) => void;
   volume: number; setVolume: (v: number) => void; muted: boolean; toggleMute: () => void;
@@ -84,6 +84,8 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   /** a record opened by link: the head unit starts on its review */
   openRecord: ChallengeNote | null;
   onOpened: () => void;
+  /** no Bread in this browser: stages 2 and up lock, the red key offers it where the wallet would be asked for */
+  noBread: boolean;
 }) {
   const { layout, scale, left, top } = useFit(geometry);
   const G = geometry[layout] as G, TV = G.tv, R = G.radio, C = TV.cols, N = TV.rows.baselines.length;
@@ -128,7 +130,8 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     ...history(notes, me, height, (a) => chain!.nameOf(a)).map((h): Run => { const n = notes.find((x) => x.id === h.id); return { key: h.id, kind: h.kind, score: h.score, state: h.result.replace(/^You /, "").toUpperCase(), line: h.money.toUpperCase(), tone: h.tone, song: n ? songIn(n) : 0, label: h.kind === "shot" ? `CHAMPION ${h.context.split("'")[0]}` : "YOUR SCORE" }; }),
   ] : [];
   const best = boards(notes, height, me);
-  const grant = () => void chain?.gamecoins().then((m) => m && setNote(m)); // the faucet's 10, from WALLET, an empty MY RUNS and LEADERBOARDS
+  const grant = () => void chain?.gamecoins().then((m) => m && setNote(m));
+  const getBread = () => void window.open(BREAD_URL, "_blank", "noopener"); // the faucet's 10, from WALLET, an empty MY RUNS and LEADERBOARDS
 
   // what the mode shows on the TV, and what the keys do there
   const cur = cursor[mode] ?? 0;
@@ -143,7 +146,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const stage = STATIONS[station], preview = previewOf(stage), tuning = mode === "solo" && !loaded.has(preview);
   // the dial's locks: what this wallet has posted opens the later tracks (unlock.ts); a locked stage shows, dark, with its price, and DRIVE stays dark
   const posted = notes.filter((n) => n.kind === "record" && same(me, n.storage.champion)).map((n) => n.storage.target);
-  const lock = mode === "solo" && !unlocked(station, posted) ? need(station) : null;
+  const lock = mode !== "solo" ? null : noBread && station > 0 ? ("bread" as const) : !unlocked(station, posted) ? need(station) : null;
   if (mode === "solo") {
     word = "drive"; go = lock ? null : onDrive;
     if (tuning) status = ["TUNING"];
@@ -166,7 +169,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   } else if (mode === "my-runs") {
     heading = "MY RUNS";
     const o = opened ? runs.find((r) => r.key === opened) : null;
-    if (!me) { status = [chain?.connecting ? chain.walletStatus || "CONNECTING" : "CONNECT YOUR WALLET"]; if (!chain?.connecting && chain?.installed) { word = "connect"; go = () => void chain.connect(); } }
+    if (!me) { status = [noBread ? "NO BREAD WALLET" : chain?.connecting ? chain.walletStatus || "CONNECTING" : "CONNECT YOUR WALLET"]; if (noBread) { word = "get bread"; go = getBread; } else if (!chain?.connecting && chain?.installed) { word = "connect"; go = () => void chain.connect(); } }
     else if (o) {
       rev = { heading: o.word === "drive" ? "SHOT READY" : o.kind === "record" ? "MY RECORD" : "MY SHOT", label: o.label, score: o.score, line: o.word === "drive" ? "PRESS DRIVE" : o.line, tone: o.tone, song: o.song, left: o.deadline };
       if (o.word === "collect") { word = "collect"; go = () => void chain?.collect(owed).then((ok) => ok && setNote("COINS RECEIVED")); } // everything owed, one transaction
@@ -199,7 +202,8 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       ["NETWORK", "MIDEN TESTNET"],
       ...(me ? [["PLAYER", chain!.nameOf(me)], ["ADDRESS", `${chain!.address!.slice(0, 7)}…${chain!.address!.slice(-5)} COPY`, () => void navigator.clipboard?.writeText(chain!.address!).then(() => setNote("ADDRESS COPIED"), () => setNote("COPY FAILED"))], ["GAMECOINS", "GET 10", grant], ["DISCONNECT", "ENTER", () => void chain?.disconnect()]] as [string, string, (() => void)?][] : []),
     ], "mono", AMBER);
-    if (!me && chain?.installed && !chain.connecting) { word = "connect"; go = () => void chain.connect(); }
+    if (noBread) { word = "get bread"; go = getBread; }
+    else if (!me && chain?.installed && !chain.connecting) { word = "connect"; go = () => void chain.connect(); }
   } else {
     heading = "SYSTEM";
     const bestScore = Number(stored("pub.best") ?? 0);
@@ -321,7 +325,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
               {brand(TV.scene.logo, "left")}
               {text(`${pad2(station + 1)} / ${pad2(STATIONS.length)}`, TV.count[0], TV.count[1], TV.count[2], "cp", AMBER, true)}
               {text(stage.title, TV.scene.title[0], TV.scene.title[1], TV.scene.title[2], "cp", WHITE)}
-              {lock ? text(`LOCKED: POST ${lock.records} RECORD${lock.records > 1 ? "S" : ""}, ONE AT ${lock.score}+`, TV.cond[0].icon[0], TV.cond[0].text[1], TV.cond[0].text[2], "cp", PINK) : cond(station, TV.cond[0].text[1])}
+              {lock ? text(lock === "bread" ? "LOCKED WITHOUT BREAD" : `LOCKED: POST ${lock.records} RECORD${lock.records > 1 ? "S" : ""}, ONE AT ${lock.score}+`, TV.cond[0].icon[0], TV.cond[0].text[1], TV.cond[0].text[2], "cp", PINK) : cond(station, TV.cond[0].text[1])}
             </>
           )}
           {mode !== "solo" && !status && !rev && (

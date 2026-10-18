@@ -12,6 +12,7 @@ import Loading from "./Loading";
 import Results from "./Results";
 import type { ChainApi, ChallengeNote, Posted } from "./chain/ChainHost";
 import type { Settled } from "./chain/useChain";
+import { BREAD_URL } from "./chain/flow";
 
 // the chain (Miden SDK, Bread) loads beside the game: its wasm must never hold the splash
 const ChainHost = lazy(() => import("./chain/ChainHost"));
@@ -54,6 +55,20 @@ function dithered(r: Rider): string {
   return url;
 }
 const best = () => Number(stored("pub.best") ?? 0);
+// no Bread in this browser (desktop: the extension; phone: the game opened outside Bread's Explore tab): the card says where
+// to get it and that only the first stage plays without it. The player can still play on (Gaylord 2026-10-18).
+const PHONE = matchMedia("(pointer: coarse)").matches;
+function BreadCard({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="bread-veil">
+      <div className="bread-card">
+        <h2>NO BREAD WALLET</h2>
+        <p>{PHONE ? "Open the game from the Explore tab in Bread to post your record and challenge rivals. Without it, only the first stage plays. No Bread yet? Get the app." : "You need Bread to post your record and challenge rivals. Without it, only the first stage plays."}</p>
+        <div><a href={BREAD_URL} target="_blank" rel="noopener">GET BREAD</a><button onClick={onClose}>PLAY ANYWAY</button></div>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -77,6 +92,11 @@ export default function App() {
   const [openRecord, setOpenRecord] = useState<ChallengeNote | null>(null);
   const sharedId = useRef(new URLSearchParams(location.search).get("record"));
   const [progress, setProgress] = useState(0);
+  // Bread is detected by polling once the chain loads: a second and a half after, "not installed" is the truth
+  const [known, setKnown] = useState(false);
+  const [breadCard, setBreadCard] = useState(true);
+  useEffect(() => { if (!chain || mode === "ready" || known) return; const t = setTimeout(() => setKnown(true), 1500); return () => clearTimeout(t); }, [chain != null, mode, known]); // eslint-disable-line react-hooks/exhaustive-deps
+  const noBread = known && !!chain && !chain.installed;
   useEffect(() => { loadArt((d, t) => setProgress(d / t)).then(() => { loadedRef.current = true; setLoaded(true); }, (e) => console.error(e)); }, []);
   useEffect(() => { if (mode === "ready" && loaded && attract.current) return startAttract(attract.current); }, [mode, loaded]);
   const [station, setStation] = useState(0);
@@ -242,13 +262,14 @@ export default function App() {
       {mode === "menu" && (
         <div className="overlay menu">
           <HeadUnit chain={chain} station={station} setStation={setStation} volume={volume} setVolume={setVolume} muted={!soundOn} toggleMute={() => setSoundOn(audio.toggle())}
-            onDrive={() => drive(seed)} onShot={driveShot} onOff={() => setMode("ready")} openRecord={openRecord} onOpened={onOpened} />
+            onDrive={() => drive(seed)} onShot={driveShot} onOff={() => setMode("ready")} openRecord={openRecord} onOpened={onOpened} noBread={noBread} />
+          {noBread && breadCard && <BreadCard onClose={() => setBreadCard(false)} />}
         </div>
       )}
       {mode === "paused" && <div className="overlay dim" onClick={() => setMode("play")}><img className="pause" src={`${ART}pause.png`} alt="PAUSED. CLOCK STOPPED, CLICK TO RESUME" /></div>}
       {mode === "over" && (
         <div className="overlay dim screen">
-          <Results s={s} station={station} chain={chain} posted={posted} setPosted={setPosted} shot={shot.current ? { target: shot.current.record.storage.target } : null} settled={settled}
+          <Results s={s} station={station} chain={chain} posted={posted} setPosted={setPosted} shot={shot.current ? { target: shot.current.record.storage.target } : null} settled={settled} noBread={noBread}
             onSame={() => start(seed, station)} onNew={() => { setSeed(randomSeed()); toMenu(); }}
             onMenu={() => { chain?.dismiss(); shot.current = null; setSeed(randomSeed()); toMenu(); }} onRetry={(r) => { chain?.dismiss(); setSettled(null); r(); }} />
         </div>
