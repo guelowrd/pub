@@ -192,9 +192,9 @@ describe("submitting through Bread", () => {
 
 describe("a wait, for the player", () => {
   it("names the step, what to do and how long, with a clock since the step began", () => {
-    expect(waiting({ stage: "wallet", since: Date.now() - 12_000 })).toEqual(["OVER TO YOUR WALLET", "APPROVE IT THERE. UP TO A MINUTE  0:12"]);
+    expect(waiting({ stage: "wallet", since: Date.now() - 12_000 })).toEqual(["OVER TO YOUR WALLET", "APPROVE IT THERE. USUALLY IN LESS THAN 20 SEC  0:12"]);
     expect(waiting({ stage: "wallet", since: Date.now() }, true)[0]).toBe("PROVING");
-    expect(waiting({ stage: "network", since: Date.now() })[1]).toMatch(/^USUALLY UNDER A MINUTE  0:0\d$/);
+    expect(waiting({ stage: "network", since: Date.now() })[1]).toMatch(/^USUALLY IN LESS THAN 20 SEC  0:0\d$/);
   });
 });
 
