@@ -204,15 +204,11 @@ describe("Gamecoin in words", () => {
     expect(fmtGamecoin(10_000_000n)).toBe("10 Gamecoins");
     expect(fmtGamecoin(2_500_000n)).toBe("2.5 Gamecoins");
   });
-  it("shares a record as a ?record= link, inside the X post too, with the expiry in UTC and the song", () => {
+  it("shares a record as a ?record= link, inside the X post too, with the stake and the station as a hashtag", () => {
     vi.stubGlobal("location", { origin: "http://pub", pathname: "/" });
-    const { url, x } = recordLinks("0xabc", 9690, Date.UTC(2026, 9, 13, 14, 5), "NEON PURSUIT");
+    const { url, x } = recordLinks("0xabc", "midnight-chase");
     expect(url).toBe("http://pub/?record=0xabc");
-    const text = new URL(x).searchParams.get("text")!;
-    expect(text).toContain("9690");
-    expect(text).toContain("13 Oct 14:05 UTC");
-    expect(text).toContain("NEON PURSUIT");
-    expect(text).toMatch(new RegExp(`\\.\n${url.replace(/[?.]/g, "\\$&")}$`));
+    expect(new URL(x).searchParams.get("text")).toBe(`Try to beat me for 1 Gamecoin\n#pickupboomers #midnightchase \u{1F474}\u{1F475}\n${url}`);
     vi.unstubAllGlobals();
   });
   it("shows blocks as a clock at 3 s a block", () => {

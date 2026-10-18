@@ -188,24 +188,9 @@ export function fmtGamecoin(v: bigint): string {
   return `${n.toLocaleString("en-US", { maximumFractionDigits: GC_DECIMALS })} ${n === 1 ? "Gamecoin" : "Gamecoins"}`;
 }
 
-/** A moment in UTC, for readers anywhere: 13 Oct 14:05 UTC. */
-function utcLabel(ms: number): string {
-  const d = new Date(ms);
-  return `${pad(d.getUTCDate())} ${d.toLocaleString("en", { month: "short", timeZone: "UTC" })} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())} UTC`;
-}
-
-// the X post: one of these, the record picks which (so a record always shares the same line); the link follows on its own line
-const POSTS: ((score: number, until: string, song: string) => string)[] = [
-  (score, until, song) => `${score} points on Pick Up Boomers, driving to ${song} 🚗\nInstall @joinbread & beat my record before ${until}.`,
-  (score, until, song) => `My Pick Up Boomers record: ${score} points on ${song}, open until ${until}.\nInstall @joinbread & beat it.`,
-  (score, until, song) => `${score} points, three minutes of ${song}. One Gamecoin says you can't beat it before ${until}.\nInstall @joinbread & prove me wrong.`,
-  (score, until, song) => `Boomers picked up, ${score} points banked on ${song}. Your move, until ${until}.\nInstall @joinbread & take a shot.`,
-];
-
-/** The shareable link to a record, and the X post that carries it; `expiresAt` is the record's expiry in ms. */
-export function recordLinks(recordId: string, score: number, expiresAt: number, song: string) {
+/** The shareable link to a record, and the X post that carries it (Gaylord's text, 2026-10-18); `songId` is the station id, its hashtag. */
+export function recordLinks(recordId: string, songId: string) {
   const url = `${location.origin}${location.pathname}?record=${recordId}`;
-  const pick = [...recordId].reduce((sum, c) => sum + c.charCodeAt(0), 0);
-  const text = POSTS[pick % POSTS.length](score, utcLabel(expiresAt), song);
+  const text = `Try to beat me for ${fmtGamecoin(STAKE)}\n#pickupboomers #${songId.replace(/-/g, "")} \u{1F474}\u{1F475}`;
   return { url, x: `https://x.com/intent/post?text=${encodeURIComponent(`${text}\n${url}`)}` };
 }

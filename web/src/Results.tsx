@@ -84,11 +84,11 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
     const needCoins = () => { heading = "NEED GAMECOINS"; color = YELLOW; status = "A POST COSTS 1 GAMECOIN. GET 10 FREE,\nOPEN YOUR WALLET TO TAKE THEM, THEN POST."; keys = [postKey("GET GAMECOINS", false, grant)]; };
     if (posted) {
       heading = "RECORD POSTED"; color = MINT; status = note;
-      const links = recordLinks(posted.recordId, posted.score, posted.expiresAt, STATIONS[posted.song].title);
+      const links = recordLinks(posted.recordId, STATIONS[posted.song].id);
       // three share keys in the kit's two-key row: SHARE ON X, COPY LINK and the card to save
       const [a, b] = G.share, gap = b[0] - a[0] - a[2], w = (b[0] + b[2] - a[0] - 2 * gap) / 3;
       const riders = s.stops.filter((o) => o.taken && o.rider).map((o) => o.rider!).sort((p, q) => agePoints(q.age) - agePoints(p.age));
-      keys = [["SHARE ON X", () => window.open(links.x, "_blank", "noopener")], ["COPY LINK", () => void navigator.clipboard?.writeText(links.url).then(() => setNote("LINK COPIED"), () => setNote("COPY FAILED"))], ["SAVE CARD", () => void saveCard(posted.score, STATIONS[posted.song].title, riders).catch(() => setNote("COULD NOT SAVE"))]]
+      keys = [["SHARE ON X", () => { if (!window.open(links.x, "_blank", "noopener")) location.href = links.x; }], ["COPY LINK", () => void navigator.clipboard?.writeText(links.url).then(() => setNote("LINK COPIED"), () => setNote("COPY FAILED"))], ["SAVE CARD", () => void saveCard(posted.score, STATIONS[posted.song].title, riders).catch(() => setNote("COULD NOT SAVE"))]]
         .map(([label, onClick], i) => ({ kind: "share" as const, rect: [a[0] + i * (w + gap), a[1], w, a[3]], label: label as string, onClick: onClick as () => void }));
     } else if (trouble?.t.kind === "funds") needCoins();
     else if (trouble) { status = trouble.t.title.toUpperCase(); keys = [postKey("TRY AGAIN", false, () => { const r = trouble.retry; chain?.dismiss(); r ? r() : post(); })]; }
