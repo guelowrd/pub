@@ -118,3 +118,7 @@ phone the same flow has a review screen, a Bread popup to find, proving and a sl
 
 ## Composition is Gaylord's (2026-10-18)
 Eight layout variations of the record card and none landed; Gaylord: "Your sense of positioning and design isn't great. Can you please give me the assets I'll do it myself." When a visual needs composing (where things sit, how big), build the layers and hand them over as separate transparent PNGs with the fonts and colours, then implement the layout he returns. Measuring alignment is my job; choosing it is his.
+
+## A grep in a push chain hides a red suite (2026-10-19)
+`npx vitest run | grep "Tests "` exits 0 whenever grep matches, so `&& git push` ran on a failing suite. Run the suite as its own
+command and read the result before the commit, never pipe it into grep inside the chain that pushes.
