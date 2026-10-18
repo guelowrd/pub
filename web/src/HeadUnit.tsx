@@ -130,8 +130,8 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     ...history(notes, me, height, (a) => chain!.nameOf(a)).map((h): Run => { const n = notes.find((x) => x.id === h.id); return { key: h.id, kind: h.kind, score: h.score, state: h.result.replace(/^You /, "").toUpperCase(), line: h.money.toUpperCase(), tone: h.tone, song: n ? songIn(n) : 0, label: h.kind === "shot" ? `CHAMPION ${h.context.split("'")[0]}` : "YOUR SCORE" }; }),
   ] : [];
   const best = boards(notes, height, me);
-  const grant = () => void chain?.gamecoins().then((m) => m && setNote(m));
-  const getBread = () => void window.open(BREAD_URL, "_blank", "noopener"); // the faucet's 10, from WALLET, an empty MY RUNS and LEADERBOARDS
+  const grant = () => void chain?.gamecoins().then((m) => m && setNote(m)); // the faucet's 10, from WALLET, an empty MY RUNS and LEADERBOARDS
+  const getBread = () => void window.open(BREAD_URL, "_blank", "noopener"); // no Bread here: the red key opens its page
 
   // what the mode shows on the TV, and what the keys do there
   const cur = cursor[mode] ?? 0;
@@ -148,7 +148,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const posted = notes.filter((n) => n.kind === "record" && same(me, n.storage.champion)).map((n) => n.storage.target);
   const lock = mode !== "solo" ? null : noBread && station > 0 ? ("bread" as const) : !unlocked(station, posted) ? need(station) : null;
   if (mode === "solo") {
-    word = "drive"; go = lock ? null : onDrive;
+    if (lock === "bread") { word = "get bread"; go = getBread; } else { word = "drive"; go = lock ? null : onDrive; }
     if (tuning) status = ["TUNING"];
   } else if (mode === "challenge") {
     heading = "CHALLENGE";
@@ -325,7 +325,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
               {brand(TV.scene.logo, "left")}
               {text(`${pad2(station + 1)} / ${pad2(STATIONS.length)}`, TV.count[0], TV.count[1], TV.count[2], "cp", AMBER, true)}
               {text(stage.title, TV.scene.title[0], TV.scene.title[1], TV.scene.title[2], "cp", WHITE)}
-              {lock ? text(lock === "bread" ? "LOCKED WITHOUT BREAD" : `LOCKED: POST ${lock.records} RECORD${lock.records > 1 ? "S" : ""}, ONE AT ${lock.score}+`, TV.cond[0].icon[0], TV.cond[0].text[1], TV.cond[0].text[2], "cp", PINK) : cond(station, TV.cond[0].text[1])}
+              {lock ? text(lock === "bread" ? "GET BREAD TO UNLOCK" : `LOCKED: POST ${lock.records} RECORD${lock.records > 1 ? "S" : ""}, ONE AT ${lock.score}+`, TV.cond[0].icon[0], TV.cond[0].text[1], TV.cond[0].text[2], "cp", PINK) : cond(station, TV.cond[0].text[1])}
             </>
           )}
           {mode !== "solo" && !status && !rev && (

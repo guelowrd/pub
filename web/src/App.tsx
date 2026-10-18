@@ -62,8 +62,8 @@ function BreadCard({ onClose }: { onClose: () => void }) {
   return (
     <div className="bread-veil">
       <div className="bread-card">
-        <h2>NO BREAD WALLET</h2>
-        <p>{PHONE ? "Open the game from the Explore tab in Bread to post your record and challenge rivals. Without it, only the first stage plays. No Bread yet? Get the app." : "You need Bread to post your record and challenge rivals. Without it, only the first stage plays."}</p>
+        <h2>NO BREAD?</h2>
+        <p>You need Bread Wallet by Miden to post your record, challenge rivals, and unlock tracks besides track #1.{PHONE && " Already installed? Open the game from the Explore tab!"}</p>
         <div><a href={BREAD_URL} target="_blank" rel="noopener">GET BREAD</a><button onClick={onClose}>PLAY ANYWAY</button></div>
       </div>
     </div>
