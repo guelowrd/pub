@@ -340,7 +340,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
             <>
               {text(heading, TV.heading[0], TV.heading[1], TV.heading[2], "cp", AMBER)}
               {brand(TV.brand, "right")}
-              {count && text(count, TV.count[0], TV.count[1], TV.count[2], "mono", CYAN, true)}
+              {count && text(count, TV.count[0], TV.heading[1], TV.count[2], "mono", CYAN, true)}{/* on the heading line: the corner holds the brand here (it hid the count, 2026-10-19) */}
               {rows.slice(start, start + baselines.length).map((row, j) => {
                 const i = start + j, r = TV.rows.sel[j];
                 return (
