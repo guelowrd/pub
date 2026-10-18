@@ -13,7 +13,7 @@ import { need, unlocked } from "./game/unlock";
 import { NAME } from "./game/sim";
 import { audio } from "./audio";
 import type { ChainApi, ChallengeNote } from "./chain/ChainHost";
-import { blocksToClock as clock, fmtGamecoin, sameAccount as same, sameWord } from "./chain/flow";
+import { blocksToClock as clock, canDrive, fmtGamecoin, sameAccount as same, sameWord, waiting } from "./chain/flow";
 import { boards, history, owed as owedNotes } from "./chain/hub";
 import { noteDeadline } from "./chain/notes";
 
@@ -51,9 +51,7 @@ const gc = (v: bigint) => fmtGamecoin(v).toUpperCase(); // spelled out on the TV
 const previewOf = (st: Station) => `${ART}stage/${st.district}-${st.time}${st.rain ? "-rain" : ""}.png`;
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 const cell = (t: string, x: number, size: number, font: Font, color: string, right = false, width?: number, y?: number): Cell => ({ t, x, y, size, font, color, right, width });
-// what the TV says while the chain works (the pack's phases); the purpose line on the LCD never changes
-const PHASE: Record<string, string> = { prepare: "GETTING READY", wallet: "CHECK YOUR WALLET", network: "SENDING" };
-const TONE: Record<string, string> = { COLLECT: AMBER, READY: AMBER, LOST: PINK, BEATEN: PINK, WON: CYAN, DEFENDED: CYAN };
+const TONE: Record<string, string> = { COLLECT: AMBER, READY: AMBER, LATE: PINK, LOST: PINK, BEATEN: PINK, WON: CYAN, DEFENDED: CYAN };
 
 /** The music meter: six columns of eight segments on the pack's bed, fed by the analyser at 20 Hz (35 ms attack, 180 ms
  * release); still under reduced motion, dark when muted */
@@ -124,7 +122,8 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const runs: Run[] = me ? [
     ...owed.map((n): Run => ({ key: n.id, kind: n.kind, score: n.storage.target, state: "COLLECT", line: `${gc(n.amount)} TO COLLECT`, song: songIn(n), label: n.kind === "record" ? "YOUR SCORE" : `${rival(n)} LOST`, word: "collect" })),
     ...notes.filter((n) => n.kind === "record" && !n.consumed && same(me, n.storage.champion) && !owed.includes(n)).map((n): Run => ({ key: n.id, kind: "record", score: n.storage.target, state: "OPEN", line: "OPEN", song: songIn(n), label: "YOUR SCORE", deadline: n.storage.expiryBlock - height })),
-    ...notes.filter((n) => n.kind === "shot" && !n.consumed && same(me, n.storage.rival) && height < noteDeadline(n)).map((n): Run => ({ key: n.id, kind: "shot", score: n.storage.target, state: "READY", line: "SHOT READY", song: songIn(n), label: `CHAMPION ${champion(n)}`, deadline: noteDeadline(n) - height, word: "drive", shots: [n], record: notes.find((r) => r.kind === "record" && !r.consumed && sameWord(r.idWord, n.storage.recordId)) })),
+    // a shot too close to its deadline for the drive and the claim is LATE: driven anyway it would be refused at the claim (SQQ, 2026-10-18)
+    ...notes.filter((n) => n.kind === "shot" && !n.consumed && same(me, n.storage.rival) && height < noteDeadline(n)).map((n): Run => ({ key: n.id, kind: "shot", score: n.storage.target, state: canDrive(n, height) ? "READY" : "LATE", line: canDrive(n, height) ? "SHOT READY" : "TOO LATE TO DRIVE", tone: canDrive(n, height) ? undefined : "pink", song: songIn(n), label: `CHAMPION ${champion(n)}`, deadline: noteDeadline(n) - height, word: canDrive(n, height) ? "drive" : undefined, shots: [n], record: notes.find((r) => r.kind === "record" && !r.consumed && sameWord(r.idWord, n.storage.recordId)) })),
     ...notes.filter((n) => n.kind === "shot" && !n.consumed && same(me, n.storage.champion) && !same(me, n.storage.rival) && !owed.includes(n)).map((n): Run => ({ key: n.id, kind: "shot", score: n.storage.target, state: "IN PLAY", line: `${rival(n)} SHOOTING`, song: songIn(n), label: "YOUR SCORE" })),
     // the finished games (hub.ts history): BEATEN, DEFENDED, TAKEN BACK, WON, LOST and the money that moved
     ...history(notes, me, height, (a) => chain!.nameOf(a)).map((h): Run => { const n = notes.find((x) => x.id === h.id); return { key: h.id, kind: h.kind, score: h.score, state: h.result.replace(/^You /, "").toUpperCase(), line: h.money.toUpperCase(), tone: h.tone, song: n ? songIn(n) : 0, label: h.kind === "shot" ? `CHAMPION ${h.context.split("'")[0]}` : "YOUR SCORE" }; }),
@@ -213,8 +212,8 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       ["WALLET", chain?.local ? "TEST (?LOCAL=)" : "BREAD"],
     ], "cp", WHITE);
   }
-  // the chain's say comes over the mode's own screen: the phase while it works, the trouble after, our own note
-  if (busy) { status = [busy.stage === "connect" ? chain?.walletStatus || "CONNECTING" : PHASE[busy.stage] ?? busy.text, "PLEASE WAIT"]; word = "wait"; go = null; rev = null; }
+  // the chain's say comes over the mode's own screen: what is being done, where it is and how long it takes (flow.ts waiting), the trouble after, our own note
+  if (busy) { const [what, how] = waiting(busy, chain?.local); status = [(busy.stage === "connect" && chain?.walletStatus) || what, `${busy.text}. ${how}`]; word = "wait"; go = null; rev = null; }
   else if (trouble) { status = [trouble.retry ? "TRY AGAIN" : trouble.t.title.toUpperCase(), trouble.t.detail]; rev = null; word = trouble.retry ? lastWord.current : null; go = trouble.retry ? () => { const r = trouble.retry!; chain?.dismiss(); r(); } : null; }
   else if (note) { status = [note]; rev = null; word = null; go = null; }
 

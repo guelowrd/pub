@@ -1,7 +1,7 @@
 // The results screen (results kit, Night Shift): the score and the stats over the frozen, dimmed scene; the riders still
 // on board; the post well (POST IT, then SHARE ON X / COPY LINK / SAVE CARD) or the shot's verdict; SAME RUN / NEW RUN.
 // Geometry from game/data/results.json (the kit's metadata, trimmed), one frame per layout.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { baselineEm, fmt, px, stored, useFit } from "./board";
 import geometry from "./game/data/results.json";
 import { ART, PORTRAITS } from "./game/art";
@@ -9,7 +9,7 @@ import { CHARACTERS } from "./game/course";
 import { RATE, agePoints, type Rider, type Sim } from "./game/sim";
 import { STATIONS } from "./game/stations";
 import { STAKE } from "./chain/config";
-import { recordLinks } from "./chain/flow";
+import { recordLinks, waiting } from "./chain/flow";
 import { saveCard } from "./share";
 import type { ChainApi, Posted } from "./chain/ChainHost";
 import type { Settled } from "./chain/useChain";
@@ -45,6 +45,9 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
   const { layout, scale, left, top } = useFit(geometry);
   const G = geometry[layout] as Geometry;
   const [note, setNote] = useState<string | null>(null);
+  const busy = chain?.busy ?? null, trouble = chain?.trouble ?? null;
+  const [, setTick] = useState(0);
+  useEffect(() => { if (!busy) return; const t = setInterval(() => setTick((n) => n + 1), 1000); return () => clearInterval(t); }, [busy]); // the waiting line's clock
   const text = (t: string, x: number, baseline: number, size: number, color: string, mono = false, align: "left" | "right" | "center" = "left", width?: number, key?: string | number) => (
     <span key={key} className={`hu-text ${mono ? "hu-mono" : "hu-gt"}`} style={{ left: px(align === "right" ? x - (width ?? 600) : align === "center" ? x - (width ?? 600) / 2 : x), width: px(width ?? 600), textAlign: align, top: px(baseline - baselineEm(mono ? "Share Tech Mono" : "Chakra Petch") * size), fontSize: px(size), color }}>{t}</span>
   );
@@ -56,7 +59,6 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
   // every passenger picked up, in order; the ones still aboard at time-up, or gone in a wreck, are a note (and pink)
   const picked = s.stops.filter((o) => o.taken && o.rider).map((o) => o.rider!);
   const R = G.riders, shown = picked.slice(0, R.cols * R.rows);
-  const busy = chain?.busy ?? null, trouble = chain?.trouble ?? null;
 
   // the post well: what it says, which key it offers; or the shot's verdict
   let heading = "POST YOUR RECORD", color = CYAN, status: string | null = TERMS, keys: KeyDef[] = [], footer: KeyDef[];
@@ -65,7 +67,11 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
     footer = [settled?.again ? left("TRY AGAIN", onAgain) : settled?.won ? left("NEW RUN", onNew) : trouble?.retry ? left("TRY AGAIN", () => onRetry(trouble.retry!)) : left("TRY AGAIN"),
       { kind: "footer", rect: G.footer[1], label: "MENU", disabled: !!busy, onClick: onMenu }];
     if (settled) { heading = settled.won ? "RECORD BEATEN" : "RECORD HELD"; color = settled.won ? MINT : PINK; status = settled.text; }
-    else { heading = "CHECKING RESULT"; status = trouble ? trouble.t.title.toUpperCase() : busy ? busy.text : `SCORE TO BEAT ${fmt(shot.target)}`; }
+    else { // the score tells the verdict before the chain does; the wait says where it is and how long it takes
+      const won = s.score > shot.target;
+      heading = won ? "RECORD BEATEN" : "CHECKING RESULT"; if (won) color = MINT;
+      status = trouble ? trouble.t.title.toUpperCase() : busy ? [busy.text, ...waiting(busy, chain?.local)].join("\n") : `SCORE TO BEAT ${fmt(shot.target)}`;
+    }
   } else {
     footer = [{ kind: "footer", rect: G.footer[0], label: "SAME RUN", onClick: onSame }, { kind: "footer", rect: G.footer[1], label: "NEW RUN", onClick: onNew }];
     const post = () => { chain?.dismiss(); void chain?.post(s.seed, station, s.score).then((p) => { if (p) { setPosted(p); setNote(null); } }); };
@@ -87,7 +93,7 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
     else if (busy) { // the key says what is being sent (a post, or the faucet's Gamecoins), the status the step before it
       const coins = /GAMECOINS/.test(busy.text);
       if (coins) heading = "NEED GAMECOINS";
-      status = busy.stage === "connect" ? "CONNECTING" : busy.stage === "wallet" ? "CHECK WALLET" : busy.stage === "prepare" ? "GETTING READY" : null;
+      status = waiting(busy, chain?.local).join("\n");
       keys = [postKey(busy.stage !== "network" ? "POST IT" : coins ? "GETTING GAMECOINS" : "POSTING", true)];
     }
     else if (!chain?.ready) { status = "LOADING THE CHAIN"; keys = [postKey("POST IT", true)]; }

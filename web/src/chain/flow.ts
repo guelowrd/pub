@@ -4,7 +4,7 @@
 import type { ChallengeNote } from "./chain";
 import { noteDeadline, shotDeadline, ZERO_WORD, type AccountFelts, type ChallengeStorage, type Word4 } from "./notes";
 import { playable } from "./game";
-import { BLOCK_SECONDS, CLAIM_FUZZ, GC_DECIMALS, GC_FAUCET, MIN_SHOT_WINDOW_BLOCKS, RECORD_LIFETIME_BLOCKS, SCORE_MAX, STAKE } from "./config";
+import { BLOCK_SECONDS, CLAIM_FUZZ, GC_DECIMALS, GC_FAUCET, MIN_SHOT_WINDOW_BLOCKS, RECORD_LIFETIME_BLOCKS, SCORE_MAX, SHOT_DRIVE_BLOCKS, STAKE } from "./config";
 
 export const sameAccount = (a: AccountFelts | null | undefined, b: AccountFelts | null | undefined) =>
   !!a && !!b && a.suffix === b.suffix && a.prefix === b.prefix;
@@ -18,6 +18,9 @@ export function myOpenShotsOn(notes: ChallengeNote[], me: AccountFelts | null, r
   if (!me) return [];
   return notes.filter((n) => n.kind === "shot" && sameAccount(me, n.storage.rival) && sameWord(n.storage.recordId, record.idWord) && isOpen(n, height));
 }
+
+/** A shot with room for the drive and the claim after it: a shot too close to its deadline is lost before it is driven. */
+export const canDrive = (shot: ChallengeNote, height: number) => isOpen(shot, height) && noteDeadline(shot) - height >= SHOT_DRIVE_BLOCKS;
 
 /** Why a shot cannot be taken right now, or null when it can. */
 export function shotRefusal(record: ChallengeNote, height: number, me?: AccountFelts | null): string | null {
@@ -78,7 +81,7 @@ export function settlePlan(shots: ChallengeNote[], record: ChallengeNote | undef
  * The wallet took the request but the chain never showed its effect. Bread answers a dApp as soon as the user approves
  * and can still fail afterwards in its own queue, without telling the dApp.
  */
-export const NOT_FINISHED = "It did not go through yet. Nothing is spent until it does, so try again.";
+export const NOT_FINISHED = "Not on the chain after 2 minutes. Your wallet may have refused it: look there. Nothing is spent until it lands.";
 /** The wallet took too long: a popup left open, or none. Try again looks whether it landed after all before sending again. */
 export const WALLET_SILENT = "Your wallet did not answer. Open it, then try again.";
 
@@ -145,6 +148,19 @@ export function withTimeout<T>(p: Promise<T>, ms: number, what: string): Promise
     timer = setTimeout(() => reject(new Error(`${what} timed out after ${Math.round(ms / 1000)} s`)), ms);
   });
   return Promise.race([p, timeout]).finally(() => clearTimeout(timer));
+}
+
+/**
+ * What a wait is, for the player (Gaylord's phone, 2026-10-18: CLAIMING YOUR PRIZE sat there with nothing else): the step,
+ * what to do, how long it usually takes, and a clock running since the step began.
+ */
+export function waiting(b: { stage: "connect" | "prepare" | "wallet" | "network"; since: number }, local = false): [string, string] {
+  const clock = secondsToClock(Math.max(0, Math.floor((Date.now() - b.since) / 1000)));
+  const [what, how] = b.stage === "connect" ? (local ? ["MAKING THE TEST WALLET", "UP TO A MINUTE"] : ["CONNECTING YOUR WALLET", "APPROVE IN BREAD IF IT ASKS"])
+    : b.stage === "prepare" ? ["GETTING READY", "A FEW SECONDS"]
+      : b.stage === "wallet" ? (local ? ["PROVING", "UP TO A MINUTE"] : ["OVER TO YOUR WALLET", "APPROVE IT THERE. UP TO A MINUTE"])
+        : ["WAITING FOR THE CHAIN", "USUALLY UNDER A MINUTE"];
+  return [what, `${how}  ${clock}`];
 }
 
 /** The outcome line once the chain shows the effect: "YOU WIN! DONE!" */

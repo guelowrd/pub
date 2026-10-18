@@ -12,8 +12,12 @@ export const STAKE: bigint = BigInt(import.meta.env.VITE_GC_STAKE ?? "1000000");
 export const BLOCK_SECONDS = 3;
 // A record stays open about a day.
 export const RECORD_LIFETIME_BLOCKS = Math.round((24 * 3600) / BLOCK_SECONDS); // 28 800
-// A shot must be settled within one drive (3 min) plus the radio, proving and the wallet: 6 min.
-export const SHOT_WINDOW_BLOCKS = Math.round((6 * 60) / BLOCK_SECONDS); // 120
+// A shot must be settled within its window: the review, one drive (3 min), then the wallet's approval and proving on a
+// phone. 6 min lost SQQ a won claim (2026-10-18, ERR_EXPIRED in Bread): 15 min now. The chain lets a rival pick any
+// deadline inside the record's life; a longer window only makes the champion wait that long to collect a lost shot.
+export const SHOT_WINDOW_BLOCKS = Math.round((15 * 60) / BLOCK_SECONDS); // 300
+// A shot can only be driven while this much of its window is left: the drive and as long again for the claim.
+export const SHOT_DRIVE_BLOCKS = Math.round((6 * 60) / BLOCK_SECONDS); // 120
 // Refuse a shot at a record that will expire before the shot window ends.
 export const MIN_SHOT_WINDOW_BLOCKS = SHOT_WINDOW_BLOCKS + 20;
 // A score no drive can reach: a record above it is rigged (a 3-minute drive banks under 30 000).

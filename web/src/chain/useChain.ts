@@ -13,7 +13,7 @@ import { accountFelts, bech32Of, fetchChallengeNote, knownNote, listChallengeNot
 import { keyOf, lettersBackward, nicknames, playersInOrder } from "./hub";
 import { collect as collectNotes, gcBalance, postRecord, postShot, setBalanceListener, setPendingListener, setSubmitAttemptListener, setSubmitStageListener, settle as settleNotes, waitFor, type Submitted } from "./bread";
 import { shotDeadline, shotStorage, ZERO_WORD, type AccountFelts, type ChallengeStorage } from "./notes";
-import { blockToMs, claimVerdict, explain, fmtGamecoin, myOpenShotsOn, NOT_FINISHED, doneText, settlePlan, SHOT_LOST, shotRefusal, WALLET_SILENT, withTimeout, type Trouble } from "./flow";
+import { blockToMs, canDrive, claimVerdict, explain, fmtGamecoin, myOpenShotsOn, NOT_FINISHED, doneText, settlePlan, SHOT_LOST, shotRefusal, WALLET_SILENT, withTimeout, type Trouble } from "./flow";
 import { decodeGame, encodeGame, genuine, newGame, pubAnswer } from "./game";
 import type { Event } from "../game/sim";
 
@@ -212,7 +212,7 @@ export function useChain(): ChainApi {
       const rival = accountFelts(parseAccountId(address));
       const refusal = shotRefusal(record, heightRef.current, rival);
       if (refusal) return (setBusy(null), say(refusal), null);
-      const open = myOpenShotsOn(notesRef.current, rival, record, heightRef.current);
+      const open = myOpenShotsOn(notesRef.current, rival, record, heightRef.current).filter((n) => canDrive(n, heightRef.current));
       // one Gamecoin per sitting: drive the shot already on the table instead of paying again
       if (open.length > 0) return (setBusy(null), { shots: open, record });
       const submitted = await run("INSERTING YOUR GAMECOIN", true, async () => {
@@ -240,6 +240,9 @@ export function useChain(): ChainApi {
       const verdict = claimVerdict(now.map((s) => ({ consumedAt: s.consumedAt, deadline: shotDeadline(s.storage) })));
       if (verdict === "claimed") return { txId: "", noteIds: shots.map((s) => s.id) };
       if (verdict === "lost") throw new Error(SHOT_LOST);
+      // the deadline, at the chain's current block: the note script refuses a late claim, and Bread tells nobody when it does
+      const h = client ? await runExclusive(() => syncNotes(client)) : heightRef.current;
+      if (shots.some((s) => h >= shotDeadline(s.storage))) throw new Error(SHOT_LOST);
       return client ? settleNotes(client, walletRef.current, shots, claimPrize ? record : undefined, pubAnswer(seed, song, log, dist)) : Promise.reject(new Error("client not ready"));
     });
     return submitted ? { won, claimed: true, again: false, text: doneText(text) } : null;

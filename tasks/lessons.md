@@ -104,3 +104,10 @@ I enlarged the portrait fork cue and moved it under the clocks because it measur
 his phone and it was fine; the bigger cue crowded the side boxes. Rule: a size Gaylord has looked at on the device and not
 complained about is not a finding. A phone's pixels are denser than an iframe's; "n px in the iframe" says nothing about
 legibility in the hand. Phone type sizes change on his word (as the ribbon did), never on my measurement alone.
+
+## 2026-10-18, a six-minute shot window lost a won claim on a phone
+The window was sized on the desktop flow (drive 3 min, local wallet signs in seconds) and judged "fine" from one night's blocks. On a
+phone the same flow has a review screen, a Bread popup to find, proving and a slow network; SQQ lost two Gamecoins to it.
+- Size every chain deadline for the slowest real flow (phone + Bread), then guard the action that starts it: do not start what cannot finish in time.
+- When a wallet acknowledges before executing, the app never sees the failure: check the refusable conditions (deadline, balance) on the app side first, and tell the player to look in the wallet when the chain shows nothing.
+- A wait with no stage, no duration and no clock reads as a hang: every busy state says where it is, what to do and how long it takes.

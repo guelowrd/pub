@@ -2,9 +2,9 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ChallengeNote } from "../chain";
 import type { ChallengeStorage, Word4 } from "../notes";
-import { GC_FAUCET, MIN_SHOT_WINDOW_BLOCKS, SCORE_MAX } from "../config";
+import { GC_FAUCET, MIN_SHOT_WINDOW_BLOCKS, SCORE_MAX, SHOT_DRIVE_BLOCKS } from "../config";
 import { encodeGame, newGame, RULES_VERSION } from "../game";
-import { acceptNote, blocksToClock, claimVerdict, explain, fmtGamecoin, isChainBehind, myOpenShotsOn, NOT_FINISHED, WALLET_SILENT, noteKind, doneText, recordLinks, settlePlan, shotRefusal, submitWithRetry, withTimeout } from "../flow";
+import { acceptNote, blocksToClock, canDrive, claimVerdict, explain, fmtGamecoin, isChainBehind, myOpenShotsOn, NOT_FINISHED, WALLET_SILENT, waiting, noteKind, doneText, recordLinks, settlePlan, shotRefusal, submitWithRetry, withTimeout } from "../flow";
 
 const champion = { suffix: 1n, prefix: 2n };
 const me = { suffix: 3n, prefix: 4n };
@@ -35,6 +35,12 @@ describe("open shots at a record", () => {
     expect(myOpenShotsOn([challenge(me, 2000)], me, prize, 999)).toHaveLength(1);
     expect(myOpenShotsOn([challenge(me, 2000)], me, prize, 1000)).toHaveLength(0);
     expect(myOpenShotsOn([challenge(me, 120)], me, prize, 120)).toHaveLength(0);
+  });
+
+  it("a shot is driven only with room for the drive and the claim after it", () => {
+    expect(canDrive(challenge(me, 1000), 1000 - SHOT_DRIVE_BLOCKS)).toBe(true);
+    expect(canDrive(challenge(me, 1000), 1000 - SHOT_DRIVE_BLOCKS + 1)).toBe(false);
+    expect(canDrive({ ...challenge(me, 1000), consumed: true }, 500)).toBe(false);
   });
 });
 
@@ -183,6 +189,14 @@ describe("submitting through Bread", () => {
   it("recognises Bread being behind, and nothing else", () => {
     expect(isChainBehind(behind)).toBe(true);
     expect(isChainBehind(new Error("insufficient balance"))).toBe(false);
+  });
+});
+
+describe("a wait, for the player", () => {
+  it("names the step, what to do and how long, with a clock since the step began", () => {
+    expect(waiting({ stage: "wallet", since: Date.now() - 12_000 })).toEqual(["OVER TO YOUR WALLET", "APPROVE IT THERE. UP TO A MINUTE  0:12"]);
+    expect(waiting({ stage: "wallet", since: Date.now() }, true)[0]).toBe("PROVING");
+    expect(waiting({ stage: "network", since: Date.now() })[1]).toMatch(/^USUALLY UNDER A MINUTE  0:0\d$/);
   });
 });
 

@@ -780,3 +780,17 @@ Decided: tracks 1 to 5 open for everyone; track n from 6 up needs n-5 records po
 - [x] More places to get Gamecoins: an empty MY RUNS reads "NO RUNS YET / A POST COSTS 1 GAMECOIN. GET 10 FREE WITH THE RED KEY" with GAMECOINS on the red key; LEADERBOARDS gives a connected player with no runs the same key; WALLET's GAMECOINS GET 10 row stays → verify: ?local=9, the grant landed (BALANCE 10 GAMECOINS)
 - [x] GC gone from the menus: BALANCE, TO COLLECT and the finished-run money lines spell Gamecoin / Gamecoins ("1 GAMECOIN WON, 1 LOST"); fmtGc deleted → verify: hub tests updated, 84 green
 - A failed grant now offers TRY AGAIN (the success note is lost on that path, the balance tells). Skipped: a CANCEL key while the chain works (the cap ends every wait), a hint on the LOADING screen when the node never answers.
+
+## 2026-10-18, SQQ's won claim refused: the shot window (Gaylord's iPhone, CLAIMING YOUR PRIZE with nothing else; Bread's popup showed the real reason)
+Read from the chain (listChallengeNotes at 338118): SQQ's shot at KJS 11033 was made at 337876 with its deadline at 337990, 114 blocks
+(5.7 min) for the review, a 3-minute drive and the claim through Bread on a phone. 12,370 beat it; the claim came after the deadline.
+Bread simulated it, showed "assertion failed with error code 14434107113890732517" in its own popup and still let him confirm;
+blake3 of the MASM messages maps the code to ERR_EXPIRED ("challenge: the deadline has passed"). The app heard only "approved" from
+Bread, waited the 2 minutes, then read "did not go through yet, try again", which he confirmed 2-3 times. SQQ's earlier shot at JHT 11904
+(320284, deadline 320399) is unconsumed too: the same loss once before. The shot at HSW 2145 landed in 70 blocks, so the flow can be fast.
+- [x] SHOT_WINDOW_BLOCKS 6 min → 15 min (300 blocks). The chain lets a rival pick any deadline inside the record's life; the champion waits that long to collect a lost shot; MIN_SHOT_WINDOW follows (a record needs 15:40 left to be shot) → verify: flow tests, 86 green
+- [x] A shot is driven only with 6 min left (SHOT_DRIVE_BLOCKS: the drive and as long again for the claim): MY RUNS reads LATE / TOO LATE TO DRIVE in pink and DRIVE stays dark; a funded shot that is already late is not reused by SHOT → verify: canDrive tests
+- [x] The claim checks the deadline at the chain's current block before building: a late one reads SHOT_LOST ("Too late: your shot ended before the claim") at once, no wallet popup, no Try again → verify: tsc
+- [x] NOT_FINISHED says where to look: "Not on the chain after 2 minutes. Your wallet may have refused it: look there. Nothing is spent until it lands."
+- [x] Every wait says where it is and how long (flow.ts waiting, results and head unit): CONNECTING YOUR WALLET / GETTING READY, A FEW SECONDS / OVER TO YOUR WALLET, APPROVE IT THERE, UP TO A MINUTE / WAITING FOR THE CHAIN, USUALLY UNDER A MINUTE, with a clock since the step began (the results screen ticks while busy); the shot screen reads RECORD BEATEN from the score before the chain confirms → verify: ?local=11 post, the states PROVING 0:00..0:01 → WAITING FOR THE CHAIN 0:00..0:06 → RECORD POSTED; waiting() test
+- Not done: nothing recovers SQQ's two Gamecoins (KJS and JHT can collect them); a countdown to the shot deadline on the results screen.
