@@ -253,7 +253,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   else if (note) { status = [note]; rev = null; word = null; go = null; }
   else if (pop) {
     const shots = owed.filter((n) => n.kind === "shot").length, records = owed.length - shots;
-    status = [`${gc(owed.reduce((sum, n) => sum + n.amount, 0n))} TO COLLECT`, [shots ? "RIVALS TRIED TO BEAT YOU AND FAILED!" : "", records ? (shots ? `${records === 1 ? "A RECORD" : "RECORDS"} OF YOURS RAN OUT TOO.` : `YOUR RECORD${records === 1 ? "" : "S"} RAN OUT. YOUR GAMECOIN${records === 1 ? " IS" : "S ARE"} BACK.`) : ""].filter(Boolean).join("\n")];
+    status = [`${gc(owed.reduce((sum, n) => sum + n.amount, 0n))} TO COLLECT`, [shots ? `${shots === 1 ? "A RIVAL" : "RIVALS"} TRIED TO BEAT YOU AND FAILED!` : "", records ? (shots ? `${records === 1 ? "A RECORD" : "RECORDS"} OF YOURS RAN OUT TOO.` : `YOUR RECORD${records === 1 ? "" : "S"} RAN OUT. YOUR GAMECOIN${records === 1 ? " IS" : "S ARE"} BACK.`) : ""].filter(Boolean).join("\n")];
     rev = null; word = "collect"; go = () => { setOwedPop(false); void chain?.collect(owed).then((ok) => ok && setNote("COINS RECEIVED")); };
   }
 
