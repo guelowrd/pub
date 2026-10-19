@@ -141,10 +141,10 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   // what the mode shows on the TV, and what the keys do there
   const cursorKey = board ? `leaderboards/${board}` : mode, cur = cursor[cursorKey] ?? 0; // a board keeps its own page
   let word: Word | null = null, go: (() => void) | null = null, enter: (() => void) | null = null;
-  let heading = "", count = "", rows: Row[] = [], total = 0, at = 0, start = 0, selected = -1, footer: Cell[] = [], status: [string, string?] | null = null, rev: Review | null = null, baselines = TV.rows.baselines;
+  let heading = "", count = "", rows: Row[] = [], total = 0, at = 0, start = 0, selected = -1, footer: Cell[] = [], status: [string, string?] | null = null, rev: Review | null = null, baselines = TV.rows.baselines, sel = TV.rows.sel;
   // a board's page: ten rows between the heading and the footer, smaller type (Gaylord 2026-10-19: ten rows a page, scrolling)
   const DENSE = 10, denseTop = TV.heading[1] + 44 * u, denseStep = (TV.detail - 46 * u - denseTop) / (DENSE - 1), dense = Array.from({ length: DENSE }, (_, i) => denseTop + i * denseStep), denseS = Math.max(11, 22 * u);
-  const list = (n: number) => { total = n; at = Math.min(cur, Math.max(0, n - 1)); start = Math.min(Math.max(0, at - N + 1), Math.max(0, n - N)); selected = at; };
+  const list = (n: number) => { total = n; at = Math.min(cur, Math.max(0, n - 1)); start = Math.min(Math.max(0, at - baselines.length + 1), Math.max(0, n - baselines.length)); selected = at; };
   const kv = (pairs: [string, string, (() => void)?][], valueFont: Font, valueColor: string) => {
     list(pairs.length); if (pairs.length > N) count = `${pad2(at + 1)} / ${pad2(pairs.length)}`; // more rows than the TV shows: say where the cursor is
     rows = pairs.map(([k, v], i) => ({ key: k, cells: [cell(k, C["my-runs"].type, C["wallet-system"].keyS, "cp", i === at ? AMBER : CYAN), cell(v, C["wallet-system"].valueR, C["wallet-system"].valueS, valueFont, valueColor, true)] }));
@@ -194,7 +194,9 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     heading = "LEADERBOARDS";
     if (loading) status = ["LOADING"];
     else if (!board) { // the five boards as a list, how many players on each; ENTER opens one
-      list(BOARDS.length); if (BOARDS.length > N) count = `${pad2(at + 1)} / ${pad2(BOARDS.length)}`;
+      const step = baselines[1] - baselines[0], [x, y, w, h] = sel[sel.length - 1]; // a fifth row at the same step: all five boards on one screen (Gaylord 2026-10-19)
+      baselines = [...baselines, baselines[baselines.length - 1] + step]; sel = [...sel, [x, y + step, w, h]];
+      list(BOARDS.length);
       rows = BOARDS.map(([key, title], i) => ({ key, cells: [cell(title, C.leaderboards.name, C.challenge.nicknameS, "cp", i === at ? AMBER : key === "losers" ? PINK : WHITE), cell(String(best[key].top.length), C.leaderboards.scoreR, C.leaderboards.scoreS, "mono", AMBER, true)] }));
       const k = BOARDS[at][0]; enter = () => setBoard(k);
     } else { // one board, ten rows a page: PREV / NEXT turn the pages, BACK closes it. My row closes every page I am not on (nine rows then, so no rank is skipped)
@@ -345,7 +347,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
               {brand(TV.brand, "right")}
               {count && text(count, TV.count[0], TV.heading[1], TV.count[2], "mono", CYAN, true)}{/* on the heading line: the corner holds the brand here (it hid the count, 2026-10-19) */}
               {rows.slice(start, start + baselines.length).map((row, j) => {
-                const i = start + j, r = TV.rows.sel[j];
+                const i = start + j, r = sel[j];
                 return (
                   <span key={row.key}>
                     {i === selected && r && <img src={`${GP}${layout}/row.png`} alt="" style={box(r)} />}
