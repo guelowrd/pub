@@ -209,11 +209,13 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       rows = BOARDS.map(([key, title], i) => ({ key, cells: [cell(title, C.leaderboards.name, C.challenge.nicknameS, "cp", i === at ? AMBER : key === "losers" ? PINK : WHITE), cell(`${players(best[key].top)} PLAYER${players(best[key].top) === 1 ? "" : "S"}`, C["wallet-system"].valueR, C.leaderboards.scoreS, "mono", AMBER, true)] }));
       const k = BOARDS[at][0]; enter = () => setBoard(k);
     } else { // one board, ten rows a page: PREV / NEXT turn the pages, BACK closes it. My row closes every page I am not on (nine rows then, so no rank is skipped)
-      const title = BOARDS.find(([k]) => k === board)![1], b = best[board], mine = b.top.find((r) => same(me, r.who)) ?? b.mine, per = mine ? DENSE - 1 : DENSE, pages = Math.max(1, Math.ceil(b.top.length / per));
+      const title = BOARDS.find(([k]) => k === board)![1], b = best[board], mine = b.top.find((r) => same(me, r.who)) ?? b.mine, per = DENSE, pages = Math.max(1, Math.ceil(b.top.length / per)); // ten a page, the last one shorter (Gaylord 2026-10-19)
       total = pages; at = Math.min(cur, pages - 1); baselines = dense; if (pages > 1) count = `${pad2(at + 1)} / ${pad2(pages)}`;
-      const slice = b.top.slice(at * per, (at + 1) * per), shown = mine && !slice.includes(mine) ? [mine, ...slice] : slice; // my row opens every page I am not on (Gaylord 2026-10-19: at the top)
-      rows = shown.map((r) => ({ key: r.key, cells: [cell(`${pad2(r.rank)} ${chain?.nameOf(r.who) ?? "???"}`, C.leaderboards.name, denseS, "cp", same(me, r.who) ? AMBER : WHITE), cell(board === "records" ? score(r.value) : String(r.value), C.leaderboards.scoreR, denseS, "mono", AMBER, true)] }));
-      footer = [cell(title, TV.safe[0], 24 * u, "cp", board === "losers" ? PINK : CYAN, false, undefined, TV.detail), ...(rows.length ? [] : [cell("NO ONE YET", C.leaderboards.name, C.challenge.nicknameS, "cp", WHITE, false, undefined, TV.rows.baselines[0])])];
+      const slice = b.top.slice(at * per, (at + 1) * per);
+      rows = slice.map((r) => ({ key: r.key, cells: [cell(`${pad2(r.rank)} ${chain?.nameOf(r.who) ?? "???"}`, C.leaderboards.name, denseS, "cp", same(me, r.who) ? AMBER : WHITE), cell(board === "records" ? score(r.value) : String(r.value), C.leaderboards.scoreR, denseS, "mono", AMBER, true)] }));
+      // my standing rides the footer line on the pages my rank is not on (and when it is outside the top hundred)
+      const standing = mine && !slice.includes(mine) ? [cell(`${pad2(mine.rank)} ${chain!.nameOf(mine.who)}  ${board === "records" ? score(mine.value) : String(mine.value)}`, C["wallet-system"].valueR, denseS, "mono", AMBER, true, undefined, TV.detail)] : [];
+      footer = [cell(title, TV.safe[0], 24 * u, "cp", board === "losers" ? PINK : CYAN, false, undefined, TV.detail), ...standing, ...(rows.length ? [] : [cell("NO ONE YET", C.leaderboards.name, C.challenge.nicknameS, "cp", WHITE, false, undefined, TV.rows.baselines[0])])];
       if (me && !runs.length) { word = "gamecoins"; go = grant; } // a newcomer's way onto the boards
     }
   } else if (mode === "wallet") {
