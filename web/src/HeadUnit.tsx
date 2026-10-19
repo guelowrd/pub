@@ -14,7 +14,7 @@ import { NAME } from "./game/sim";
 import { audio } from "./audio";
 import type { ChainApi, ChallengeNote } from "./chain/ChainHost";
 import { BREAD_URL, blocksToClock as clock, canDrive, fmtGamecoin, sameAccount as same, sameWord, waiting } from "./chain/flow";
-import { boards, history, owed as owedNotes } from "./chain/hub";
+import { boards, history, keyOf, owed as owedNotes } from "./chain/hub";
 import { STAKE } from "./chain/config";
 import { noteDeadline } from "./chain/notes";
 
@@ -198,9 +198,10 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   } else if (mode === "leaderboards") {
     heading = "LEADERBOARDS";
     if (loading) status = ["LOADING"];
-    else if (!board) { // the five boards as a list, how many players on each; ENTER opens one
+    else if (!board) { // the five boards as a list, how many players on each (BEST RECORDS: distinct champions, its page counts the records); ENTER opens one
+      const players = (rows: { who: Parameters<typeof keyOf>[0] }[]) => new Set(rows.map((r) => keyOf(r.who))).size;
       five(); list(BOARDS.length);
-      rows = BOARDS.map(([key, title], i) => ({ key, cells: [cell(title, C.leaderboards.name, C.challenge.nicknameS, "cp", i === at ? AMBER : key === "losers" ? PINK : WHITE), cell(`${best[key].top.length} ${key === "records" ? "RECORD" : "PLAYER"}${best[key].top.length === 1 ? "" : "S"}`, C["wallet-system"].valueR, C.leaderboards.scoreS, "mono", AMBER, true)] }));
+      rows = BOARDS.map(([key, title], i) => ({ key, cells: [cell(title, C.leaderboards.name, C.challenge.nicknameS, "cp", i === at ? AMBER : key === "losers" ? PINK : WHITE), cell(`${players(best[key].top)} PLAYER${players(best[key].top) === 1 ? "" : "S"}`, C["wallet-system"].valueR, C.leaderboards.scoreS, "mono", AMBER, true)] }));
       const k = BOARDS[at][0]; enter = () => setBoard(k);
     } else { // one board, ten rows a page: PREV / NEXT turn the pages, BACK closes it. My row closes every page I am not on (nine rows then, so no rank is skipped)
       const title = BOARDS.find(([k]) => k === board)![1], b = best[board], mine = b.top.find((r) => same(me, r.who)) ?? b.mine, per = mine ? DENSE - 1 : DENSE, pages = Math.max(1, Math.ceil(b.top.length / per));
