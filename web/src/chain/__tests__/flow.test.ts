@@ -213,7 +213,7 @@ describe("Gamecoin in words", () => {
     const texts = SHARE_LINES.map((_, i) => new URL(recordLinks("0xabc", "midnight-chase", 9690, "Midnight Chase", i / SHARE_LINES.length).x).searchParams.get("text")!);
     expect(new Set(texts).size).toBe(SHARE_LINES.length);
     expect(texts[1]).toContain("9690 pts at PICK UP BOOMERS");
-    expect(texts[5]).toContain("New record on MIDNIGHT CHASE.");
+    expect(texts[5]).toContain("New record on MIDNIGHT CHASE.\nCome get it");
     expect(texts.every((t) => !/\{(score|track|stake)\}/.test(t) && t.endsWith(`\n${url}`))).toBe(true);
     // the boomers ride the hashtags only when the line has none of its own
     expect(texts[0]).toContain(`#midnightchase \u{1F474}\u{1F475}\n`);

@@ -192,17 +192,17 @@ export function fmtGamecoin(v: bigint): string {
 /** The shareable link to a record and the X post that carries it (Gaylord's text, 2026-10-18). The link goes through /r and names the
  *  track and the score: the page served there carries that record's preview card (api/share.py, api/card.py). Vercel serves the static
  *  page for / before any rewrite, so a record link needs its own path. The hashtag is the track id. */
-/** The first line of an X post, one drawn per share (Gaylord's list, 2026-10-19); {score}, {track} and {stake} fill in. */
+/** The opening of an X post, one drawn per share (Gaylord's list, 2026-10-19), a sentence a line; {score}, {track} and {stake} fill in. */
 export const SHARE_LINES = [
   "Try to beat me for {stake}",
   "{score} pts at PICK UP BOOMERS \u{1F474}\nBeat that and the Gamecoin is yours \u{1F60E}",
   "I bet {stake} you can't pick up boomers faster than me",
   "Picked up some boomers \u{1F474}\u{1F475}\nThink you can do better? \u{1F447}",
-  "Grandma rated my driving five stars \u2B50\uFE0F Try and beat me",
-  "New record on {track}. Come get it \u{1F624}",
+  "Grandma rated my driving five stars \u2B50\uFE0F\nTry and beat me",
+  "New record on {track}.\nCome get it \u{1F624}",
   "Champion of {track} until proven otherwise",
-  "Record posted. Rivals welcome",
-  "I just posted a record in Pick Up Boomers. Beat it and you win my Gamecoin \u2B07\uFE0F",
+  "Record posted.\nRivals welcome",
+  "I just posted a record in Pick Up Boomers.\nBeat it and you win my Gamecoin \u2B07\uFE0F",
   "Boomers are the best, millennials are not worth my driving \u{1F474}\u2764\uFE0F",
   "Boomers are the best, Gen Z are not worth my driving \u{1F475}\u2764\uFE0F",
 ];
