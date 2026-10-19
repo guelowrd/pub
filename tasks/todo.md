@@ -892,3 +892,7 @@ Then the phone layout of the main ones.
 - SYSTEM values in Share Tech Mono amber like WALLET and every list value (Gaylord 2026-10-19, "more consistent with the rest of the screens"). The board list's player counts sit at the right value column (they ran into the names on phones at the mid-screen score column).
 - BEST RECORDS ranks every record posted, a player as often as they posted (Gaylord 2026-10-19; yesterday's one-row-per-player undone). The board list counts players on every board ("5 PLAYERS"; BEST RECORDS counts distinct champions, its own page shows the records).
 - Board pages: my row opens every page my rank is not on (top row, Gaylord 2026-10-19; it closed them before).
+
+## Coins to collect, told once (2026-10-19, Gaylord's idea)
+- When the menu is idle with the notes read and the wallet has coins owed, the TV says "N GAMECOINS TO COLLECT" with the reason under it (rivals tried and failed / a record ran out), the red key COLLECT takes everything owed, BACK leaves it; the LCD reads LATER FROM MY RUNS meanwhile. Once per wallet and session (a module mark, the head unit unmounts for every run). MY RUNS stays lit on the radio while coins wait there.
+- The LCD face has no brackets (PUB Painted Matrix, 43 glyphs), so "[MY RUNS]" became the lit key.

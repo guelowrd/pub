@@ -48,7 +48,8 @@ type Run = { key: string; kind: "record" | "shot"; score: number; state: string;
 const score = (n: number) => String(n).padStart(5, "0");
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const songOf = (i: number) => STATIONS[i]?.title ?? `SONG ${i}`;
-const gc = (v: bigint) => fmtGamecoin(v).toUpperCase(); // spelled out on the TV (Gaylord 2026-10-18: GC was unclear)
+const gc = (v: bigint) => fmtGamecoin(v).toUpperCase();
+let owedTold: string | null = null; // the wallet told about its coins to collect, once a session (the head unit unmounts for every run) // spelled out on the TV (Gaylord 2026-10-18: GC was unclear)
 // the TV's painting of a stage: the district at its hour, rain or not
 const previewOf = (st: Station) => `${ART}stage/${st.district}-${st.time}${st.rain ? "-rain" : ""}.png`;
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -128,6 +129,10 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   // the lists behind the modes
   const records = notes.filter((n) => n.kind === "record" && !over(n) && n.amount > 0n && !same(me, n.storage.champion)).sort((a, b) => a.storage.target - b.storage.target);
   const owed = owedNotes(notes, height, me);
+  // coins to collect, told once when the menu is idle with the notes read (Gaylord 2026-10-19): the red key collects, BACK leaves it to MY RUNS
+  const [owedPop, setOwedPop] = useState(false);
+  useEffect(() => { const a = chain?.address ?? null; if (a && !loading && owed.length && owedTold !== a) { owedTold = a; setOwedPop(true); } }, [chain?.address, loading, owed.length]);
+  const pop = owedPop && owed.length > 0;
   const runs: Run[] = me ? [
     ...owed.map((n): Run => ({ key: n.id, kind: n.kind, score: n.storage.target, state: "COLLECT", line: `${gc(n.amount)} TO COLLECT`, song: songIn(n), label: n.kind === "record" ? "YOUR SCORE" : `${rival(n)} LOST`, word: "collect" })),
     ...notes.filter((n) => n.kind === "record" && !n.consumed && same(me, n.storage.champion) && !owed.includes(n)).map((n): Run => ({ key: n.id, kind: "record", score: n.storage.target, state: "OPEN", line: "OPEN", song: songIn(n), label: "YOUR SCORE", deadline: n.storage.expiryBlock - height })),
@@ -246,10 +251,15 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   // the raw error shows under the title (Gaylord 2026-10-18: "copy-paste the error and tag @zkGaylord on X"), capped so it stays on the TV
   else if (trouble) { const [head, ...tail] = trouble.t.title.toUpperCase().split(". "); status = [head, [tail.join(". "), trouble.retry ? "TRY AGAIN WITH THE RED KEY." : "", trouble.t.detail ? `${trouble.t.detail.slice(0, 240).toUpperCase()} (COPY IT AND TAG @ZKGAYLORD ON X)` : ""].filter(Boolean).join("\n") || undefined]; rev = null; word = trouble.retry ? lastWord.current : null; go = trouble.retry ? () => { const r = trouble.retry!; chain?.dismiss(); r(); } : null; }
   else if (note) { status = [note]; rev = null; word = null; go = null; }
+  else if (pop) {
+    const shots = owed.filter((n) => n.kind === "shot").length, records = owed.length - shots;
+    status = [`${gc(owed.reduce((sum, n) => sum + n.amount, 0n))} TO COLLECT`, [shots ? "RIVALS TRIED TO BEAT YOU AND FAILED!" : "", records ? (shots ? `${records === 1 ? "A RECORD" : "RECORDS"} OF YOURS RAN OUT TOO.` : `YOUR RECORD${records === 1 ? "" : "S"} RAN OUT. YOUR GAMECOIN${records === 1 ? " IS" : "S ARE"} BACK.`) : ""].filter(Boolean).join("\n")];
+    rev = null; word = "collect"; go = () => { setOwedPop(false); void chain?.collect(owed).then((ok) => ok && setNote("COINS RECEIVED")); };
+  }
 
   // which keys answer, by the pack's rules: a root has no BACK, ENTER opens rows only, the arrows stop at a list's ends
   // (the stages wrap), nothing but VOL and MUTE while the chain works
-  const root = !review && !opened && !board && !note && !trouble;
+  const root = !review && !opened && !board && !note && !trouble && !pop;
   const on = (id: string): boolean => {
     if (busy) return id === "volume" || id === "mute";
     switch (id) {
@@ -262,7 +272,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     }
   };
   const goMode = (m: Mode) => { setMode(m); setReview(null); setOpened(null); setBoard(null); setNote(null); chain?.dismiss(); };
-  const back = () => { if (trouble) return chain?.dismiss(); if (note) return setNote(null); if (review) return setReview(null); if (board) return setBoard(null); setOpened(null); };
+  const back = () => { if (trouble) return chain?.dismiss(); if (pop) return setOwedPop(false); if (note) return setNote(null); if (review) return setReview(null); if (board) return setBoard(null); setOpened(null); };
   const stepTo = (d: number) => { if (mode === "solo") return setStation((station + d + STATIONS.length) % STATIONS.length); if (total) setCursor({ ...cursor, [cursorKey]: Math.max(0, Math.min(total - 1, at + d)) }); };
   const act = (id: string, half?: 0 | 1) => {
     if (!on(id)) return;
@@ -313,7 +323,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   }, [word, shown]);
 
   // the faces: rest, hover (pointer), pressed, selected (the mode's key, MUTE on), disabled
-  const lit = (id: string) => id === mode || (id === "mute" && muted);
+  const lit = (id: string) => id === mode || (id === "mute" && muted) || (id === "my-runs" && owed.length > 0); // MY RUNS stays lit while coins wait there
   const face = (id: string) => (pressed === id ? (lit(id) ? "selected-pressed" : "pressed") : !on(id) ? "disabled" : lit(id) ? "selected" : hover === id ? "hover" : "rest");
   const box = (r: number[]) => ({ left: px(r[0]), top: px(r[1]), width: px(r[2]), height: px(r[3]) });
   /** Text on its baseline inside the TV */
@@ -399,7 +409,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       <div className="gp-radio" style={box([...R.origin, ...R.size])}>
         <img src={`${GP}${layout}/fascia.png`} alt="" style={box([0, 0, ...R.size])} />
         <img src={`${GP}${layout}/lcd.png`} alt="" style={box(R.lcd)} />
-        <span className="gp-text gp-lcd" style={{ left: px(R.purpose[0]), top: px(R.purpose[1] - baselineEm(LCD) * R.purpose[2] * K.lcd), fontSize: px(R.purpose[2] * K.lcd), color: AMBER }}>{PURPOSE[mode]}</span>
+        <span className="gp-text gp-lcd" style={{ left: px(R.purpose[0]), top: px(R.purpose[1] - baselineEm(LCD) * R.purpose[2] * K.lcd), fontSize: px(R.purpose[2] * K.lcd), color: AMBER }}>{pop ? "LATER FROM MY RUNS" : PURPOSE[mode]}</span>
         <Meter layout={layout} m={R.meter} />
         <img className="gp-plaque" src={`${GP}${layout}/plaque.png`} alt="electronic GRAND PRIX" style={box(R.plaque)} />
         {R.controls.map((c) => {
