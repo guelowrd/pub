@@ -112,6 +112,9 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   // the stage comes back as it was last chosen (the first one cold)
   useEffect(() => { const s = Number(stored("pub.stage")); if (Number.isInteger(s) && s >= 0 && s < STATIONS.length) setStation(s); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { store("pub.stage", String(station)); }, [station]);
+  // WALLET read once per connection on its first visit (Bread asks the player on every read); ENTER on BALANCE reads again
+  const balanceAsked = useRef<string | null>(null);
+  useEffect(() => { const a = chain?.address; if (mode === "wallet" && a && balanceAsked.current !== a) { balanceAsked.current = a; void chain!.readBalance(); } }, [mode, chain?.address]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const me = chain?.me ?? null, height = chain?.height ?? 0, notes = chain?.notes ?? [], busy = chain?.busy ?? null, trouble = chain?.trouble ?? null;
   const loading = !chain?.ready || !chain.notesRead;
@@ -204,14 +207,14 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     }
   } else if (mode === "wallet") {
     heading = "WALLET";
+    const connect = noBread ? getBread : !me && chain?.installed && !chain.connecting ? () => void chain.connect() : undefined; // the red key and ENTER on STATUS, until connected
     kv([
-      ["STATUS", !chain?.installed ? "NO BREAD WALLET" : me ? "CONNECTED" : chain.connecting ? chain.walletStatus || "CONNECTING" : "NOT CONNECTED"],
-      ["BALANCE", chain?.balance != null ? gc(chain.balance) : me ? "ENTER TO READ" : "--", me ? () => void chain?.readBalance() : undefined],
+      ["STATUS", !chain?.installed ? "NO BREAD WALLET" : me ? "CONNECTED" : chain.connecting ? chain.walletStatus || "CONNECTING" : "NOT CONNECTED", connect],
+      ["BALANCE", chain?.balance != null ? gc(chain.balance) : me ? "READING" : "--", me ? () => void chain?.readBalance() : undefined], // read on arrival; ENTER reads again
       ["NETWORK", "MIDEN TESTNET"],
       ...(me ? [["PLAYER", chain!.nameOf(me)], ["ADDRESS", `${chain!.address!.slice(0, 7)}…${chain!.address!.slice(-5)} COPY`, () => void navigator.clipboard?.writeText(chain!.address!).then(() => setNote("ADDRESS COPIED"), () => setNote("COPY FAILED"))], ["GAMECOINS", "GET 10", grant], ["DISCONNECT", "ENTER", () => void chain?.disconnect()]] as [string, string, (() => void)?][] : []),
     ], "mono", AMBER);
-    if (noBread) { word = "get bread"; go = getBread; }
-    else if (!me && chain?.installed && !chain.connecting) { word = "connect"; go = () => void chain.connect(); }
+    if (connect) { word = noBread ? "get bread" : "connect"; go = connect; }
   } else {
     heading = "SYSTEM";
     const bestScore = Number(stored("pub.best") ?? 0);
@@ -226,7 +229,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   // the chain's say comes over the mode's own screen: what is being done, where it is and how long it takes (flow.ts waiting), the trouble after, our own note
   if (busy) { const [what, how] = waiting(busy, chain?.local); status = [(busy.stage === "connect" && chain?.walletStatus) || what, `${busy.text}. ${how}`]; word = "wait"; go = null; rev = null; }
   // the raw error shows under the title (Gaylord 2026-10-18: "copy-paste the error and tag @zkGaylord on X"), capped so it stays on the TV
-  else if (trouble) { status = [trouble.t.title.toUpperCase(), [trouble.retry ? "TRY AGAIN WITH THE RED KEY." : "", trouble.t.detail ? `${trouble.t.detail.slice(0, 240).toUpperCase()} (COPY IT AND TAG @ZKGAYLORD ON X)` : ""].filter(Boolean).join("\n") || undefined]; rev = null; word = trouble.retry ? lastWord.current : null; go = trouble.retry ? () => { const r = trouble.retry!; chain?.dismiss(); r(); } : null; }
+  else if (trouble) { const [head, ...tail] = trouble.t.title.toUpperCase().split(". "); status = [head, [tail.join(". "), trouble.retry ? "TRY AGAIN WITH THE RED KEY." : "", trouble.t.detail ? `${trouble.t.detail.slice(0, 240).toUpperCase()} (COPY IT AND TAG @ZKGAYLORD ON X)` : ""].filter(Boolean).join("\n") || undefined]; rev = null; word = trouble.retry ? lastWord.current : null; go = trouble.retry ? () => { const r = trouble.retry!; chain?.dismiss(); r(); } : null; }
   else if (note) { status = [note]; rev = null; word = null; go = null; }
 
   // which keys answer, by the pack's rules: a root has no BACK, ENTER opens rows only, the arrows stop at a list's ends

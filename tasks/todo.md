@@ -874,3 +874,8 @@ Then the phone layout of the main ones.
   pages ("02 / 04" top right), BACK returns to the list. My row closes every page I am not on (pages of nine then, no rank skipped).
 - BEST RECORDS ranks players by their best record (one row each); every board keeps a hundred rows (hub.ts). Before, a fourth row read "08".
 - A 503 from the faucet reads "THE GAMECOIN FAUCET IS DOWN. TRY AGAIN LATER." (was the network line).
+
+## WALLET screen (2026-10-19, screen 30/33)
+- BALANCE reads on the first WALLET visit of each connection (Bread serves asset reads to a connected site without asking; measured 3.5 s); the row says READING meanwhile, ENTER reads again.
+- STATUS row takes ENTER until connected: CONNECT (Bread present) or GET BREAD (none), the same as the red key. Cursor stays on STATUS.
+- Trouble headings: the first sentence is the heading, the rest opens the detail paragraph (every title over ~35 characters clipped on the one-line heading, the faucet line first).
