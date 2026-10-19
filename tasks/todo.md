@@ -881,3 +881,4 @@ Then the phone layout of the main ones.
 - Trouble headings: the first sentence is the heading, the rest opens the detail paragraph (every title over ~35 characters clipped on the one-line heading, the faucet line first).
 - NETWORK row moved from WALLET to SYSTEM (Gaylord 2026-10-19: WALLET is for making the wallet work and concrete info, the network is informative). SYSTEM now six rows, WALLET six when connected, two when not.
 - LEADERBOARDS list shows all five boards at once: a fifth row at the same step (desktop 548, phones 222), no page counter (Gaylord 2026-10-19: there is room on the TV). Board pages stay at ten rows.
+- SYSTEM: VOLUME row dropped (the radio's VOL keys do it). Bread exposes no version to the page (checked the injected midenWallet object and the 1.17.4 bundle, 2026-10-19): the WALLET row stays BREAD until it does.

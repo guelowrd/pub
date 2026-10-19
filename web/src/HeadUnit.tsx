@@ -221,7 +221,6 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     const bestScore = Number(stored("pub.best") ?? 0);
     kv([
       ["SOUND", muted ? "OFF" : "ON", toggleMute],
-      ["VOLUME", `${Math.round(volume * 100)}%`, () => setVolume(volume >= 0.95 ? 0 : Math.min(1, volume + 0.1))],
       ["RESET BEST", bestScore ? score(bestScore) : "--", bestScore ? () => { store("pub.best", null); setNote("BEST SCORE CLEARED"); } : undefined],
       ["VERSION", __PUB_VERSION__],
       ["WALLET", chain?.local ? "TEST (?LOCAL=)" : "BREAD"],
