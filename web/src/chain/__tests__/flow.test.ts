@@ -4,7 +4,7 @@ import type { ChallengeNote } from "../chain";
 import type { ChallengeStorage, Word4 } from "../notes";
 import { GC_FAUCET, MIN_SHOT_WINDOW_BLOCKS, SCORE_MAX, SHOT_DRIVE_BLOCKS } from "../config";
 import { encodeGame, newGame, RULES_VERSION } from "../game";
-import { acceptNote, blocksToClock, canDrive, claimVerdict, explain, fmtGamecoin, isChainBehind, myOpenShotsOn, NOT_FINISHED, WALLET_SILENT, waiting, noteKind, doneText, recordLinks, settlePlan, shotRefusal, submitWithRetry, withTimeout } from "../flow";
+import { acceptNote, blocksToClock, canDrive, claimVerdict, explain, fmtGamecoin, isChainBehind, myOpenShotsOn, NOT_FINISHED, WALLET_SILENT, waiting, noteKind, doneText, recordLinks, settlePlan, shotRefusal, submitWithRetry, withTimeout, SHARE_LINES } from "../flow";
 
 const champion = { suffix: 1n, prefix: 2n };
 const me = { suffix: 3n, prefix: 4n };
@@ -206,9 +206,15 @@ describe("Gamecoin in words", () => {
   });
   it("shares a record as a ?record= link, inside the X post too, with the stake and the station as a hashtag", () => {
     vi.stubGlobal("location", { origin: "http://pub", pathname: "/" });
-    const { url, x } = recordLinks("0xabc", "midnight-chase", 9690);
+    const { url, x } = recordLinks("0xabc", "midnight-chase", 9690, "Midnight Chase", 0);
     expect(url).toBe("http://pub/r?record=0xabc&t=midnight-chase&s=9690");
     expect(new URL(x).searchParams.get("text")).toBe(`Try to beat me for 1 Gamecoin\n#pickupboomers #midnightchase \u{1F474}\u{1F475}\n${url}`);
+    // every line draws, the fields fill in, the track in capitals
+    const texts = SHARE_LINES.map((_, i) => new URL(recordLinks("0xabc", "midnight-chase", 9690, "Midnight Chase", i / SHARE_LINES.length).x).searchParams.get("text")!);
+    expect(new Set(texts).size).toBe(SHARE_LINES.length);
+    expect(texts[1]).toContain("9690 pts at PICK UP BOOMERS");
+    expect(texts[5]).toContain("New record on MIDNIGHT CHASE.");
+    expect(texts.every((t) => !/\{(score|track|stake)\}/.test(t) && t.endsWith(`#pickupboomers #midnightchase \u{1F474}\u{1F475}\n${url}`))).toBe(true);
     vi.unstubAllGlobals();
   });
   it("shows blocks as a clock at 3 s a block", () => {
