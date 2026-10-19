@@ -122,3 +122,6 @@ Eight layout variations of the record card and none landed; Gaylord: "Your sense
 ## A grep in a push chain hides a red suite (2026-10-19)
 `npx vitest run | grep "Tests "` exits 0 whenever grep matches, so `&& git push` ran on a failing suite. Run the suite as its own
 command and read the result before the commit, never pipe it into grep inside the chain that pushes.
+
+## Every changed screen gets looked at, on all three layouts (2026-10-19)
+Gaylord: "pls do some visual checks, you re going too fast on these assuming everything is fine." I had shipped SYSTEM with white Chakra Petch values next to WALLET's amber mono, and the board list's counts colliding with the names on phones, after measuring only that text was not clipped. A clipping probe is not a look. Rule: after any change to a TV screen, screenshot it on desktop and in the two phone iframes, look at it against its neighbours (same face, same colour, same column as the other lists), and measure the gaps between columns, not only overflow, before saying it is done.

@@ -200,7 +200,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     if (loading) status = ["LOADING"];
     else if (!board) { // the five boards as a list, how many players on each; ENTER opens one
       five(); list(BOARDS.length);
-      rows = BOARDS.map(([key, title], i) => ({ key, cells: [cell(title, C.leaderboards.name, C.challenge.nicknameS, "cp", i === at ? AMBER : key === "losers" ? PINK : WHITE), cell(String(best[key].top.length), C.leaderboards.scoreR, C.leaderboards.scoreS, "mono", AMBER, true)] }));
+      rows = BOARDS.map(([key, title], i) => ({ key, cells: [cell(title, C.leaderboards.name, C.challenge.nicknameS, "cp", i === at ? AMBER : key === "losers" ? PINK : WHITE), cell(String(best[key].top.length), C["wallet-system"].valueR, C.leaderboards.scoreS, "mono", AMBER, true)] }));
       const k = BOARDS[at][0]; enter = () => setBoard(k);
     } else { // one board, ten rows a page: PREV / NEXT turn the pages, BACK closes it. My row closes every page I am not on (nine rows then, so no rank is skipped)
       const title = BOARDS.find(([k]) => k === board)![1], b = best[board], mine = b.top.find((r) => same(me, r.who)) ?? b.mine, per = mine ? DENSE - 1 : DENSE, pages = Math.max(1, Math.ceil(b.top.length / per));
@@ -238,7 +238,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       ["NETWORK", "MIDEN TESTNET"],
       ["STATUS", !health ? "CHECKING" : !Object.keys(health).length ? "UNKNOWN" : down ? `${down[1]} DOWN` : "ALL GOOD", () => void window.open("https://status.testnet.miden.io/", "_blank", "noopener")],
       ["RPC", (chain?.rpc ?? "").replace(/^https?:\/\//, "").replace(/\/$/, "") || "--"],
-    ], "cp", WHITE);
+    ], "mono", AMBER); // the same face and colour as WALLET and every list value (Gaylord 2026-10-19)
   }
   // the chain's say comes over the mode's own screen: what is being done, where it is and how long it takes (flow.ts waiting), the trouble after, our own note
   if (busy) { const [what, how] = waiting(busy, chain?.local); status = [(busy.stage === "connect" && chain?.walletStatus) || what, `${busy.text}. ${how}`]; word = "wait"; go = null; rev = null; }

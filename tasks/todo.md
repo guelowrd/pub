@@ -889,3 +889,4 @@ Then the phone layout of the main ones.
 - STATUS reads the testnet monitor through api/status.py (status.testnet.miden.io serves HTML without CORS; the function parses the service cards, s-maxage 30 s). The game needs three of its services: RPC, Remote Prover, Local Transactions; the first unhealthy one names the row ("TRANSACTIONS DOWN"), else ALL GOOD; CHECKING while fetching, UNKNOWN when the monitor is unreachable. ENTER opens the monitor.
 - RPC is the endpoint the game reads from (chain.rpc, from the SDK Endpoint). Bread's own endpoint is not typed in the adapter.
 - Five rows fit WALLET, SYSTEM and the board list (five() in HeadUnit).
+- SYSTEM values in Share Tech Mono amber like WALLET and every list value (Gaylord 2026-10-19, "more consistent with the rest of the screens"). The board list's player counts sit at the right value column (they ran into the names on phones at the mid-screen score column).
