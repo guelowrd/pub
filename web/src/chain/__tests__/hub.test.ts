@@ -151,9 +151,9 @@ describe("boards", () => {
     const notes = [open, shot(open, KQX, 200, { consumedAt: 900 }), shot(open, MUD, 300), shot(open, MUD, 800)];
     expect(boards(notes, 400, ME).defended.top.map((r) => [name(r.who), r.value])).toEqual([["JHT", 2]]);
     expect(boards(notes, 400, ME).losers.top.map((r) => [name(r.who), r.value])).toEqual([["KQX", 1], ["MUD", 1]]); // the LOSERBOARD: each rival's lost shots
-    // one row per player, the best record each holds: KQX's two records make one row, so ME ranks second
-    const two = boards([record(KQX, 9_000), record(KQX, 8_000), record(ME, 8_500)], 400, null).records.top;
-    expect(two.map((r) => [name(r.who), r.value, r.rank])).toEqual([["KQX", 9_000, 1], ["JHT", 8_500, 2]]);
+    // every record posted ranks, a player as often as they posted (2026-10-19)
+    const three = boards([record(KQX, 9_000), record(KQX, 8_000), record(ME, 8_500)], 400, null).records.top;
+    expect(three.map((r) => [name(r.who), r.value, r.rank])).toEqual([["KQX", 9_000, 1], ["JHT", 8_500, 2], ["KQX", 8_000, 3]]);
     const many = Array.from({ length: 101 }, (_, i) => record(i ? { suffix: BigInt(10 + i), prefix: BigInt(10 + i) } : ME, 10_000 - i * 10));
     const { records } = boards(many, 400, MUD);
     expect(records.top).toHaveLength(100);

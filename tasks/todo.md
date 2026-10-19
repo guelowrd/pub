@@ -890,3 +890,4 @@ Then the phone layout of the main ones.
 - RPC is the endpoint the game reads from (chain.rpc, from the SDK Endpoint). Bread's own endpoint is not typed in the adapter.
 - Five rows fit WALLET, SYSTEM and the board list (five() in HeadUnit).
 - SYSTEM values in Share Tech Mono amber like WALLET and every list value (Gaylord 2026-10-19, "more consistent with the rest of the screens"). The board list's player counts sit at the right value column (they ran into the names on phones at the mid-screen score column).
+- BEST RECORDS ranks every record posted, a player as often as they posted (Gaylord 2026-10-19; yesterday's one-row-per-player undone). The board list counts read "23 RECORDS" / "5 PLAYERS" so the first board's count is not taken for players.

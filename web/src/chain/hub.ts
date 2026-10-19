@@ -175,7 +175,7 @@ function rank(rows: Omit<Ranked, "rank">[], me: AccountFelts | null, limit = 10)
 
 /**
  * The boards. Gamecoins won: lost shots a champion took, plus prizes (a winner's own Gamecoin coming back is not a win).
- * Best records: each player's best record, by its score. A hundred rows a board. Defended: every rival who lost at one of the
+ * Best records: every record posted, by its score, a player as often as they posted. A hundred rows a board. Defended: every rival who lost at one of the
  * champion's records, open or not. Smashed: records a rival took.
  */
 export function boards(notes: ChallengeNote[], height: number, me: AccountFelts | null) {
@@ -198,12 +198,7 @@ export function boards(notes: ChallengeNote[], height: number, me: AccountFelts 
       smashed.push({ who: w, value: 1, at: n.consumedAt! });
     }
   }
-  // one row per player: the best record each champion holds (a fourth row read "08" when every record was ranked, 2026-10-19)
-  const best = new Map<string, Omit<Ranked, "rank">>();
-  for (const n of notes) {
-    if (n.kind !== "record") continue;
-    const key = keyOf(n.storage.champion), row = { key: n.id, who: n.storage.champion, value: n.storage.target, at: n.createdAt ?? Infinity }, b = best.get(key);
-    if (!b || row.value > b.value || (row.value === b.value && row.at < b.at)) best.set(key, row);
-  }
-  return { coins: rank(tally(coins), me, 100), records: rank([...best.values()], me, 100), defended: rank(tally(defended), me, 100), smashed: rank(tally(smashed), me, 100), losers: rank(tally(losers), me, 100) };
+  // every record posted, one row each (Gaylord 2026-10-19: all of them, even several per player)
+  const records = notes.filter((n) => n.kind === "record").map((n) => ({ key: n.id, who: n.storage.champion, value: n.storage.target, at: n.createdAt ?? Infinity }));
+  return { coins: rank(tally(coins), me, 100), records: rank(records, me, 100), defended: rank(tally(defended), me, 100), smashed: rank(tally(smashed), me, 100), losers: rank(tally(losers), me, 100) };
 }
