@@ -891,3 +891,4 @@ Then the phone layout of the main ones.
 - Five rows fit WALLET, SYSTEM and the board list (five() in HeadUnit).
 - SYSTEM values in Share Tech Mono amber like WALLET and every list value (Gaylord 2026-10-19, "more consistent with the rest of the screens"). The board list's player counts sit at the right value column (they ran into the names on phones at the mid-screen score column).
 - BEST RECORDS ranks every record posted, a player as often as they posted (Gaylord 2026-10-19; yesterday's one-row-per-player undone). The board list counts players on every board ("5 PLAYERS"; BEST RECORDS counts distinct champions, its own page shows the records).
+- Board pages: my row opens every page my rank is not on (top row, Gaylord 2026-10-19; it closed them before).

@@ -206,7 +206,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     } else { // one board, ten rows a page: PREV / NEXT turn the pages, BACK closes it. My row closes every page I am not on (nine rows then, so no rank is skipped)
       const title = BOARDS.find(([k]) => k === board)![1], b = best[board], mine = b.top.find((r) => same(me, r.who)) ?? b.mine, per = mine ? DENSE - 1 : DENSE, pages = Math.max(1, Math.ceil(b.top.length / per));
       total = pages; at = Math.min(cur, pages - 1); baselines = dense; if (pages > 1) count = `${pad2(at + 1)} / ${pad2(pages)}`;
-      const slice = b.top.slice(at * per, (at + 1) * per), shown = mine && !slice.includes(mine) ? [...slice, mine] : slice;
+      const slice = b.top.slice(at * per, (at + 1) * per), shown = mine && !slice.includes(mine) ? [mine, ...slice] : slice; // my row opens every page I am not on (Gaylord 2026-10-19: at the top)
       rows = shown.map((r) => ({ key: r.key, cells: [cell(`${pad2(r.rank)} ${chain?.nameOf(r.who) ?? "???"}`, C.leaderboards.name, denseS, "cp", same(me, r.who) ? AMBER : WHITE), cell(board === "records" ? score(r.value) : String(r.value), C.leaderboards.scoreR, denseS, "mono", AMBER, true)] }));
       footer = [cell(title, TV.safe[0], 24 * u, "cp", board === "losers" ? PINK : CYAN, false, undefined, TV.detail), ...(rows.length ? [] : [cell("NO ONE YET", C.leaderboards.name, C.challenge.nicknameS, "cp", WHITE, false, undefined, TV.rows.baselines[0])])];
       if (me && !runs.length) { word = "gamecoins"; go = grant; } // a newcomer's way onto the boards
