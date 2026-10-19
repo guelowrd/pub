@@ -125,3 +125,6 @@ command and read the result before the commit, never pipe it into grep inside th
 
 ## Every changed screen gets looked at, on all three layouts (2026-10-19)
 Gaylord: "pls do some visual checks, you re going too fast on these assuming everything is fine." I had shipped SYSTEM with white Chakra Petch values next to WALLET's amber mono, and the board list's counts colliding with the names on phones, after measuring only that text was not clipped. A clipping probe is not a look. Rule: after any change to a TV screen, screenshot it on desktop and in the two phone iframes, look at it against its neighbours (same face, same colour, same column as the other lists), and measure the gaps between columns, not only overflow, before saying it is done.
+
+## `tsc --noEmit -p .` checks nothing here; the build is `tsc -b` (2026-10-19)
+Three deployments failed in a row (3a9ca35, 211e8b8, 2a5b615) on a shadowed import (`waiting`) that my check never saw: web/tsconfig.json is a solution file with references, so `tsc --noEmit -p .` type-checks zero files and exits 0. Vercel runs `npm run build` = `tsc -b && vite build`. Rule: the pre-push check is `npm run build` (or `tsc -b`), never `tsc --noEmit -p .`; and after every push, read the commit status (api.github.com/repos/guelowrd/pub/commits/<sha>/status) before saying it is live.

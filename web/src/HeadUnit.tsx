@@ -326,8 +326,8 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
 
   // the faces: rest, hover (pointer), pressed, selected (the mode's key, MUTE on), disabled
   // MY RUNS blinks (once a second, on the clock tick) while coins wait there; steady under reduced motion (Gaylord 2026-10-19)
-  const waiting = owed.length > 0 && (reduced() || Math.floor(Date.now() / 1000) % 2 === 0);
-  const lit = (id: string) => id === mode || (id === "mute" && muted) || (id === "my-runs" && waiting);
+  const coinsWait = owed.length > 0 && (reduced() || Math.floor(Date.now() / 1000) % 2 === 0);
+  const lit = (id: string) => id === mode || (id === "mute" && muted) || (id === "my-runs" && coinsWait);
   const face = (id: string) => (pressed === id ? (lit(id) ? "selected-pressed" : "pressed") : !on(id) ? "disabled" : lit(id) ? "selected" : hover === id ? "hover" : "rest");
   const box = (r: number[]) => ({ left: px(r[0]), top: px(r[1]), width: px(r[2]), height: px(r[3]) });
   /** Text on its baseline inside the TV */
