@@ -882,3 +882,10 @@ Then the phone layout of the main ones.
 - NETWORK row moved from WALLET to SYSTEM (Gaylord 2026-10-19: WALLET is for making the wallet work and concrete info, the network is informative). SYSTEM now six rows, WALLET six when connected, two when not.
 - LEADERBOARDS list shows all five boards at once: a fifth row at the same step (desktop 548, phones 222), no page counter (Gaylord 2026-10-19: there is room on the TV). Board pages stay at ten rows.
 - SYSTEM: VOLUME row dropped (the radio's VOL keys do it). Bread exposes no version to the page (checked the injected midenWallet object and the 1.17.4 bundle, 2026-10-19): the WALLET row stays BREAD until it does.
+
+## WALLET vs SYSTEM reorganised (2026-10-19, Gaylord)
+- WALLET: STATUS (ENTER connects until connected), PLAYER, BALANCE, RESET BEST (from SYSTEM), DISCONNECT. BALANCE carries its one action: "N GAMECOINS. ENTER TO CLAIM" when coins are owed (ENTER collects everything owed, then reads again), "N GAMECOIN. ENTER TO GET 10" at 1 or less, else the number (ENTER reads again).
+- SYSTEM: VERSION, ADDRESS (from WALLET, ENTER copies), NETWORK, STATUS, RPC. SOUND and VOLUME rows dropped (the radio keys do it), the TEST/BREAD row dropped.
+- STATUS reads the testnet monitor through api/status.py (status.testnet.miden.io serves HTML without CORS; the function parses the service cards, s-maxage 30 s). The game needs three of its services: RPC, Remote Prover, Local Transactions; the first unhealthy one names the row ("TRANSACTIONS DOWN"), else ALL GOOD; CHECKING while fetching, UNKNOWN when the monitor is unreachable. ENTER opens the monitor.
+- RPC is the endpoint the game reads from (chain.rpc, from the SDK Endpoint). Bread's own endpoint is not typed in the adapter.
+- Five rows fit WALLET, SYSTEM and the board list (five() in HeadUnit).

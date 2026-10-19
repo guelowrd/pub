@@ -9,7 +9,7 @@ import { useMidenFiWallet } from "@miden-sdk/miden-wallet-adapter-react";
 import { LOCAL_WALLET, useLocalWallet } from "./localWallet";
 import { GAMECOIN_GRANT, gamecoinRefusal, GRANT_PENDING_MS, useGamecoin } from "./gamecoin";
 import { RECORD_LIFETIME_BLOCKS, STAKE, SUBMIT_TIMEOUT_MS } from "./config";
-import { accountFelts, bech32Of, fetchChallengeNote, knownNote, listChallengeNotes, loadScripts, parseAccountId, syncNotes, wordFromHex, type ChallengeNote, type Client } from "./chain";
+import { accountFelts, bech32Of, endpoint, fetchChallengeNote, knownNote, listChallengeNotes, loadScripts, parseAccountId, syncNotes, wordFromHex, type ChallengeNote, type Client } from "./chain";
 import { keyOf, lettersBackward, nicknames, playersInOrder } from "./hub";
 import { collect as collectNotes, gcBalance, postRecord, postShot, setBalanceListener, setPendingListener, setSubmitAttemptListener, setSubmitStageListener, settle as settleNotes, waitFor, type Submitted } from "./bread";
 import { shotDeadline, shotStorage, ZERO_WORD, type AccountFelts, type ChallengeStorage } from "./notes";
@@ -54,6 +54,8 @@ export type ChainApi = {
   settle: (shots: ChallengeNote[], record: ChallengeNote | undefined, seed: number, song: number, log: Event[], dist: number, score: number) => Promise<Settled | null>;
   /** Champion: expired records and lost shots, all in one transaction. */
   collect: (notes: ChallengeNote[]) => Promise<boolean>;
+  /** The node the game reads from (SYSTEM screen). */
+  rpc: string;
   /** Ten Gamecoins from the faucet; what the player should know. */
   gamecoins: () => Promise<string | null>;
 };
@@ -326,6 +328,7 @@ export function useChain(): ChainApi {
     shoot,
     settle,
     collect,
+    rpc: endpoint().toString(),
     gamecoins,
   };
 }

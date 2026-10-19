@@ -15,6 +15,7 @@ import { audio } from "./audio";
 import type { ChainApi, ChallengeNote } from "./chain/ChainHost";
 import { BREAD_URL, blocksToClock as clock, canDrive, fmtGamecoin, sameAccount as same, sameWord, waiting } from "./chain/flow";
 import { boards, history, owed as owedNotes } from "./chain/hub";
+import { STAKE } from "./chain/config";
 import { noteDeadline } from "./chain/notes";
 
 type Mode = "solo" | "challenge" | "my-runs" | "leaderboards" | "wallet" | "system";
@@ -96,7 +97,8 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const [review, setReview] = useState<ChallengeNote | null>(null); // CHALLENGE: the record under review
   const [opened, setOpened] = useState<string | null>(null); // MY RUNS: the run opened, by key
   const [board, setBoard] = useState<BoardKey | null>(null); // LEADERBOARDS: the board opened
-  const [note, setNote] = useState<string | null>(null); // a line of our own on the TV (coins received, best cleared)
+  const [note, setNote] = useState<string | null>(null);
+  const [health, setHealth] = useState<Record<string, string> | null>(null); // SYSTEM: the testnet monitor's word per service, {} when unreachable // a line of our own on the TV (coins received, best cleared)
   const [pressed, setPressed] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
   const [loaded, setLoaded] = useState<Set<string>>(() => new Set()); // the paintings the TV can show
@@ -114,6 +116,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   useEffect(() => { store("pub.stage", String(station)); }, [station]);
   // WALLET read once per connection on its first visit (Bread asks the player on every read); ENTER on BALANCE reads again
   const balanceAsked = useRef<string | null>(null);
+  useEffect(() => { if (mode !== "system") return; setHealth(null); fetch("/api/status").then((r) => r.json()).then(setHealth, () => setHealth({})); }, [mode]);
   useEffect(() => { const a = chain?.address; if (mode === "wallet" && a && balanceAsked.current !== a) { balanceAsked.current = a; void chain!.readBalance(); } }, [mode, chain?.address]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const me = chain?.me ?? null, height = chain?.height ?? 0, notes = chain?.notes ?? [], busy = chain?.busy ?? null, trouble = chain?.trouble ?? null;
@@ -144,9 +147,11 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   let heading = "", count = "", rows: Row[] = [], total = 0, at = 0, start = 0, selected = -1, footer: Cell[] = [], status: [string, string?] | null = null, rev: Review | null = null, baselines = TV.rows.baselines, sel = TV.rows.sel;
   // a board's page: ten rows between the heading and the footer, smaller type (Gaylord 2026-10-19: ten rows a page, scrolling)
   const DENSE = 10, denseTop = TV.heading[1] + 44 * u, denseStep = (TV.detail - 46 * u - denseTop) / (DENSE - 1), dense = Array.from({ length: DENSE }, (_, i) => denseTop + i * denseStep), denseS = Math.max(11, 22 * u);
+  // a fifth row at the rows' own step: the five boards, WALLET and SYSTEM each fit one screen (Gaylord 2026-10-19)
+  const five = () => { const step = baselines[1] - baselines[0], [x, y, w, h] = sel[sel.length - 1]; baselines = [...TV.rows.baselines, TV.rows.baselines[N - 1] + step]; sel = [...TV.rows.sel, [x, y + step, w, h]]; };
   const list = (n: number) => { total = n; at = Math.min(cur, Math.max(0, n - 1)); start = Math.min(Math.max(0, at - baselines.length + 1), Math.max(0, n - baselines.length)); selected = at; };
   const kv = (pairs: [string, string, (() => void)?][], valueFont: Font, valueColor: string) => {
-    list(pairs.length); if (pairs.length > N) count = `${pad2(at + 1)} / ${pad2(pairs.length)}`; // more rows than the TV shows: say where the cursor is
+    five(); list(pairs.length); if (pairs.length > baselines.length) count = `${pad2(at + 1)} / ${pad2(pairs.length)}`; // more rows than the TV shows: say where the cursor is
     rows = pairs.map(([k, v], i) => ({ key: k, cells: [cell(k, C["my-runs"].type, C["wallet-system"].keyS, "cp", i === at ? AMBER : CYAN), cell(v, C["wallet-system"].valueR, C["wallet-system"].valueS, valueFont, valueColor, true)] }));
     enter = pairs[at]?.[2] ?? null;
   };
@@ -194,9 +199,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     heading = "LEADERBOARDS";
     if (loading) status = ["LOADING"];
     else if (!board) { // the five boards as a list, how many players on each; ENTER opens one
-      const step = baselines[1] - baselines[0], [x, y, w, h] = sel[sel.length - 1]; // a fifth row at the same step: all five boards on one screen (Gaylord 2026-10-19)
-      baselines = [...baselines, baselines[baselines.length - 1] + step]; sel = [...sel, [x, y + step, w, h]];
-      list(BOARDS.length);
+      five(); list(BOARDS.length);
       rows = BOARDS.map(([key, title], i) => ({ key, cells: [cell(title, C.leaderboards.name, C.challenge.nicknameS, "cp", i === at ? AMBER : key === "losers" ? PINK : WHITE), cell(String(best[key].top.length), C.leaderboards.scoreR, C.leaderboards.scoreS, "mono", AMBER, true)] }));
       const k = BOARDS[at][0]; enter = () => setBoard(k);
     } else { // one board, ten rows a page: PREV / NEXT turn the pages, BACK closes it. My row closes every page I am not on (nine rows then, so no rank is skipped)
@@ -210,21 +213,31 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   } else if (mode === "wallet") {
     heading = "WALLET";
     const connect = noBread ? getBread : !me && chain?.installed && !chain.connecting ? () => void chain.connect() : undefined; // the red key and ENTER on STATUS, until connected
+    const bestScore = Number(stored("pub.best") ?? 0), b = chain?.balance ?? null;
+    // BALANCE carries the one thing to do with it: claim what is owed, or get 10 when down to 1 or less (Gaylord 2026-10-19)
+    const balance: [string, string, (() => void)?] = b == null ? ["BALANCE", "READING", () => void chain?.readBalance()]
+      : owed.length ? ["BALANCE", `${gc(b)}. ENTER TO CLAIM`, () => void chain?.collect(owed).then((ok) => { if (ok) { setNote("COINS RECEIVED"); void chain.readBalance(); } })]
+      : b <= STAKE ? ["BALANCE", `${gc(b)}. ENTER TO GET 10`, grant]
+      : ["BALANCE", gc(b), () => void chain?.readBalance()];
     kv([
       ["STATUS", !chain?.installed ? "NO BREAD WALLET" : me ? "CONNECTED" : chain.connecting ? chain.walletStatus || "CONNECTING" : "NOT CONNECTED", connect],
-      ["BALANCE", chain?.balance != null ? gc(chain.balance) : me ? "READING" : "--", me ? () => void chain?.readBalance() : undefined], // read on arrival; ENTER reads again
-      ...(me ? [["PLAYER", chain!.nameOf(me)], ["ADDRESS", `${chain!.address!.slice(0, 7)}…${chain!.address!.slice(-5)} COPY`, () => void navigator.clipboard?.writeText(chain!.address!).then(() => setNote("ADDRESS COPIED"), () => setNote("COPY FAILED"))], ["GAMECOINS", "GET 10", grant], ["DISCONNECT", "ENTER", () => void chain?.disconnect()]] as [string, string, (() => void)?][] : []),
+      ...(me ? [["PLAYER", chain!.nameOf(me)], balance] as [string, string, (() => void)?][] : []),
+      ["RESET BEST", bestScore ? score(bestScore) : "--", bestScore ? () => { store("pub.best", null); setNote("BEST SCORE CLEARED"); } : undefined],
+      ...(me ? [["DISCONNECT", "ENTER", () => void chain?.disconnect()]] as [string, string, (() => void)?][] : []),
     ], "mono", AMBER);
     if (connect) { word = noBread ? "get bread" : "connect"; go = connect; }
   } else {
     heading = "SYSTEM";
-    const bestScore = Number(stored("pub.best") ?? 0);
+    // the testnet monitor's word on what the game needs: reads, proving, and the node taking our transactions
+    const NEEDED: [string, string][] = [["rpc", "RPC"], ["remote prover", "PROVER"], ["local transactions", "TRANSACTIONS"]];
+    const down = health && NEEDED.find(([k]) => health[k] !== "healthy");
+    const addr = chain?.address ?? null;
     kv([
-      ["SOUND", muted ? "OFF" : "ON", toggleMute],
-      ["RESET BEST", bestScore ? score(bestScore) : "--", bestScore ? () => { store("pub.best", null); setNote("BEST SCORE CLEARED"); } : undefined],
       ["VERSION", __PUB_VERSION__],
-      ["WALLET", chain?.local ? "TEST (?LOCAL=)" : "BREAD"],
+      ["ADDRESS", addr ? `${addr.slice(0, 7)}…${addr.slice(-5)} COPY` : "--", addr ? () => void navigator.clipboard?.writeText(addr).then(() => setNote("ADDRESS COPIED"), () => setNote("COPY FAILED")) : undefined],
       ["NETWORK", "MIDEN TESTNET"],
+      ["STATUS", !health ? "CHECKING" : !Object.keys(health).length ? "UNKNOWN" : down ? `${down[1]} DOWN` : "ALL GOOD", () => void window.open("https://status.testnet.miden.io/", "_blank", "noopener")],
+      ["RPC", (chain?.rpc ?? "").replace(/^https?:\/\//, "").replace(/\/$/, "") || "--"],
     ], "cp", WHITE);
   }
   // the chain's say comes over the mode's own screen: what is being done, where it is and how long it takes (flow.ts waiting), the trouble after, our own note
