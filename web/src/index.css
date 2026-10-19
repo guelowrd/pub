@@ -107,6 +107,7 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .gp-content { position: absolute; left: 0; top: 0; overflow: hidden; background: #080e17; }
 .gp-pic { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; } /* the 256x192 buffer, every pixel square (the boards) */
 .gp-pic.locked { filter: grayscale(.8) brightness(.45); }
+.gp-pic.dim { filter: brightness(.22) saturate(.8); } /* a record's stage behind the CHALLENGE list and review */
 .gp-lock { position: absolute; color: #f28bb1; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 .3em rgba(242, 139, 177, .55)); } /* the padlock over a locked stage, drawn like the kit's line icons */
 .gp-shade { position: absolute; left: 0; right: 0; top: 62%; bottom: 0; background: linear-gradient(#080e1700, #080e17c8 45%, #080e17f0); }
 .gp-text { position: absolute; white-space: nowrap; line-height: 1; overflow: hidden; }

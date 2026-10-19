@@ -151,7 +151,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   // what the mode shows on the TV, and what the keys do there
   const cursorKey = board ? `leaderboards/${board}` : mode, cur = cursor[cursorKey] ?? 0; // a board keeps its own page
   let word: Word | null = null, go: (() => void) | null = null, enter: (() => void) | null = null;
-  let heading = "", count = "", rows: Row[] = [], total = 0, at = 0, start = 0, selected = -1, footer: Cell[] = [], status: [string, string?] | null = null, rev: Review | null = null, baselines = TV.rows.baselines, sel = TV.rows.sel;
+  let heading = "", count = "", rows: Row[] = [], total = 0, at = 0, start = 0, selected = -1, footer: Cell[] = [], status: [string, string?] | null = null, rev: Review | null = null, baselines = TV.rows.baselines, sel = TV.rows.sel, backdrop: string | null = null;
   // a board's page: ten rows between the heading and the footer, smaller type (Gaylord 2026-10-19: ten rows a page, scrolling)
   const DENSE = 10, denseTop = TV.heading[1] + 44 * u, denseStep = (TV.detail - 46 * u - denseTop) / (DENSE - 1), dense = Array.from({ length: DENSE }, (_, i) => denseTop + i * denseStep), denseS = Math.max(11, 22 * u);
   // a fifth row at the rows' own step: the five boards, WALLET and SYSTEM each fit one screen (Gaylord 2026-10-19)
@@ -174,6 +174,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     if (review) {
       const r = review, mine = same(me, r.storage.champion), done = over(r);
       rev = { heading: done ? "RECORD OVER" : "CHALLENGE", label: `CHAMPION ${champion(r)}`, score: r.storage.target, line: mine ? "YOUR OWN RECORD" : "", song: songIn(r), left: done ? undefined : r.storage.expiryBlock - height };
+      backdrop = previewOf(STATIONS[songIn(r)]);
       // SHOT: the Gamecoin in, the drive starts at once (Gaylord 2026-10-18: no PRESS DRIVE step, the shot window is six minutes)
       if (!done && !mine) { word = "shot"; go = () => void chain?.shoot(r).then((x) => x && onShot(x.shots, x.record)); }
     } else if (loading) status = ["LOADING"];
@@ -182,6 +183,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       list(records.length); count = `${records.length} OPEN`;
       rows = records.map((n, i) => ({ key: n.id, cells: [cell(champion(n), C.challenge.champion, C.challenge.nicknameS, "cp", i === at ? AMBER : WHITE), cell(score(n.storage.target), C.challenge.scoreR, C.challenge.scoreS, "mono", AMBER, true), cell(songOf(songIn(n)), C.challenge.stage, C.challenge.stageS, "cp", i === at ? AMBER : WHITE, false, C.challenge.stageW)] }));
       const s = records[at];
+      backdrop = previewOf(STATIONS[songIn(s)]); // the record's stage behind the list, dimmed (Gaylord 2026-10-19)
       footer = [cell(songOf(songIn(s)), TV.safe[0], TV.review.stageS, "cp", AMBER, false, undefined, TV.footer), cell("TIME LEFT", TV.count[0], Math.max(11, 14 * u), "cp", CYAN, true, undefined, TV.detail - 4 * u), cell(clock(s.storage.expiryBlock - height), TV.count[0], TV.review.expiryS, "mono", AMBER, true, undefined, TV.footer + 4 * u)];
       enter = () => setReview(s);
     }
@@ -362,6 +364,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       </svg>
       <div className="gp-tv" style={box([...TV.origin, ...TV.size])}>
         <div className="gp-content" style={{ width: px(TV.size[0]), height: px(TV.size[1]), clipPath: `url(#gp-tube-${layout})` }}>
+          {backdrop && !status && loaded.has(backdrop) && <img className="gp-pic dim" src={backdrop} alt="" />}
           {mode === "solo" && !status && (
             <>
               <img className={`gp-pic${lock ? " locked" : ""}`} src={preview} alt="" />
