@@ -210,6 +210,7 @@ export const SHARE_LINES = [
 export function recordLinks(recordId: string, songId: string, score: number, track: string, roll = Math.random()) {
   const url = `${location.origin}/r?record=${recordId}&t=${songId}&s=${score}`;
   const line = SHARE_LINES[Math.floor(roll * SHARE_LINES.length)].replace("{score}", String(score)).replace("{track}", track.toUpperCase()).replace("{stake}", fmtGamecoin(STAKE));
-  const text = `${line}\n#pickupboomers #${songId.replace(/-/g, "")} \u{1F474}\u{1F475}`;
+  const boomers = /[\u{1F474}\u{1F475}]/u.test(line) ? "" : " \u{1F474}\u{1F475}"; // the hashtags carry the boomers unless the line already has one
+  const text = `${line}\n#pickupboomers #${songId.replace(/-/g, "")}${boomers}`;
   return { url, x: `https://x.com/intent/post?text=${encodeURIComponent(`${text}\n${url}`)}` };
 }

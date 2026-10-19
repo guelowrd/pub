@@ -214,7 +214,11 @@ describe("Gamecoin in words", () => {
     expect(new Set(texts).size).toBe(SHARE_LINES.length);
     expect(texts[1]).toContain("9690 pts at PICK UP BOOMERS");
     expect(texts[5]).toContain("New record on MIDNIGHT CHASE.");
-    expect(texts.every((t) => !/\{(score|track|stake)\}/.test(t) && t.endsWith(`#pickupboomers #midnightchase \u{1F474}\u{1F475}\n${url}`))).toBe(true);
+    expect(texts.every((t) => !/\{(score|track|stake)\}/.test(t) && t.endsWith(`\n${url}`))).toBe(true);
+    // the boomers ride the hashtags only when the line has none of its own
+    expect(texts[0]).toContain(`#midnightchase \u{1F474}\u{1F475}\n`);
+    expect(texts[1]).toContain(`\u{1F474}\nBeat that`);
+    expect(texts[1]).toContain(`#midnightchase\n`);
     vi.unstubAllGlobals();
   });
   it("shows blocks as a clock at 3 s a block", () => {
