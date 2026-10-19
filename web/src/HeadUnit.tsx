@@ -323,7 +323,9 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   }, [word, shown]);
 
   // the faces: rest, hover (pointer), pressed, selected (the mode's key, MUTE on), disabled
-  const lit = (id: string) => id === mode || (id === "mute" && muted) || (id === "my-runs" && owed.length > 0); // MY RUNS stays lit while coins wait there
+  // MY RUNS blinks (once a second, on the clock tick) while coins wait there; steady under reduced motion (Gaylord 2026-10-19)
+  const waiting = owed.length > 0 && (reduced() || Math.floor(Date.now() / 1000) % 2 === 0);
+  const lit = (id: string) => id === mode || (id === "mute" && muted) || (id === "my-runs" && waiting);
   const face = (id: string) => (pressed === id ? (lit(id) ? "selected-pressed" : "pressed") : !on(id) ? "disabled" : lit(id) ? "selected" : hover === id ? "hover" : "rest");
   const box = (r: number[]) => ({ left: px(r[0]), top: px(r[1]), width: px(r[2]), height: px(r[3]) });
   /** Text on its baseline inside the TV */
@@ -409,7 +411,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       <div className="gp-radio" style={box([...R.origin, ...R.size])}>
         <img src={`${GP}${layout}/fascia.png`} alt="" style={box([0, 0, ...R.size])} />
         <img src={`${GP}${layout}/lcd.png`} alt="" style={box(R.lcd)} />
-        <span className="gp-text gp-lcd" style={{ left: px(R.purpose[0]), top: px(R.purpose[1] - baselineEm(LCD) * R.purpose[2] * K.lcd), fontSize: px(R.purpose[2] * K.lcd), color: AMBER }}>{pop ? "LATER FROM MY RUNS" : PURPOSE[mode]}</span>
+        <span className="gp-text gp-lcd" style={{ left: px(R.purpose[0]), top: px(R.purpose[1] - baselineEm(LCD) * R.purpose[2] * K.lcd), fontSize: px(R.purpose[2] * K.lcd), color: AMBER }}>{pop ? "COLLECT YOUR GAMECOINS" : PURPOSE[mode]}</span>
         <Meter layout={layout} m={R.meter} />
         <img className="gp-plaque" src={`${GP}${layout}/plaque.png`} alt="electronic GRAND PRIX" style={box(R.plaque)} />
         {R.controls.map((c) => {
