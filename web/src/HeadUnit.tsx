@@ -52,6 +52,7 @@ const gc = (v: bigint) => fmtGamecoin(v).toUpperCase();
 let owedTold: string | null = null; // the wallet told about its coins to collect, once a session (the head unit unmounts for every run) // spelled out on the TV (Gaylord 2026-10-18: GC was unclear)
 // the TV's painting of a stage: the district at its hour, rain or not
 const previewOf = (st: Station) => `${ART}stage/${st.district}-${st.time}${st.rain ? "-rain" : ""}.png`;
+const DIM_TO = 0.045; // the mean brightness every CHALLENGE backdrop is dimmed to (paintings range 0.15 to 0.49)
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 const cell = (t: string, x: number, size: number, font: Font, color: string, right = false, width?: number, y?: number): Cell => ({ t, x, y, size, font, color, right, width });
 const TONE: Record<string, string> = { COLLECT: AMBER, READY: AMBER, LATE: PINK, LOST: PINK, BEATEN: PINK, WON: CYAN, DEFENDED: CYAN };
@@ -104,7 +105,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const [health, setHealth] = useState<Record<string, string> | null>(null); // SYSTEM: the testnet monitor's word per service, {} when unreachable // a line of our own on the TV (coins received, best cleared)
   const [pressed, setPressed] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState<Set<string>>(() => new Set()); // the paintings the TV can show
+  const [loaded, setLoaded] = useState<Map<string, number>>(() => new Map()); // the paintings the TV can show, each with its mean brightness (0..1)
   const [, setTick] = useState(0);
   const lastWord = useRef<Word | null>(null); // what the red key read when the chain was asked: TRY AGAIN offers it again
 
@@ -112,7 +113,17 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   useEffect(() => { void document.fonts.ready.then(() => setTick((n) => n + 1)); }, []); // baselines need the fonts measured
   useEffect(() => { if (!openRecord) return; setMode("challenge"); setReview(openRecord); onOpened(); }, [openRecord, onOpened]);
   useEffect(() => { // every stage's painting warms up at once; TUNING shows until the current one is in
-    for (const st of STATIONS) { const src = previewOf(st), img = new Image(); img.onload = () => setLoaded((s) => new Set(s).add(src)); img.src = src; }
+    const c = document.createElement("canvas"), g = c.getContext("2d")!;
+    for (const st of STATIONS) {
+      const src = previewOf(st), img = new Image();
+      img.onload = () => { // mean luminance, so the dimmed backdrops come out even (Gaylord 2026-10-19)
+        c.width = img.width; c.height = img.height; g.drawImage(img, 0, 0);
+        const d = g.getImageData(0, 0, c.width, c.height).data; let sum = 0;
+        for (let i = 0; i < d.length; i += 4) sum += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+        setLoaded((s) => new Map(s).set(src, sum / (d.length / 4) / 255));
+      };
+      img.src = src;
+    }
   }, []);
   // the stage comes back as it was last chosen (the first one cold)
   useEffect(() => { const s = Number(stored("pub.stage")); if (Number.isInteger(s) && s >= 0 && s < STATIONS.length) setStation(s); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -193,6 +204,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     if (!me) { status = [noBread ? "NO BREAD WALLET" : chain?.connecting ? chain.walletStatus || "CONNECTING" : "CONNECT YOUR WALLET"]; if (noBread) { word = "get bread"; go = getBread; } else if (!chain?.connecting && chain?.installed) { word = "connect"; go = () => void chain.connect(); } }
     else if (o) {
       rev = { heading: o.word === "drive" ? "SHOT READY" : o.kind === "record" ? "MY RECORD" : "MY SHOT", label: o.label, score: o.score, line: o.word === "drive" ? "PRESS DRIVE" : o.line, tone: o.tone, song: o.song, left: o.deadline };
+      backdrop = previewOf(STATIONS[o.song]);
       if (o.word === "collect") { word = "collect"; go = () => void chain?.collect(owed).then((ok) => ok && flash("COINS RECEIVED")); } // everything owed, one transaction
       else if (o.word === "drive") { word = "drive"; go = () => onShot(o.shots!, o.record!); }
     } else if (loading) status = ["LOADING"];
@@ -201,6 +213,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       list(runs.length); count = `${runs.length} RUNS`;
       rows = runs.map((r, i) => ({ key: r.key, cells: [cell(r.kind.toUpperCase(), C["my-runs"].type, C["my-runs"].typeS, "cp", i === at ? AMBER : WHITE), cell(score(r.score), C["my-runs"].scoreR, C["my-runs"].scoreS, "mono", AMBER, true), cell(r.state, C["my-runs"].stateR, C["my-runs"].stateS, "cp", i === at ? AMBER : TONE[r.state] ?? WHITE, true)] }));
       const r = runs[at]; // the stage under the list (the rows have no room for it); the money or the rival on the right, unless the line only repeats the state
+      backdrop = previewOf(STATIONS[r.song]); // and its painting behind the list, like CHALLENGE
       footer = [cell(songOf(r.song), TV.safe[0], TV.review.stageS, "cp", AMBER, false, undefined, TV.footer), ...(r.line === r.state ? [] : [cell(r.line, TV.count[0], 20 * u, "cp", CYAN, true, undefined, TV.footer)])];
       const k = runs[at].key; enter = () => setOpened(k);
     }
@@ -364,7 +377,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       </svg>
       <div className="gp-tv" style={box([...TV.origin, ...TV.size])}>
         <div className="gp-content" style={{ width: px(TV.size[0]), height: px(TV.size[1]), clipPath: `url(#gp-tube-${layout})` }}>
-          {backdrop && !status && loaded.has(backdrop) && <img className="gp-pic dim" src={backdrop} alt="" />}
+          {backdrop && !status && loaded.has(backdrop) && <img className="gp-pic dim" style={{ filter: `brightness(${(DIM_TO / loaded.get(backdrop)!).toFixed(3)}) saturate(.8)` }} src={backdrop} alt="" />}
           {mode === "solo" && !status && (
             <>
               <img className={`gp-pic${lock ? " locked" : ""}`} src={preview} alt="" />
