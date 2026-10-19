@@ -99,6 +99,8 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const [opened, setOpened] = useState<string | null>(null); // MY RUNS: the run opened, by key
   const [board, setBoard] = useState<BoardKey | null>(null); // LEADERBOARDS: the board opened
   const [note, setNote] = useState<string | null>(null);
+  const [noteUntil, setNoteUntil] = useState<number | null>(null); // a note that counts down and goes back to the track (COINS RECEIVED, Gaylord 2026-10-19)
+  const noteTimer = useRef(0);
   const [health, setHealth] = useState<Record<string, string> | null>(null); // SYSTEM: the testnet monitor's word per service, {} when unreachable // a line of our own on the TV (coins received, best cleared)
   const [pressed, setPressed] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
@@ -106,7 +108,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const [, setTick] = useState(0);
   const lastWord = useRef<Word | null>(null); // what the red key read when the chain was asked: TRY AGAIN offers it again
 
-  useEffect(() => { const t = setInterval(() => setTick((n) => n + 1), 1000); return () => clearInterval(t); }, []); // the clocks
+  useEffect(() => { const t = setInterval(() => setTick((n) => n + 1), 1000); return () => { clearInterval(t); clearTimeout(noteTimer.current); }; }, []); // the clocks (and a note's timer at unmount)
   useEffect(() => { void document.fonts.ready.then(() => setTick((n) => n + 1)); }, []); // baselines need the fonts measured
   useEffect(() => { if (!openRecord) return; setMode("challenge"); setReview(openRecord); onOpened(); }, [openRecord, onOpened]);
   useEffect(() => { // every stage's painting warms up at once; TUNING shows until the current one is in
@@ -189,7 +191,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     if (!me) { status = [noBread ? "NO BREAD WALLET" : chain?.connecting ? chain.walletStatus || "CONNECTING" : "CONNECT YOUR WALLET"]; if (noBread) { word = "get bread"; go = getBread; } else if (!chain?.connecting && chain?.installed) { word = "connect"; go = () => void chain.connect(); } }
     else if (o) {
       rev = { heading: o.word === "drive" ? "SHOT READY" : o.kind === "record" ? "MY RECORD" : "MY SHOT", label: o.label, score: o.score, line: o.word === "drive" ? "PRESS DRIVE" : o.line, tone: o.tone, song: o.song, left: o.deadline };
-      if (o.word === "collect") { word = "collect"; go = () => void chain?.collect(owed).then((ok) => ok && setNote("COINS RECEIVED")); } // everything owed, one transaction
+      if (o.word === "collect") { word = "collect"; go = () => void chain?.collect(owed).then((ok) => ok && flash("COINS RECEIVED")); } // everything owed, one transaction
       else if (o.word === "drive") { word = "drive"; go = () => onShot(o.shots!, o.record!); }
     } else if (loading) status = ["LOADING"];
     else if (!runs.length) { status = ["NO RUNS YET", "A POST COSTS 1 GAMECOIN. GET 10 FREE WITH THE RED KEY"]; word = "gamecoins"; go = grant; }
@@ -224,7 +226,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     const bestScore = Number(stored("pub.best") ?? 0), b = chain?.balance ?? null;
     // BALANCE carries the one thing to do with it: claim what is owed, or get 10 when down to 1 or less (Gaylord 2026-10-19)
     const balance: [string, string, (() => void)?] = b == null ? ["BALANCE", "READING", () => void chain?.readBalance()]
-      : owed.length ? ["BALANCE", `${gc(b)}. ENTER TO CLAIM`, () => void chain?.collect(owed).then((ok) => { if (ok) { setNote("COINS RECEIVED"); void chain.readBalance(); } })]
+      : owed.length ? ["BALANCE", `${gc(b)}. ENTER TO CLAIM`, () => void chain?.collect(owed).then((ok) => { if (ok) { flash("COINS RECEIVED"); void chain.readBalance(); } })]
       : b <= STAKE ? ["BALANCE", `${gc(b)}. ENTER TO GET 10`, grant]
       : ["BALANCE", gc(b), () => void chain?.readBalance()];
     kv([
@@ -252,11 +254,11 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   if (busy) { const [what, how] = waiting(busy, chain?.local); status = [(busy.stage === "connect" && chain?.walletStatus) || what, `${busy.text}. ${how}`]; word = "wait"; go = null; rev = null; }
   // the raw error shows under the title (Gaylord 2026-10-18: "copy-paste the error and tag @zkGaylord on X"), capped so it stays on the TV
   else if (trouble) { const [head, ...tail] = trouble.t.title.toUpperCase().split(". "); status = [head, [tail.join(". "), trouble.retry ? "TRY AGAIN WITH THE RED KEY." : "", trouble.t.detail ? `${trouble.t.detail.slice(0, 240).toUpperCase()} (COPY IT AND TAG @ZKGAYLORD ON X)` : ""].filter(Boolean).join("\n") || undefined]; rev = null; word = trouble.retry ? lastWord.current : null; go = trouble.retry ? () => { const r = trouble.retry!; chain?.dismiss(); r(); } : null; }
-  else if (note) { status = [note]; rev = null; word = null; go = null; }
+  else if (note) { status = [note, noteUntil ? `BACK TO THE TRACK IN ${Math.max(1, Math.ceil((noteUntil - Date.now()) / 1000))}` : undefined]; rev = null; word = null; go = null; }
   else if (pop) {
     const shots = owed.filter((n) => n.kind === "shot").length, records = owed.length - shots;
     status = [`${gc(owed.reduce((sum, n) => sum + n.amount, 0n))} TO COLLECT`, [shots ? `${shots === 1 ? "A RIVAL" : "RIVALS"} TRIED TO BEAT YOU AND FAILED!` : "", records ? (shots ? `${records === 1 ? "A RECORD" : "RECORDS"} OF YOURS RAN OUT TOO.` : `YOUR RECORD${records === 1 ? "" : "S"} RAN OUT. YOUR GAMECOIN${records === 1 ? " IS" : "S ARE"} BACK.`) : ""].filter(Boolean).join("\n")];
-    rev = null; word = "collect"; go = () => { setOwedPop(false); void chain?.collect(owed).then((ok) => ok && setNote("COINS RECEIVED")); };
+    rev = null; word = "collect"; go = () => { setOwedPop(false); void chain?.collect(owed).then((ok) => ok && flash("COINS RECEIVED")); };
   }
 
   // which keys answer, by the pack's rules: a root has no BACK, ENTER opens rows only, the arrows stop at a list's ends
@@ -273,8 +275,11 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       default: return true;
     }
   };
-  const goMode = (m: Mode) => { setMode(m); setReview(null); setOpened(null); setBoard(null); setNote(null); chain?.dismiss(); };
-  const back = () => { if (trouble) return chain?.dismiss(); if (pop) return setOwedPop(false); if (note) return setNote(null); if (review) return setReview(null); if (board) return setBoard(null); setOpened(null); };
+  const clearNote = () => { clearTimeout(noteTimer.current); setNoteUntil(null); setNote(null); };
+  const goMode = (m: Mode) => { setMode(m); setReview(null); setOpened(null); setBoard(null); clearNote(); chain?.dismiss(); };
+  /** a note for five seconds, then the track */
+  const flash = (t: string) => { clearNote(); setNote(t); setNoteUntil(Date.now() + 5000); noteTimer.current = window.setTimeout(() => goMode("solo"), 5000); };
+  const back = () => { if (trouble) return chain?.dismiss(); if (pop) return setOwedPop(false); if (note) return clearNote(); if (review) return setReview(null); if (board) return setBoard(null); setOpened(null); };
   const stepTo = (d: number) => { if (mode === "solo") return setStation((station + d + STATIONS.length) % STATIONS.length); if (total) setCursor({ ...cursor, [cursorKey]: Math.max(0, Math.min(total - 1, at + d)) }); };
   const act = (id: string, half?: 0 | 1) => {
     if (!on(id)) return;
