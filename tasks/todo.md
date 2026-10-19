@@ -879,3 +879,4 @@ Then the phone layout of the main ones.
 - BALANCE reads on the first WALLET visit of each connection (Bread serves asset reads to a connected site without asking; measured 3.5 s); the row says READING meanwhile, ENTER reads again.
 - STATUS row takes ENTER until connected: CONNECT (Bread present) or GET BREAD (none), the same as the red key. Cursor stays on STATUS.
 - Trouble headings: the first sentence is the heading, the rest opens the detail paragraph (every title over ~35 characters clipped on the one-line heading, the faucet line first).
+- NETWORK row moved from WALLET to SYSTEM (Gaylord 2026-10-19: WALLET is for making the wallet work and concrete info, the network is informative). SYSTEM now six rows, WALLET six when connected, two when not.

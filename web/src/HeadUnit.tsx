@@ -211,7 +211,6 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     kv([
       ["STATUS", !chain?.installed ? "NO BREAD WALLET" : me ? "CONNECTED" : chain.connecting ? chain.walletStatus || "CONNECTING" : "NOT CONNECTED", connect],
       ["BALANCE", chain?.balance != null ? gc(chain.balance) : me ? "READING" : "--", me ? () => void chain?.readBalance() : undefined], // read on arrival; ENTER reads again
-      ["NETWORK", "MIDEN TESTNET"],
       ...(me ? [["PLAYER", chain!.nameOf(me)], ["ADDRESS", `${chain!.address!.slice(0, 7)}…${chain!.address!.slice(-5)} COPY`, () => void navigator.clipboard?.writeText(chain!.address!).then(() => setNote("ADDRESS COPIED"), () => setNote("COPY FAILED"))], ["GAMECOINS", "GET 10", grant], ["DISCONNECT", "ENTER", () => void chain?.disconnect()]] as [string, string, (() => void)?][] : []),
     ], "mono", AMBER);
     if (connect) { word = noBread ? "get bread" : "connect"; go = connect; }
@@ -224,6 +223,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       ["RESET BEST", bestScore ? score(bestScore) : "--", bestScore ? () => { store("pub.best", null); setNote("BEST SCORE CLEARED"); } : undefined],
       ["VERSION", __PUB_VERSION__],
       ["WALLET", chain?.local ? "TEST (?LOCAL=)" : "BREAD"],
+      ["NETWORK", "MIDEN TESTNET"],
     ], "cp", WHITE);
   }
   // the chain's say comes over the mode's own screen: what is being done, where it is and how long it takes (flow.ts waiting), the trouble after, our own note
