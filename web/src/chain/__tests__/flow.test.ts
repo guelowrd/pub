@@ -152,7 +152,7 @@ describe("plain words for failures", () => {
     expect(explain(new Error("fetch failed"))).toMatchObject({ kind: "network", detail: "fetch failed" });
     expect(explain(new Error("assertion failed with error code: 123")).kind).toBe("refused");
     expect(explain(new Error("This record's course does not match")).kind).toBe("refused");
-    expect(explain(new Error("not Pick Up Boomers game data")).kind).toBe("not-found");
+    expect(explain(new Error("not Pick Up Boomers game data"))).toEqual({ kind: "not-found", title: "No such record." }); // no detail: nothing for the player to copy
     expect(explain("??")).toMatchObject({ kind: "unknown", detail: "??" });
   });
 

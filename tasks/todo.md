@@ -909,3 +909,9 @@ Then the phone layout of the main ones.
 → verify: every trouble kind and the grant note shown through a temporary `?trouble=` / `?note=` switch (removed), DOM rects and screenshots on desktop and both phone frames; build, 86 tests
 - [x] Board pages: the number one row opens every page after the first, with nine more ranks under it (Gaylord 2026-10-21: the first line is always THE best score; I first pinned my own row, wrong). My standing on the footer line is gone (Gaylord 2026-10-21: the board has the info).
 - [x] BEST RECORDS rows name the track (Gaylord 2026-10-21): the record carries its song out of hub.ts; the row uses the CHALLENGE columns (name, score, track at the CHALLENGE stage size, which is the one that fits BITTERSWEET SUNSET on a phone) → verify: local wallet 11 (PDW, ranks 23 and 27): page 1 = PDW + 1..9, page 2 = PDW + 10..18, page 3 = 19..27 with PDW in place; desktop and both phones, no clipped cell
+
+## Record opened by link, POWER off (2026-10-21, screen 33/33)
+- A record link lands on its review after CLICK TO START; POWER returns to the splash and the mute survives. Both kept as they were.
+- An over record shows RECORD OVER with the red key reading TRY ANOTHER, which leads to the open challenges like BACK (Gaylord's word).
+- A dead link reads NO SUCH RECORD alone, pink, no detail and no TRY AGAIN: a missing record never comes back. BACK leads home.
+- While a linked record is still loading, the head unit starts on CHALLENGE with LOADING instead of SOLO RUN (`opening` from App).

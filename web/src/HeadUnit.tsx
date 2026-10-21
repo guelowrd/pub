@@ -23,7 +23,7 @@ const MODES: Mode[] = ["solo", "challenge", "my-runs", "leaderboards", "wallet",
 // the boards, one a page (GQ's, the LOSERBOARD last)
 type BoardKey = keyof ReturnType<typeof boards>;
 const BOARDS: [BoardKey, string][] = [["records", "BEST RECORDS"], ["coins", "MOST GAMECOINS WON"], ["defended", "RIVALS BEATEN"], ["smashed", "RECORDS SMASHED"], ["losers", "LOSERBOARD"]];
-type Word = "drive" | "shot" | "collect" | "connect" | "gamecoins" | "get bread" | "wait" | "try again";
+type Word = "drive" | "shot" | "collect" | "connect" | "gamecoins" | "get bread" | "wait" | "try again" | "try another";
 // The font pass (PUB-Painted-Type, Gaylord 2026-10-17: "much better"): PUB Painted Pixel for words and the counter, PUB Painted
 // Matrix for numbers, the LCD line and the red key's word. The sizes in menu.json were set against the stand-ins (Chakra Petch,
 // Share Tech Mono, PUB Stereo LCD); K keeps the cap heights they gave (caps at 100 px: the stand-ins and Pixel 70, Matrix 64.6, Stereo LCD 66.7)
@@ -79,7 +79,7 @@ function Meter({ layout, m }: { layout: string; m: G["radio"]["meter"] }) {
   );
 }
 
-export default function HeadUnit({ chain, station, setStation, volume, setVolume, muted, toggleMute, onDrive, onShot, onOff, openRecord, onOpened, noBread }: {
+export default function HeadUnit({ chain, station, setStation, volume, setVolume, muted, toggleMute, onDrive, onShot, onOff, openRecord, onOpened, opening, noBread }: {
   chain: ChainApi | null;
   station: number; setStation: (i: number) => void;
   volume: number; setVolume: (v: number) => void; muted: boolean; toggleMute: () => void;
@@ -90,6 +90,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   onOff: () => void;
   /** a record opened by link: the head unit starts on its review */
   openRecord: ChallengeNote | null;
+  opening: boolean; // a record linked is still loading: CHALLENGE says so
   onOpened: () => void;
   /** no Bread in this browser: stages 2 and up lock, the red key offers it where the wallet would be asked for */
   noBread: boolean;
@@ -97,7 +98,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const { layout, scale, left, top } = useFit(geometry);
   const G = geometry[layout] as G, TV = G.tv, R = G.radio, C = TV.cols, N = TV.rows.baselines.length;
   const u = TV.heading[2] / 34; // the TV's type scale: 1 on desktop, 0.59 on phones
-  const [mode, setMode] = useState<Mode>("solo");
+  const [mode, setMode] = useState<Mode>(opening ? "challenge" : "solo");
   const [cursor, setCursor] = useState<Record<string, number>>({}); // the row (or page) per mode, kept across mode changes
   const [review, setReview] = useState<ChallengeNote | null>(null); // CHALLENGE: the record under review
   const [opened, setOpened] = useState<string | null>(null); // MY RUNS: the run opened, by key
@@ -187,8 +188,9 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       rev = { heading: done ? "RECORD OVER" : "CHALLENGE", label: `CHAMPION ${champion(r)}`, score: r.storage.target, line: mine ? "YOUR OWN RECORD" : "", song: songIn(r), left: done ? undefined : r.storage.expiryBlock - height };
       backdrop = previewOf(STATIONS[songIn(r)]);
       // SHOT: the Gamecoin in, the drive starts at once (Gaylord 2026-10-18: no PRESS DRIVE step, the shot window is six minutes)
-      if (!done && !mine) { word = "shot"; go = () => void chain?.shoot(r).then((x) => x && onShot(x.shots, x.record)); }
-    } else if (loading) status = ["LOADING"];
+      if (done) { word = "try another"; go = () => setReview(null); } // an over record (by link, mostly): the key leads to the open ones, like BACK (Gaylord 2026-10-21)
+      else if (!mine) { word = "shot"; go = () => void chain?.shoot(r).then((x) => x && onShot(x.shots, x.record)); }
+    } else if (loading || opening) status = ["LOADING"];
     else if (!records.length) status = ["NO CHALLENGES YET"];
     else {
       list(records.length); count = `${records.length} OPEN`;

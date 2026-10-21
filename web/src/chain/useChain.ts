@@ -137,7 +137,7 @@ export function useChain(): ChainApi {
   }, [notes, me]);
   const nameOf = useCallback((a: AccountFelts) => names.get(keyOf(a)) ?? lettersBackward(bech32Of(a)).slice(0, 3), [names]);
 
-  const oops = (e: unknown, retry?: () => void) => setTrouble({ t: explain(e), retry });
+  const oops = (e: unknown, retry?: () => void) => { const t = explain(e); setTrouble({ t, retry: t.kind === "not-found" ? undefined : retry }); }; // a missing record never comes back: no TRY AGAIN
   const say = (title: string) => setTrouble({ t: { kind: "unknown", title } });
 
   /** The wallet, connected: Bread opens its popup, the test wallet creates itself. */

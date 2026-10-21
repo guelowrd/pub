@@ -92,6 +92,7 @@ export default function App() {
   const [settled, setSettled] = useState<Settled | null>(null);
   const [openRecord, setOpenRecord] = useState<ChallengeNote | null>(null);
   const sharedId = useRef(new URLSearchParams(location.search).get("record"));
+  const [opening, setOpening] = useState(sharedId.current != null); // until the linked record is read (or found missing)
   const [progress, setProgress] = useState(0);
   // Bread is detected by polling once the chain loads: a second and a half after, "not installed" is the truth
   const [known, setKnown] = useState(false);
@@ -111,7 +112,7 @@ export default function App() {
     const id = sharedId.current;
     if (!id || !chain?.ready) return;
     sharedId.current = null;
-    void chain.loadRecord(id).then((r) => r && setOpenRecord(r));
+    void chain.loadRecord(id).then((r) => { if (r) setOpenRecord(r); setOpening(false); });
   }, [chain]);
   // music follows the screen: menus loop Omotesando, the run plays the station from its first second, results loop Wireline Cosmos
   useEffect(() => {
@@ -263,7 +264,7 @@ export default function App() {
       {mode === "menu" && (
         <div className="overlay menu">
           <HeadUnit chain={chain} station={station} setStation={setStation} volume={volume} setVolume={setVolume} muted={!soundOn} toggleMute={() => setSoundOn(audio.toggle())}
-            onDrive={() => drive(seed)} onShot={driveShot} onOff={() => setMode("ready")} openRecord={openRecord} onOpened={onOpened} noBread={noBread} />
+            onDrive={() => drive(seed)} onShot={driveShot} onOff={() => setMode("ready")} openRecord={openRecord} onOpened={onOpened} opening={opening} noBread={noBread} />
           {noBread && breadCard && <BreadCard onClose={() => setBreadCard(false)} />}
         </div>
       )}

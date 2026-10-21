@@ -132,7 +132,7 @@ export function explain(e: unknown): Trouble {
   if (/^Too late: /.test(raw)) return trouble("too-late", raw, false);
   if (/already been consumed|already consumed/i.test(raw)) return trouble("already-done", "This was already done.");
   if (/deadline has passed|too late|is over/i.test(raw)) return trouble("too-late", "Too late: this one is over.");
-  if (/not found on chain|is not public|not a record or shot|not Pick Up Boomers|Not found/i.test(raw)) return trouble("not-found", "No such record.");
+  if (/not found on chain|is not public|not a record or shot|not Pick Up Boomers|Not found/i.test(raw)) return trouble("not-found", "No such record.", false); // the link is wrong or the record gone: nothing to copy for the player
   if (/course does not match/i.test(raw)) return trouble("refused", "This record is not from this game.");
   if (/assertion failed|error code/i.test(raw)) return trouble("refused", "That did not work.");
   if (/faucet/i.test(raw)) return trouble("network", "The Gamecoin faucet is down. Try again later."); // a 503 from the faucet is not the network (2026-10-19)
