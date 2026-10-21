@@ -132,3 +132,7 @@ Three deployments failed in a row (3a9ca35, 211e8b8, 2a5b615) on a shadowed impo
 ## A wallet check in my tab is not a check in Gaylord's (2026-10-21)
 - I measured Bread's asset read in my own tab on 10-19 (3.5 s, no approval click) and put a balance read on WALLET arrival on that basis. The code's own comment said Bread asks before every asset read, and Gaylord got a pop-up on every visit.
 - Rule: anything a wallet does with approval is verified in Gaylord's wallet, or left on the player's request. A clean run in my tab does not overrule a comment that records the opposite.
+
+## "The best score" on a board is rank one, not my row (2026-10-21)
+- Gaylord asked for the best score as the first line of every board page; I pinned the connected wallet's own row and shipped it. On a leaderboard "the best score" means the number one.
+- Rule: when a request names a board value, read it as the board's own value first; my own standing is only ever "my row" or "my standing". When two readings differ this much, show both in one line before building.
