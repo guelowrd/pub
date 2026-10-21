@@ -194,22 +194,25 @@ export function fmtGamecoin(v: bigint): string {
  *  page for / before any rewrite, so a record link needs its own path. The hashtag is the track id. */
 /** The opening of an X post, one drawn per share (Gaylord's list, 2026-10-19), a sentence a line; {score}, {track} and {stake} fill in. */
 export const SHARE_LINES = [
-  "Try to beat me for {stake}",
-  "{score} pts at PICK UP BOOMERS \u{1F474}\nBeat that and the Gamecoin is yours \u{1F60E}",
-  "I bet {stake} you can't pick up boomers faster than me",
-  "Picked up some boomers \u{1F474}\u{1F475}\nThink you can do better? \u{1F447}",
-  "Grandma rated my driving five stars \u2B50\uFE0F\nTry and beat me",
-  "New record on {track}.\nCome get it \u{1F624}",
-  "Champion of {track} until proven otherwise",
-  "Record posted.\nRivals welcome",
-  "I just posted a record in Pick Up Boomers.\nBeat it and you win my Gamecoin \u2B07\uFE0F",
-  "Boomers are the best, millennials are not worth my driving \u{1F474}\u2764\uFE0F",
-  "Boomers are the best, Gen Z are not worth my driving \u{1F475}\u2764\uFE0F",
+  "Try to beat me for {stake} before {until}",
+  "{score} pts at PICK UP BOOMERS \u{1F474}\nBeat that before {until} and the Gamecoin is yours \u{1F60E}",
+  "I bet {stake} you can't pick up boomers faster than me by {until}",
+  "Picked up some boomers \u{1F474}\u{1F475}\nThink you can do better? \u{1F447}\nYou got until {until}.",
+  "Grandma rated my driving five stars \u2B50\uFE0F\nTry and beat me before {until}",
+  "New record on {track}.\nCome get it before {until} \u{1F624}",
+  "Champion of {track} until proven otherwise.\nProve it before {until}",
+  "Record posted.\nRivals welcome until {until}",
+  "I just posted a record in Pick Up Boomers.\nBeat it before {until} and you win my Gamecoin \u2B07\uFE0F",
+  "Boomers are the best, millennials are not worth my driving \u{1F474}\u2764\uFE0F\nProve me wrong before {until}",
+  "Boomers are the best, Gen Z are not worth my driving \u{1F475}\u2764\uFE0F\nProve me wrong before {until}",
 ];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+/** When a record runs out, for a rival anywhere: "20 Oct 17:24 UTC" (Gaylord 2026-10-21) */
+export const untilText = (ms: number) => { const d = new Date(ms); return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")} UTC`; };
 
-export function recordLinks(recordId: string, songId: string, score: number, track: string, roll = Math.random()) {
+export function recordLinks(recordId: string, songId: string, score: number, track: string, expiresAt: number, roll = Math.random()) {
   const url = `${location.origin}/r?record=${recordId}&t=${songId}&s=${score}`;
-  const line = SHARE_LINES[Math.floor(roll * SHARE_LINES.length)].replace("{score}", String(score)).replace("{track}", track.toUpperCase()).replace("{stake}", fmtGamecoin(STAKE));
+  const line = SHARE_LINES[Math.floor(roll * SHARE_LINES.length)].replace("{score}", String(score)).replace("{track}", track.toUpperCase()).replace("{stake}", fmtGamecoin(STAKE)).replace("{until}", untilText(expiresAt));
   const boomers = /[\u{1F474}\u{1F475}]/u.test(line) ? "" : " \u{1F474}\u{1F475}"; // the hashtags carry the boomers unless the line already has one
   const text = `${line}\n#pickupboomers #${songId.replace(/-/g, "")}${boomers}`;
   return { url, x: `https://x.com/intent/post?text=${encodeURIComponent(`${text}\n${url}`)}` };

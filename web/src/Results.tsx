@@ -84,7 +84,7 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
     const needCoins = () => { heading = "NEED GAMECOINS"; color = YELLOW; status = "A POST COSTS 1 GAMECOIN. GET 10 FREE,\nOPEN YOUR WALLET TO TAKE THEM, THEN POST."; keys = [postKey("GET GAMECOINS", false, grant)]; };
     if (posted) {
       heading = "RECORD POSTED"; color = MINT; status = note;
-      const links = recordLinks(posted.recordId, STATIONS[posted.song].id, posted.score, STATIONS[posted.song].title);
+      const links = recordLinks(posted.recordId, STATIONS[posted.song].id, posted.score, STATIONS[posted.song].title, posted.expiresAt);
       // three share keys in the kit's two-key row: SHARE ON X, COPY LINK and the card to save
       const [a, b] = G.share, gap = b[0] - a[0] - a[2], w = (b[0] + b[2] - a[0] - 2 * gap) / 3;
       const riders = s.stops.filter((o) => o.taken && o.rider).map((o) => o.rider!).sort((p, q) => agePoints(q.age) - agePoints(p.age));
