@@ -23,7 +23,7 @@ const MODES: Mode[] = ["solo", "challenge", "my-runs", "leaderboards", "wallet",
 // the boards, one a page (GQ's, the LOSERBOARD last)
 type BoardKey = keyof ReturnType<typeof boards>;
 const BOARDS: [BoardKey, string][] = [["records", "BEST RECORDS"], ["coins", "MOST GAMECOINS WON"], ["defended", "RIVALS BEATEN"], ["smashed", "RECORDS SMASHED"], ["losers", "LOSERBOARD"]];
-type Word = "drive" | "shot" | "collect" | "connect" | "gamecoins" | "get bread" | "wait";
+type Word = "drive" | "shot" | "collect" | "connect" | "gamecoins" | "get bread" | "wait" | "try again";
 // The font pass (PUB-Painted-Type, Gaylord 2026-10-17: "much better"): PUB Painted Pixel for words and the counter, PUB Painted
 // Matrix for numbers, the LCD line and the red key's word. The sizes in menu.json were set against the stand-ins (Chakra Petch,
 // Share Tech Mono, PUB Stereo LCD); K keeps the cap heights they gave (caps at 100 px: the stand-ins and Pixel 70, Matrix 64.6, Stereo LCD 66.7)
@@ -53,6 +53,9 @@ let owedTold: string | null = null; // the wallet told about its coins to collec
 // the TV's painting of a stage: the district at its hour, rain or not
 const previewOf = (st: Station) => `${ART}stage/${st.district}-${st.time}${st.rain ? "-rain" : ""}.png`;
 const DIM_TO = 0.045; // the mean brightness every CHALLENGE backdrop is dimmed to (paintings range 0.15 to 0.49)
+// a sentence or two for the TV: the first one is the heading (no period), the rest the paragraph
+const headline = (s: string): [string, string] => { const [head, ...tail] = s.toUpperCase().split(". "); return [head.replace(/\.$/, ""), tail.join(". ")]; };
+const cut = (s: string, n: number) => (s.length > n ? `${s.slice(0, n).replace(/\s+\S*$/, "")}...` : s); // at a word
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 const cell = (t: string, x: number, size: number, font: Font, color: string, right = false, width?: number, y?: number): Cell => ({ t, x, y, size, font, color, right, width });
 const TONE: Record<string, string> = { COLLECT: AMBER, READY: AMBER, LATE: PINK, LOST: PINK, BEATEN: PINK, WON: CYAN, DEFENDED: CYAN };
@@ -107,7 +110,6 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const [hover, setHover] = useState<string | null>(null);
   const [loaded, setLoaded] = useState<Map<string, number>>(() => new Map()); // the paintings the TV can show, each with its mean brightness (0..1)
   const [, setTick] = useState(0);
-  const lastWord = useRef<Word | null>(null); // what the red key read when the chain was asked: TRY AGAIN offers it again
 
   useEffect(() => { const t = setInterval(() => setTick((n) => n + 1), 1000); return () => { clearInterval(t); clearTimeout(noteTimer.current); }; }, []); // the clocks (and a note's timer at unmount)
   useEffect(() => { void document.fonts.ready.then(() => setTick((n) => n + 1)); }, []); // baselines need the fonts measured
@@ -268,8 +270,8 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   // the chain's say comes over the mode's own screen: what is being done, where it is and how long it takes (flow.ts waiting), the trouble after, our own note
   if (busy) { const [what, how] = waiting(busy, chain?.local); status = [(busy.stage === "connect" && chain?.walletStatus) || what, `${busy.text}. ${how}`]; word = "wait"; go = null; rev = null; }
   // the raw error shows under the title (Gaylord 2026-10-18: "copy-paste the error and tag @zkGaylord on X"), capped so it stays on the TV
-  else if (trouble) { const [head, ...tail] = trouble.t.title.toUpperCase().split(". "); status = [head, [tail.join(". "), trouble.retry ? "TRY AGAIN WITH THE RED KEY." : "", trouble.t.detail ? `${trouble.t.detail.slice(0, 240).toUpperCase()} (COPY IT AND TAG @ZKGAYLORD ON X)` : ""].filter(Boolean).join("\n") || undefined]; rev = null; word = trouble.retry ? lastWord.current : null; go = trouble.retry ? () => { const r = trouble.retry!; chain?.dismiss(); r(); } : null; }
-  else if (note) { status = [note, noteUntil ? `BACK TO THE TRACK IN ${Math.max(1, Math.ceil((noteUntil - Date.now()) / 1000))}` : undefined]; rev = null; word = null; go = null; }
+  else if (trouble) { const [head, tail] = headline(trouble.t.title); status = [head, [tail, trouble.t.detail ? `${cut(trouble.t.detail, 100).toUpperCase()} (COPY IT AND TAG @ZKGAYLORD ON X)` : ""].filter(Boolean).join("\n") || undefined]; rev = null; word = trouble.retry ? "try again" : null; go = trouble.retry ? () => { const r = trouble.retry!; chain?.dismiss(); r(); } : null; } // the red key itself says TRY AGAIN (Gaylord 2026-10-21)
+  else if (note) { const [head, tail] = headline(note); status = [head, noteUntil ? `BACK TO THE TRACK IN ${Math.max(1, Math.ceil((noteUntil - Date.now()) / 1000))}` : tail || undefined]; rev = null; word = null; go = null; }
   else if (pop) {
     const shots = owed.filter((n) => n.kind === "shot").length, records = owed.length - shots;
     status = [`${gc(owed.reduce((sum, n) => sum + n.amount, 0n))} TO COLLECT`, [shots ? `${shots === 1 ? "A RIVAL" : "RIVALS"} TRIED TO BEAT YOU AND FAILED!` : "", records ? (shots ? `${records === 1 ? "A RECORD" : "RECORDS"} OF YOURS RAN OUT TOO.` : `YOUR RECORD${records === 1 ? "" : "S"} RAN OUT. YOUR GAMECOIN${records === 1 ? " IS" : "S ARE"} BACK.`) : ""].filter(Boolean).join("\n")];
@@ -304,7 +306,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       case "next": return stepTo(1);
       case "back": return back();
       case "enter": return enter?.();
-      case "action": if (swapping.current) return; lastWord.current = word; return go?.();
+      case "action": if (swapping.current) return; return go?.();
       case "volume": return setVolume(Math.max(0, Math.min(1, volume + (half === 0 ? -0.1 : 0.1))));
       case "mute": return toggleMute();
       case "power": return onOff();
@@ -422,8 +424,10 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
           {status && (
             <>
               {brand(TV.brand, "right")}
-              {text(status[0], TV.safe[0], mid, TV.heading[2], "cp", trouble && !trouble.retry ? PINK : AMBER, false, undefined, TV.safe[2])}
-              {status[1] && <p className="gp-para gp-cp" style={{ left: px(TV.safe[0]), top: px(mid + 34 * u), width: px(TV.safe[2]), fontSize: px(20 * u), color: CYAN }}>{status[1]}</p>}
+              <div className="gp-status" style={{ left: px(TV.safe[0]), top: px(mid - baselineEm(FAMILY.cp) * TV.heading[2] * K.cp), width: px(TV.safe[2]) }}>{/* the heading wraps when it must (phones); the paragraph follows it */}
+                <p className="gp-cp" style={{ fontSize: px(TV.heading[2] * K.cp), color: trouble && !trouble.retry ? PINK : AMBER }}>{status[0]}</p>
+                {status[1] && <p className="gp-para gp-cp" style={{ marginTop: px(34 * u - (1 - baselineEm(FAMILY.cp)) * TV.heading[2] * K.cp), fontSize: px(20 * u), color: CYAN }}>{status[1]}</p>}
+              </div>
             </>
           )}
           <img src={`${GP}${layout}/crt.png`} alt="" style={box([0, 0, ...TV.size])} />{/* scanlines, phosphor, edge shade, sheen: one layer over picture, logo and text */}

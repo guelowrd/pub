@@ -900,3 +900,10 @@ Then the phone layout of the main ones.
 - CHALLENGE: the highlighted record's stage painting sits behind the list, and the reviewed record's behind the review, at brightness .22 and saturation .8 (Gaylord 2026-10-19: the background as the selected track's picture, dimmed for contrast; .3 left the midday stages busy under white text).
 - [x] CHALLENGE and MY RUNS backdrops dimmed to one level (Gaylord 2026-10-19): every stage painting is measured at preload (mean luminance on a canvas, 0.15 night to 0.49 midday) and its brightness filter set inline to 0.045 / mean, so night comes out at 0.30 and midday at 0.09; MY RUNS shows the highlighted or opened run's stage the same way → verify: build, 86 tests, desktop + both phone frames on a night and a midday record, MY RUNS list and review on local wallet 11
 - [x] Share on X lines carry the record's expiry (Gaylord 2026-10-21): `{until}` = "20 Oct 17:24 UTC" from the posted record's expiresAt, folded into the sentence when there is one ("before …", "by …", "until …") or on its own line ("You got until …", "Prove it before …") → verify: flow.test.ts (every line names the date), build
+## TV trouble and note lines (2026-10-21, screen 32/33)
+- [x] The status heading wraps to a second line when it must (phones hold ~24 characters; six of eight trouble heads were cut) and the paragraph follows it; desktop positions unchanged
+- [x] The raw error under a trouble is cut at a word near 100 characters (was 240, ran off the phone TV with the tag line)
+- [x] The red key reads TRY AGAIN on a retryable trouble; the "TRY AGAIN WITH THE RED KEY." sentence is gone (Gaylord: the UI shows where to try again from)
+- [x] No trailing period on a one-sentence heading (THIS ONE IS YOURS, SOMETHING WENT WRONG)
+- [x] A note splits like a trouble: "10 GAMECOINS FOR YOU" over "OPEN YOUR WALLET TO TAKE THEM." (was one cut-off heading, desktop too)
+→ verify: every trouble kind and the grant note shown through a temporary `?trouble=` / `?note=` switch (removed), DOM rects and screenshots on desktop and both phone frames; build, 86 tests
