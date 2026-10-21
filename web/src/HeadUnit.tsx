@@ -226,15 +226,13 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       rows = BOARDS.map(([key, title], i) => ({ key, cells: [cell(title, C.leaderboards.name, C.challenge.nicknameS, "cp", i === at ? AMBER : key === "losers" ? PINK : WHITE), cell(`${players(best[key].top)} PLAYER${players(best[key].top) === 1 ? "" : "S"}`, C["wallet-system"].valueR, C.leaderboards.scoreS, "mono", AMBER, true)] }));
       const k = BOARDS[at][0]; enter = () => setBoard(k);
     } else { // one board, ten rows a page: PREV / NEXT turn the pages, BACK closes it. The number one opens every later page (nine more ranks under it, so none is skipped; Gaylord 2026-10-21)
-      const title = BOARDS.find(([k]) => k === board)![1], b = best[board], mine = b.top.find((r) => same(me, r.who)) ?? b.mine, pages: typeof b.top[] = [];
+      const title = BOARDS.find(([k]) => k === board)![1], b = best[board], pages: typeof b.top[] = [];
       for (let from = 0; from < b.top.length || !pages.length; ) { if (!from) { pages.push(b.top.slice(0, DENSE)); from += DENSE; } else { pages.push([b.top[0], ...b.top.slice(from, from + DENSE - 1)]); from += DENSE - 1; } }
       total = pages.length; at = Math.min(cur, total - 1); baselines = dense; if (total > 1) count = `${pad2(at + 1)} / ${pad2(total)}`;
       rows = pages[at].map((r) => ({ key: r.key, cells: board === "records" // a record's row says its track too, in the CHALLENGE columns (Gaylord 2026-10-21)
         ? [cell(`${pad2(r.rank)} ${chain?.nameOf(r.who) ?? "???"}`, C.challenge.champion, denseS, "cp", same(me, r.who) ? AMBER : WHITE), cell(score(r.value), C.challenge.scoreR, denseS, "mono", AMBER, true), cell(songOf(r.song!), C.challenge.stage, C.challenge.stageS, "cp", same(me, r.who) ? AMBER : WHITE, false, C.challenge.stageW)]
         : [cell(`${pad2(r.rank)} ${chain?.nameOf(r.who) ?? "???"}`, C.leaderboards.name, denseS, "cp", same(me, r.who) ? AMBER : WHITE), cell(String(r.value), C.leaderboards.scoreR, denseS, "mono", AMBER, true)] }));
-      // my standing rides the footer line on the pages my rank is not on (and when it is outside the top hundred)
-      const standing = mine && !pages[at].includes(mine) ? [cell(`${pad2(mine.rank)} ${chain!.nameOf(mine.who)}  ${board === "records" ? score(mine.value) : String(mine.value)}`, C["wallet-system"].valueR, denseS, "mono", AMBER, true, undefined, TV.detail)] : [];
-      footer = [cell(title, TV.safe[0], 24 * u, "cp", board === "losers" ? PINK : CYAN, false, undefined, TV.detail), ...standing, ...(rows.length ? [] : [cell("NO ONE YET", C.leaderboards.name, C.challenge.nicknameS, "cp", WHITE, false, undefined, TV.rows.baselines[0])])];
+      footer = [cell(title, TV.safe[0], 24 * u, "cp", board === "losers" ? PINK : CYAN, false, undefined, TV.detail), ...(rows.length ? [] : [cell("NO ONE YET", C.leaderboards.name, C.challenge.nicknameS, "cp", WHITE, false, undefined, TV.rows.baselines[0])])];
       if (me && !runs.length) { word = "gamecoins"; go = grant; } // a newcomer's way onto the boards
     }
   } else if (mode === "wallet") {
