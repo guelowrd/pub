@@ -197,7 +197,7 @@ export const SHARE_LINES = [
   "Try to beat me for {stake} before {until}",
   "{score} pts at PICK UP BOOMERS \u{1F474}\nBeat that before {until} and the Gamecoin is yours \u{1F60E}",
   "I bet {stake} you can't pick up boomers faster than me by {until}",
-  "Picked up some boomers \u{1F474}\u{1F475}\nThink you can do better? \u{1F447}\nYou got until {until}.",
+  "Picked up some boomers \u{1F474}\u{1F475}\nThink you can do better?\nYou got until {until} \u{1F447}",
   "Grandma rated my driving five stars \u2B50\uFE0F\nTry and beat me before {until}",
   "New record on {track}.\nCome get it before {until} \u{1F624}",
   "Champion of {track} until proven otherwise.\nProve it before {until}",
