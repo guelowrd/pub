@@ -131,9 +131,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   useEffect(() => { const s = Number(stored("pub.stage")); if (Number.isInteger(s) && s >= 0 && s < STATIONS.length) setStation(s); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { store("pub.stage", String(station)); }, [station]);
   // WALLET read once per connection on its first visit (Bread asks the player on every read); ENTER on BALANCE reads again
-  const balanceAsked = useRef<string | null>(null);
   useEffect(() => { if (mode !== "system") return; setHealth(null); fetch("/api/status").then((r) => r.json()).then(setHealth, () => setHealth({})); }, [mode]);
-  useEffect(() => { const a = chain?.address; if (mode === "wallet" && a && balanceAsked.current !== a) { balanceAsked.current = a; void chain!.readBalance(); } }, [mode, chain?.address]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const me = chain?.me ?? null, height = chain?.height ?? 0, notes = chain?.notes ?? [], busy = chain?.busy ?? null, trouble = chain?.trouble ?? null;
   const loading = !chain?.ready || !chain.notesRead;
@@ -242,7 +240,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     const connect = noBread ? getBread : !me && chain?.installed && !chain.connecting ? () => void chain.connect() : undefined; // the red key and ENTER on STATUS, until connected
     const bestScore = Number(stored("pub.best") ?? 0), b = chain?.balance ?? null;
     // BALANCE carries the one thing to do with it: claim what is owed, or get 10 when down to 1 or less (Gaylord 2026-10-19)
-    const balance: [string, string, (() => void)?] = b == null ? ["BALANCE", "READING", () => void chain?.readBalance()]
+    const balance: [string, string, (() => void)?] = b == null ? ["BALANCE", "ENTER TO READ", () => void chain?.readBalance()] // Bread asks the player on every asset read, so the row waits for ENTER (Gaylord 2026-10-21: a pop-up on arrival)
       : owed.length ? ["BALANCE", `${gc(b)}. ENTER TO CLAIM`, () => void chain?.collect(owed).then((ok) => { if (ok) { flash("COINS RECEIVED"); void chain.readBalance(); } })]
       : b <= STAKE ? ["BALANCE", `${gc(b)}. ENTER TO GET 10`, grant]
       : ["BALANCE", gc(b), () => void chain?.readBalance()];

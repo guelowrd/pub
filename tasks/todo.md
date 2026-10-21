@@ -876,7 +876,7 @@ Then the phone layout of the main ones.
 - A 503 from the faucet reads "THE GAMECOIN FAUCET IS DOWN. TRY AGAIN LATER." (was the network line).
 
 ## WALLET screen (2026-10-19, screen 30/33)
-- BALANCE reads on the first WALLET visit of each connection (Bread serves asset reads to a connected site without asking; measured 3.5 s); the row says READING meanwhile, ENTER reads again.
+- BALANCE reads on ENTER only (row: ENTER TO READ). Bread opens a pop-up for every asset read: the read on arrival (2026-10-19, measured without a pop-up in my test tab) put a pop-up in Gaylord's face on every WALLET visit, dropped 2026-10-21.
 - STATUS row takes ENTER until connected: CONNECT (Bread present) or GET BREAD (none), the same as the red key. Cursor stays on STATUS.
 - Trouble headings: the first sentence is the heading, the rest opens the detail paragraph (every title over ~35 characters clipped on the one-line heading, the faucet line first).
 - NETWORK row moved from WALLET to SYSTEM (Gaylord 2026-10-19: WALLET is for making the wallet work and concrete info, the network is informative). SYSTEM now six rows, WALLET six when connected, two when not.

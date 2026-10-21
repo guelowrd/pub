@@ -128,3 +128,7 @@ Gaylord: "pls do some visual checks, you re going too fast on these assuming eve
 
 ## `tsc --noEmit -p .` checks nothing here; the build is `tsc -b` (2026-10-19)
 Three deployments failed in a row (3a9ca35, 211e8b8, 2a5b615) on a shadowed import (`waiting`) that my check never saw: web/tsconfig.json is a solution file with references, so `tsc --noEmit -p .` type-checks zero files and exits 0. Vercel runs `npm run build` = `tsc -b && vite build`. Rule: the pre-push check is `npm run build` (or `tsc -b`), never `tsc --noEmit -p .`; and after every push, read the commit status (api.github.com/repos/guelowrd/pub/commits/<sha>/status) before saying it is live.
+
+## A wallet check in my tab is not a check in Gaylord's (2026-10-21)
+- I measured Bread's asset read in my own tab on 10-19 (3.5 s, no approval click) and put a balance read on WALLET arrival on that basis. The code's own comment said Bread asks before every asset read, and Gaylord got a pop-up on every visit.
+- Rule: anything a wallet does with approval is verified in Gaylord's wallet, or left on the player's request. A clean run in my tab does not overrule a comment that records the opposite.
