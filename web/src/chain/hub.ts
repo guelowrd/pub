@@ -150,7 +150,7 @@ export function history(notes: ChallengeNote[], me: AccountFelts, height: number
   return items.sort((a, b) => b.at - a.at);
 }
 
-export type Ranked = { key: string; who: AccountFelts; value: number; at: number; rank: number };
+export type Ranked = { key: string; who: AccountFelts; value: number; at: number; rank: number; song?: number }; // song: the record's track (BEST RECORDS)
 /** The top rows (10, 100 records), and my best row when I am not among them. */
 export type Board = { top: Ranked[]; mine: Ranked | null };
 type Hit = { who: AccountFelts; value: number; at: number };
@@ -199,6 +199,6 @@ export function boards(notes: ChallengeNote[], height: number, me: AccountFelts 
     }
   }
   // every record posted, one row each (Gaylord 2026-10-19: all of them, even several per player)
-  const records = notes.filter((n) => n.kind === "record").map((n) => ({ key: n.id, who: n.storage.champion, value: n.storage.target, at: n.createdAt ?? Infinity }));
+  const records = notes.filter((n) => n.kind === "record").map((n) => ({ key: n.id, who: n.storage.champion, value: n.storage.target, at: n.createdAt ?? Infinity, song: Number(n.storage.game[4] ?? 0n) }));
   return { coins: rank(tally(coins), me, 100), records: rank(records, me, 100), defended: rank(tally(defended), me, 100), smashed: rank(tally(smashed), me, 100), losers: rank(tally(losers), me, 100) };
 }
