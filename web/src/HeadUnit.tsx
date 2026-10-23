@@ -307,7 +307,10 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     }
   };
   const clearNote = () => { clearTimeout(noteTimer.current); setNoteUntil(null); setNote(null); };
-  const goMode = (m: Mode) => { setMode(m); setReview(null); setOpened(null); setBoard(null); setShop(null); clearNote(); chain?.dismiss(); };
+  const goMode = (m: Mode) => {
+    setMode(m); setReview(null); setOpened(null); setBoard(null); setShop(null); clearNote(); chain?.dismiss();
+    if (m === "challenge" || m === "my-runs" || m === "leaderboards") void chain?.refresh(); // the lists catch up on arrival, not only on the 15 s timer (Gaylord 2026-10-23)
+  };
   /** a note for five seconds, then the track */
   const flash = (t: string) => { clearNote(); setNote(t); setNoteUntil(Date.now() + 5000); noteTimer.current = window.setTimeout(() => goMode("solo"), 5000); };
   const back = () => { if (trouble) return chain?.dismiss(); if (pop) return setOwedPop(false); if (note) return clearNote(); if (shop !== null) return setShop(null); if (review) return setReview(null); if (board) return setBoard(null); setOpened(null); };

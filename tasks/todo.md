@@ -983,3 +983,5 @@ Caps: the TV spells USDCX (its faces are capitals); the rule says USDCx in prose
 - Gaylord: "should be possible to take a shot at a record directly from the list". The CHALLENGE list's red key reads SHOT for the
   highlighted record (unless it is mine) and fires the same shot as the opened record's key; ENTER still opens the record. Checked with
   KSN: bought 1 GC, SHOT from the list → INSERTING YOUR GAMECOIN → the drive started, the wallet read 0 GC after.
+- Gaylord: refresh CHALLENGE / MY RUNS / LEADERBOARDS when the player opens them. goMode runs the chain refresh (sync + note list) on
+  those three, the 15 s timer stays. Checked: SOLO click → 0 node calls in 2 s, CHALLENGE → 16, MY RUNS → 12.
