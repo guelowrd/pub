@@ -52,7 +52,7 @@ const gc = (v: bigint) => fmtGamecoin(v).toUpperCase();
 let owedTold: string | null = null; // the wallet told about its coins to collect, once a session (the head unit unmounts for every run) // spelled out on the TV (Gaylord 2026-10-18: GC was unclear)
 // the TV's painting of a stage: the district at its hour, rain or not
 const previewOf = (st: Station) => `${ART}stage/${st.district}-${st.time}${st.rain ? "-rain" : ""}.png`;
-const DIM_TO = 0.045; // the mean brightness every CHALLENGE backdrop is dimmed to (paintings range 0.15 to 0.49)
+const DIM_TO = 0.08; // the mean brightness every CHALLENGE backdrop is dimmed to (paintings range 0.16 to 0.49; 0.045 lost the night ones, Gaylord 2026-10-23)
 // a sentence or two for the TV: the first one is the heading (no period), the rest the paragraph
 const headline = (s: string): [string, string] => { const [head, ...tail] = s.toUpperCase().split(". "); return [head.replace(/\.$/, ""), tail.join(". ")]; };
 const cut = (s: string, n: number) => (s.length > n ? `${s.slice(0, n).replace(/\s+\S*$/, "")}...` : s); // at a word

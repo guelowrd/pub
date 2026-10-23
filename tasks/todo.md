@@ -950,3 +950,6 @@ Caps: the TV spells USDCX (its faces are capitals); the rule says USDCx in prose
 - Results NEED GAMECOINS = "A POST COSTS 1 GAMECOIN." + the picker + BUY: accepted as built; landscape picker 12 px left as is.
 - A failed buy: "NO GAMECOINS ON SALE RIGHT NOW." alone, the lit red key TRY AGAIN (Gaylord). Pushed e2d34d2.
 - Bread on the other network: MAKE SURE YOU'RE ON MIDEN MAINNET alone (Gaylord 2026-10-23, on seeing "YOUR WALLET IS ON ANOTHER NETWORK" + the raw error on the live site). The collect from Bread is still to be done after switching.
+- Backdrops (2026-10-23, Gaylord: "dimmed too much" on the night paintings): DIM_TO 0.045 -> 0.08. A per-painting floor of 40% (his pick 2)
+  would have lifted the midday paintings from 9% to 40% brightness while the night ones went 24% -> 40%; the 8% target gives the night ones
+  the same lift (factor 0.43-0.5) and midday only 9% -> 16%. Checked on the darkest and the brightest painting, desktop + both phones: text reads.
