@@ -942,6 +942,6 @@ wallet; order = switch, mainnet round, push, then the screen audit resumes at 9/
       NOT DONE AFTER 2 MINUTES: knownNote only knew game notes, so a sale note never "landed"; fixed, knownNote reads any note);
       lost shot at MPN's record (368 pts, the Gamecoin waits for the champion); posted a record of my own (00382, 1 GC) for Gaylord
       to beat from Bread
-- [ ] Gaylord's half from Bread: COLLECT the lost shot's Gamecoin (MY RUNS, after the shot window), a winning shot at KSN's 00382 + claim
-- [ ] push (Vercel: no env var needed), then screen 9/33 on the new copy
+- [x] Gaylord's half from Bread (2026-10-23): the claim done and the challenge seen ("looks all good")
+- [x] pushed 61baf20 + fb3c77c on "push" (Vercel: no env var needed); next = screen 9/33 on the new copy
 Caps: the TV spells USDCX (its faces are capitals); the rule says USDCx in prose, flagged to Gaylord.
