@@ -915,3 +915,28 @@ Then the phone layout of the main ones.
 - An over record shows RECORD OVER with the red key reading TRY ANOTHER, which leads to the open challenges like BACK (Gaylord's word).
 - A dead link reads NO SUCH RECORD alone, pink, no detail and no TRY AGAIN: a missing record never comes back. BACK leads home.
 - While a linked record is still loading, the head unit starts on CHALLENGE with LOADING instead of SOLO RUN (`opening` from App).
+
+
+## Mainnet (2026-10-23, Gaylord: "lets actually deploy the game to mainnet", the GQ way)
+Decided (Gaylord, 2026-10-23): same Gamecoin as GQ (mainnet faucet 0x34a3510213533f512ec4abe36baf84, the multisig one; testnet
+0xe1f2c48d…, GQ's too); players buy it from GQ's sale notes (PSWAP, 0.001 USDCx per Gamecoin, QUANTITIES 1/2/5/10/20/50/100 stepped
+with PREV and NEXT, red key BUY); no admin panel here (GQ's `?admin=1` sells for both games); one invite code for my local rival
+wallet; order = switch, mainnet round, push, then the screen audit resumes at 9/33 on the new copy.
+- [x] config.ts: MAINNET = VITE_MIDEN_NETWORK !== "testnet" (mainnet default, `web/.env.local` the dev opt-in, vitest pins mainnet);
+      Cedar rpc/prover, BLOCK_SECONDS 3.25 (26 585 blocks a day), STATUS_URL; no VITE_GC_FAUCET/STAKE/RPC overrides any more
+- [x] the free mint is gone (gamecoin.ts deleted): chain/shop.ts (GQ's shop.ts with its own scanner), bread.ts buyGamecoin,
+      useChain.buy(gc) through `run` (lands = the sale note consumed), the local wallet claims after
+- [x] GET GAMECOINS screen in the head unit over any mode: the box in the middle of the tube (gp-box, chevrons dark at the ends,
+      the coin word and FOR <price> under it), LCD "PICK HOW MANY AND BUY", BACK closes, a note after the buy
+- [x] Results NEED GAMECOINS: "A POST COSTS 1 GAMECOIN." + `< 10 GAMECOINS FOR 0.01 USDCX >` (chevrons or arrow keys), key BUY;
+      a failed buy keeps the shop with TRY AGAIN
+- [x] providers: adapter network "mainnet", one refused auto-connect ends them; chain.ts mainnet Endpoint + bech32 mm1…;
+      flow.ts: NETWORK_NOT_GRANTED → "Your wallet is on another network.", "transaction expired" → "The network was slow this
+      time. Try again." (the USDCx fee asset caps every mainnet tx at ~65 s, GQ 2026-10-22), the shop's own words pass through
+- [x] local wallet: on mainnet `?local=N&code=<invite>` registers and claims the node's funding note; never claims a PSWAP note of its own
+- [x] SYSTEM: NETWORK MIDEN MAINNET, STATUS from status.cedar.miden.io (api/status.py; same three cards)
+- [x] verified on the testnet dev server (:5181, VITE_MIDEN_NETWORK=testnet): the box on desktop + both phones, PREV/NEXT/arrows
+      and the ends, BUY → "NO GAMECOINS ON SALE RIGHT NOW" (no testnet sale under the pair tag), Results picker + TRY AGAIN
+- [ ] mainnet round with Gaylord (Bread) and my `?local=1&code=` rival: buy, record, lost shot + collect, winning shot + claim
+- [ ] push (Vercel: no env var needed), then screen 9/33 on the new copy
+Caps: the TV spells USDCX (its faces are capitals); the rule says USDCx in prose, flagged to Gaylord.

@@ -19,7 +19,8 @@ import type { useMidenFiWallet } from "@miden-sdk/miden-wallet-adapter-react";
 import { buildChallengeNote, endpoint, fetchNotesWithProof, feltArray, loadScripts, parseAccountId, syncNotes, wordFromFelts, type Client, type ChallengeNote } from "./chain";
 import { SHOT_WINDOW_BLOCKS, GC_FAUCET, NETWORK_POLL_INTERVAL_MS, NETWORK_POLL_TIMEOUT_MS } from "./config";
 import { encodeStorage, randomWord, SHOT_DEADLINE_INDEX, shotStorage, ZERO_WORD, type AccountFelts, type ChallengeStorage, type GameAnswer, type Word4 } from "./notes";
-import { fmtGamecoin, submitWithRetry, withTimeout } from "./flow";
+import { fmtGamecoin, fmtPay, submitWithRetry, withTimeout } from "./flow";
+import { payFor, type Sale } from "./shop";
 
 /** What the app needs from a signer: Bread's adapter hook, or the local test wallet. */
 export type Wallet = Pick<ReturnType<typeof useMidenFiWallet>, "address" | "requestTransaction" | "requestAssets"> & { local?: boolean };
@@ -228,6 +229,26 @@ export async function settle(client: Client, wallet: Wallet, shots: ChallengeNot
 }
 
 /** Champion after expiry: reclaim records and collect lost shots' stakes, all in one transaction. */
+/** Player: buy `gc` Gamecoin (base units) from `sale`, paying its price in the pay asset (shop.ts payFor). */
+export async function buyGamecoin(client: Client, wallet: Wallet, sale: Sale, gc: bigint): Promise<Submitted> {
+  const pay = payFor(gc, sale);
+  const held = balanceOf(await walletAssets(wallet), sale.payFaucet);
+  if (held < pay) throw new Error(`You need ${fmtPay(pay)} and your wallet holds ${fmtPay(held)}.`);
+  const { files } = await fetchNotesWithProof([sale.id]);
+  const txId = await submit(
+    client,
+    wallet,
+    async (b) => {
+      const { inputs } = await fetchNotesWithProof([sale.id]);
+      // note args: [account fill, note fill, 0, 0] (miden-standards PswapNote::create_args)
+      return b.withExplicitInputNote(inputs[0], wordFromFelts([pay, 0n, 0n, 0n])).build();
+    },
+    [sale.id],
+    files,
+  );
+  return { txId, noteIds: [sale.id] };
+}
+
 export async function collect(client: Client, wallet: Wallet, notes: ChallengeNote[]): Promise<Submitted> {
   const ids = notes.map((n) => n.id);
   const { files } = await fetchNotesWithProof(ids);

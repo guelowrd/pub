@@ -83,10 +83,10 @@ export const NOT_FINISHED = "Not done after 2 minutes. Check your wallet, then t
 export const BREAD_URL = "https://miden.xyz/bread";
 export const WALLET_SILENT = "Your wallet did not answer. Open it, then try again.";
 
-/** A block count as m:ss, at testnet's ~3 s per block. */
+/** A block count as m:ss, at the network's pace (config BLOCK_SECONDS). */
 export const blocksToClock = (blocks: number) => secondsToClock(Math.max(0, blocks) * BLOCK_SECONDS);
 
-/** When `block` lands, in ms, counting from `height` (the chain's current block) at testnet's pace. */
+/** When `block` lands, in ms, counting from `height` (the chain's current block) at the network's pace. */
 export const blockToMs = (block: number, height: number) => Date.now() + (block - height) * BLOCK_SECONDS * 1000;
 
 export const pad = (v: number) => String(v).padStart(2, "0");
@@ -123,10 +123,12 @@ export function explain(e: unknown): Trouble {
   if (raw.includes(NOT_FINISHED)) return trouble("not-finished", NOT_FINISHED, false);
   if (raw.includes(WALLET_SILENT)) return trouble("not-finished", WALLET_SILENT, false);
   if (raw.includes(SHOT_LOST)) return trouble("too-late", SHOT_LOST, false);
+  if (/NETWORK_NOT_GRANTED/.test(raw)) return trouble("refused", "Your wallet is on another network.");
   if (/NOT_GRANTED|reject|declin|denied|cancel/i.test(raw)) return trouble("said-no", "You said no in your wallet. Nothing was sent.");
   if (/WalletNotReady|not installed/i.test(raw)) return trouble("no-wallet", "No Bread wallet found. Install it, then try again.");
   if (/WalletNotConnected|not connected|WalletDisconnected/i.test(raw)) return trouble("no-wallet", "Connect your wallet first.");
   if (/^(\w+: )?You need .*Gamecoin/.test(raw)) return trouble("funds", "Not enough Gamecoins in your wallet. Get Gamecoins first.");
+  if (/^(\w+: )?You need .*USDCx|on sale right now/.test(raw)) return trouble("refused", raw.replace(/^\w+: /, ""), false); // the shop's own words
   if (/SummaryAnchorMismatch|chain anchor|ChainBehindBoundBlock|block header for block \d+ not found/i.test(raw))
     return trouble("out-of-step", "Your wallet was not ready. Try again.");
   if (/^Too late: /.test(raw)) return trouble("too-late", raw, false);
@@ -135,7 +137,8 @@ export function explain(e: unknown): Trouble {
   if (/not found on chain|is not public|not a record or shot|not Pick Up Boomers|Not found/i.test(raw)) return trouble("not-found", "No such record.", false); // the link is wrong or the record gone: nothing to copy for the player
   if (/course does not match/i.test(raw)) return trouble("refused", "This record is not from this game.");
   if (/assertion failed|error code/i.test(raw)) return trouble("refused", "That did not work.");
-  if (/faucet/i.test(raw)) return trouble("network", "The Gamecoin faucet is down. Try again later."); // a 503 from the faucet is not the network (2026-10-19)
+  if (/transaction expired/i.test(raw)) return trouble("network", "The network was slow this time. Try again."); // mainnet's fee asset caps every transaction at ~65 s after its reference block (GQ, 2026-10-22)
+  if (/faucet/i.test(raw)) return trouble("network", "The test money faucet is down. Try again later."); // the local test wallet's fees on testnet
   if (/fetch|network|timed out|timeout|deadline exceeded|unavailable|transport|ECONN|50[234]|load failed|mempool/i.test(raw))
     return trouble("network", "The network is slow right now. Try again in a moment.");
   return trouble("unknown", "Something went wrong.");
@@ -182,6 +185,9 @@ export async function submitWithRetry<T>(attempt: (n: number) => Promise<T>, ret
 
 /** Base units to Gamecoins: 1_000_000n is 1. */
 export const toGc = (v: bigint) => Number(v) / 10 ** GC_DECIMALS;
+
+/** An amount of the fee asset (6 decimals, like Gamecoin): "0.01 USDCx". */
+export const fmtPay = (v: bigint) => `${toGc(v).toLocaleString("en-US", { maximumFractionDigits: GC_DECIMALS })} USDCx`;
 
 /** An amount of Gamecoin in words: "1 Gamecoin", "10 Gamecoins". */
 export function fmtGamecoin(v: bigint): string {

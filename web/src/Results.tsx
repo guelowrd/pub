@@ -8,8 +8,8 @@ import { ART, PORTRAITS } from "./game/art";
 import { CHARACTERS } from "./game/course";
 import { RATE, agePoints, type Rider, type Sim } from "./game/sim";
 import { STATIONS } from "./game/stations";
-import { STAKE } from "./chain/config";
-import { BREAD_URL, recordLinks, waiting } from "./chain/flow";
+import { GC_DECIMALS, GC_PRICE, QUANTITIES, STAKE } from "./chain/config";
+import { BREAD_URL, fmtPay, recordLinks, waiting } from "./chain/flow";
 import { saveCard } from "./share";
 import type { ChainApi, Posted } from "./chain/ChainHost";
 import type { Settled } from "./chain/useChain";
@@ -45,9 +45,17 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
   const { layout, scale, left, top } = useFit(geometry);
   const G = geometry[layout] as Geometry;
   const [note, setNote] = useState<string | null>(null);
+  const [qty, setQty] = useState(QUANTITIES.indexOf(10)); // NEED GAMECOINS: how many to buy (an index into QUANTITIES)
+  let picker = false;
+  const pick = `${QUANTITIES[qty]} ${QUANTITIES[qty] === 1 ? "GAMECOIN" : "GAMECOINS"} FOR ${fmtPay(BigInt(QUANTITIES[qty]) * GC_PRICE).toUpperCase()}`;
   const busy = chain?.busy ?? null, trouble = chain?.trouble ?? null;
   const [, setTick] = useState(0);
   useEffect(() => { if (!busy) return; const t = setInterval(() => setTick((n) => n + 1), 1000); return () => clearInterval(t); }, [busy]); // the waiting line's clock
+  useEffect(() => { // the arrow keys step the quantity while the shop is on the well
+    const down = (e: KeyboardEvent) => { if (!picker) return; if (e.key === "ArrowLeft") setQty((q) => Math.max(0, q - 1)); else if (e.key === "ArrowRight") setQty((q) => Math.min(QUANTITIES.length - 1, q + 1)); else return; e.preventDefault(); };
+    addEventListener("keydown", down);
+    return () => removeEventListener("keydown", down);
+  });
   const text = (t: string, x: number, baseline: number, size: number, color: string, mono = false, align: "left" | "right" | "center" = "left", width?: number, key?: string | number) => (
     <span key={key} className={`hu-text ${mono ? "hu-mono" : "hu-gt"}`} style={{ left: px(align === "right" ? x - (width ?? 600) : align === "center" ? x - (width ?? 600) / 2 : x), width: px(width ?? 600), textAlign: align, top: px(baseline - baselineEm(mono ? "Share Tech Mono" : "Chakra Petch") * size), fontSize: px(size), color }}>{t}</span>
   );
@@ -78,10 +86,11 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
     footer = [{ kind: "footer", rect: G.footer[0], label: "SAME RUN", onClick: onSame }, { kind: "footer", rect: G.footer[1], label: "NEW RUN", onClick: onNew }];
     const post = () => { chain?.dismiss(); void chain?.post(s.seed, station, s.score).then((p) => { if (p) { setPosted(p); setNote(null); } }); };
     const postKey = (label: string, disabled = false, onClick = post): KeyDef => ({ kind: "post", rect: G.action, label, disabled, onClick });
-    const grant = () => void chain?.gamecoins().then((m) => m && setNote(m));
-    // no Gamecoins (the post's own check, or a balance read before): the faucet key in place of POST IT, the record stays on
-    // screen until the coins are in (Gaylord's phone, 2026-10-17; 2026-10-18: no POST IT while the wallet is known empty)
-    const needCoins = () => { heading = "NEED GAMECOINS"; color = YELLOW; status = "A POST COSTS 1 GAMECOIN. GET 10 FREE,\nOPEN YOUR WALLET TO TAKE THEM, THEN POST."; keys = [postKey("GET GAMECOINS", false, grant)]; };
+    const buy = () => void chain?.buy(BigInt(QUANTITIES[qty]) * 10n ** BigInt(GC_DECIMALS)).then((m) => m && setNote(m));
+    // no Gamecoins (the post's own check, or a balance read before): the shop in place of POST IT (how many, stepped by the chevrons
+    // or the arrow keys, and BUY), the record stays on screen until the coins are in (Gaylord's phone, 2026-10-17; 2026-10-18: no POST IT
+    // while the wallet is known empty; 2026-10-23: bought, no longer free)
+    const needCoins = () => { heading = "NEED GAMECOINS"; color = YELLOW; status = "A POST COSTS 1 GAMECOIN."; picker = true; keys = [postKey("BUY", false, buy)]; };
     if (posted) {
       heading = "RECORD POSTED"; color = MINT; status = note;
       const links = recordLinks(posted.recordId, STATIONS[posted.song].id, posted.score, STATIONS[posted.song].title, posted.expiresAt);
@@ -91,12 +100,15 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
       keys = [["SHARE ON X", () => { if (!window.open(links.x, "_blank", "noopener")) location.href = links.x; }], ["COPY LINK", () => void navigator.clipboard?.writeText(links.url).then(() => setNote("LINK COPIED"), () => setNote("COPY FAILED"))], ["SAVE CARD", () => void saveCard(posted.score, STATIONS[posted.song].title, riders).catch(() => setNote("COULD NOT SAVE"))]]
         .map(([label, onClick], i) => ({ kind: "share" as const, rect: [a[0] + i * (w + gap), a[1], w, a[3]], label: label as string, onClick: onClick as () => void }));
     } else if (trouble?.t.kind === "funds") needCoins();
-    else if (trouble) { status = trouble.t.title.toUpperCase(); keys = [postKey("TRY AGAIN", false, () => { const r = trouble.retry; chain?.dismiss(); r ? r() : post(); })]; }
-    else if (busy) { // the key says what is being sent (a post, or the faucet's Gamecoins), the status the step before it
+    else if (trouble) {
+      status = trouble.t.title.toUpperCase(); keys = [postKey("TRY AGAIN", false, () => { const r = trouble.retry; chain?.dismiss(); r ? r() : post(); })];
+      if (chain?.balance != null && chain.balance < STAKE) { heading = "NEED GAMECOINS"; color = YELLOW; picker = true; } // a buy that failed: the shop stays, TRY AGAIN buys again
+    }
+    else if (busy) { // the key says what is being sent (a post, or the shop's Gamecoins), the status the step before it
       const coins = /GAMECOINS/.test(busy.text);
       if (coins) heading = "NEED GAMECOINS";
       status = waiting(busy, chain?.local).join("\n");
-      keys = [postKey(busy.stage !== "network" ? "POST IT" : coins ? "GETTING GAMECOINS" : "POSTING", true)];
+      keys = [postKey(busy.stage !== "network" ? (coins ? "BUY" : "POST IT") : coins ? "BUYING" : "POSTING", true)];
     }
     else if (!chain?.ready) { status = "LOADING"; keys = [postKey("POST IT", true)]; }
     else if (!chain.me) { status = null; keys = [noBread ? postKey("GET BREAD", false, () => void window.open(BREAD_URL, "_blank", "noopener")) : postKey("CONNECT", false, () => void chain.connect())]; } // the key says it
@@ -140,6 +152,13 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
         })}
         {text(heading, G.post.head[0], G.post.head[1], G.post.head[2], color)}
         {status && <span className="hu-text hu-mono rs-status" style={{ left: px(G.post.status[0]), width: px(G.post.status[3]), top: px(statusTop), fontSize: px(statusSize), color: MUTED }}>{status}</span>}
+        {picker && (
+          <span className="rs-pick" style={{ left: px(G.post.status[0]), width: px(G.post.status[3]), top: px(statusTop + statusSize * 1.6), fontSize: px(Math.min(statusSize * 1.4, sw / ((pick.length + 6) * 0.54))) }}>{/* bigger than the terms where the well allows (desktop, portrait), the label plus its two chevrons across the well where it does not (landscape) */}
+            <button aria-label="FEWER" disabled={qty === 0} onClick={() => setQty(qty - 1)}>{"<"}</button>
+            <span>{pick}</span>
+            <button aria-label="MORE" disabled={qty === QUANTITIES.length - 1} onClick={() => setQty(qty + 1)}>{">"}</button>
+          </span>
+        )}
         {[...keys, ...footer].map((k) => <Key key={k.label} {...k} layout={layout} />)}
       </div>
     </div>

@@ -13,9 +13,9 @@ import { need, unlocked } from "./game/unlock";
 import { NAME } from "./game/sim";
 import { audio } from "./audio";
 import type { ChainApi, ChallengeNote } from "./chain/ChainHost";
-import { BREAD_URL, blocksToClock as clock, canDrive, fmtGamecoin, sameAccount as same, sameWord, waiting } from "./chain/flow";
+import { BREAD_URL, blocksToClock as clock, canDrive, fmtGamecoin, fmtPay, sameAccount as same, sameWord, waiting } from "./chain/flow";
 import { boards, history, keyOf, owed as owedNotes } from "./chain/hub";
-import { STAKE } from "./chain/config";
+import { GC_DECIMALS, GC_PRICE, MAINNET, QUANTITIES, STAKE, STATUS_URL } from "./chain/config";
 import { noteDeadline } from "./chain/notes";
 
 type Mode = "solo" | "challenge" | "my-runs" | "leaderboards" | "wallet" | "system";
@@ -23,7 +23,7 @@ const MODES: Mode[] = ["solo", "challenge", "my-runs", "leaderboards", "wallet",
 // the boards, one a page (GQ's, the LOSERBOARD last)
 type BoardKey = keyof ReturnType<typeof boards>;
 const BOARDS: [BoardKey, string][] = [["records", "BEST RECORDS"], ["coins", "MOST GAMECOINS WON"], ["defended", "RIVALS BEATEN"], ["smashed", "RECORDS SMASHED"], ["losers", "LOSERBOARD"]];
-type Word = "drive" | "shot" | "collect" | "connect" | "gamecoins" | "get bread" | "wait" | "try again" | "try another";
+type Word = "drive" | "shot" | "collect" | "connect" | "gamecoins" | "buy" | "get bread" | "wait" | "try again" | "try another";
 // The font pass (PUB-Painted-Type, Gaylord 2026-10-17: "much better"): PUB Painted Pixel for words and the counter, PUB Painted
 // Matrix for numbers, the LCD line and the red key's word. The sizes in menu.json were set against the stand-ins (Chakra Petch,
 // Share Tech Mono, PUB Stereo LCD); K keeps the cap heights they gave (caps at 100 px: the stand-ins and Pixel 70, Matrix 64.6, Stereo LCD 66.7)
@@ -103,10 +103,11 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const [review, setReview] = useState<ChallengeNote | null>(null); // CHALLENGE: the record under review
   const [opened, setOpened] = useState<string | null>(null); // MY RUNS: the run opened, by key
   const [board, setBoard] = useState<BoardKey | null>(null); // LEADERBOARDS: the board opened
+  const [shop, setShop] = useState<number | null>(null); // GET GAMECOINS: the quantity picked (an index into QUANTITIES), over any mode
   const [note, setNote] = useState<string | null>(null);
   const [noteUntil, setNoteUntil] = useState<number | null>(null); // a note that counts down and goes back to the track (COINS RECEIVED, Gaylord 2026-10-19)
   const noteTimer = useRef(0);
-  const [health, setHealth] = useState<Record<string, string> | null>(null); // SYSTEM: the testnet monitor's word per service, {} when unreachable // a line of our own on the TV (coins received, best cleared)
+  const [health, setHealth] = useState<Record<string, string> | null>(null); // SYSTEM: the network monitor's word per service, {} when unreachable // a line of our own on the TV (coins received, best cleared)
   const [pressed, setPressed] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
   const [loaded, setLoaded] = useState<Map<string, number>>(() => new Map()); // the paintings the TV can show, each with its mean brightness (0..1)
@@ -157,7 +158,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     ...history(notes, me, height, (a) => chain!.nameOf(a)).map((h): Run => { const n = notes.find((x) => x.id === h.id); return { key: h.id, kind: h.kind, score: h.score, state: h.result.replace(/^You /, "").toUpperCase(), line: h.money.toUpperCase(), tone: h.tone, song: n ? songIn(n) : 0, label: h.kind === "shot" ? `CHAMPION ${h.context.split("'")[0]}` : "YOUR SCORE" }; }),
   ] : [];
   const best = boards(notes, height, me);
-  const grant = () => void chain?.gamecoins().then((m) => m && setNote(m)); // the faucet's 10, from WALLET, an empty MY RUNS and LEADERBOARDS
+  const openShop = () => setShop((s) => s ?? QUANTITIES.indexOf(10)); // GET GAMECOINS, from WALLET, an empty MY RUNS and LEADERBOARDS
   const getBread = () => void window.open(BREAD_URL, "_blank", "noopener"); // no Bread here: the red key opens its page
 
   // what the mode shows on the TV, and what the keys do there
@@ -210,7 +211,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       if (o.word === "collect") { word = "collect"; go = () => void chain?.collect(owed).then((ok) => ok && flash("COINS RECEIVED")); } // everything owed, one transaction
       else if (o.word === "drive") { word = "drive"; go = () => onShot(o.shots!, o.record!); }
     } else if (loading) status = ["LOADING"];
-    else if (!runs.length) { status = ["NO RUNS YET", "A POST COSTS 1 GAMECOIN. GET 10 FREE WITH THE RED KEY"]; word = "gamecoins"; go = grant; }
+    else if (!runs.length) { status = ["NO RUNS YET", "A POST COSTS 1 GAMECOIN. GET SOME WITH THE RED KEY"]; word = "gamecoins"; go = openShop; }
     else {
       list(runs.length); count = `${runs.length} RUNS`;
       rows = runs.map((r, i) => ({ key: r.key, cells: [cell(r.kind.toUpperCase(), C["my-runs"].type, C["my-runs"].typeS, "cp", i === at ? AMBER : WHITE), cell(score(r.score), C["my-runs"].scoreR, C["my-runs"].scoreS, "mono", AMBER, true), cell(r.state, C["my-runs"].stateR, C["my-runs"].stateS, "cp", i === at ? AMBER : TONE[r.state] ?? WHITE, true)] }));
@@ -235,16 +236,16 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
         ? [cell(`${pad2(r.rank)} ${chain?.nameOf(r.who) ?? "???"}`, C.challenge.champion, denseS, "cp", same(me, r.who) ? AMBER : WHITE), cell(score(r.value), C.challenge.scoreR, denseS, "mono", AMBER, true), cell(songOf(r.song!), C.challenge.stage, C.challenge.stageS, "cp", same(me, r.who) ? AMBER : WHITE, false, C.challenge.stageW)]
         : [cell(`${pad2(r.rank)} ${chain?.nameOf(r.who) ?? "???"}`, C.leaderboards.name, denseS, "cp", same(me, r.who) ? AMBER : WHITE), cell(String(r.value), C.leaderboards.scoreR, denseS, "mono", AMBER, true)] }));
       footer = [cell(title, TV.safe[0], 24 * u, "cp", board === "losers" ? PINK : CYAN, false, undefined, TV.detail), ...(rows.length ? [] : [cell("NO ONE YET", C.leaderboards.name, C.challenge.nicknameS, "cp", WHITE, false, undefined, TV.rows.baselines[0])])];
-      if (me && !runs.length) { word = "gamecoins"; go = grant; } // a newcomer's way onto the boards
+      if (me && !runs.length) { word = "gamecoins"; go = openShop; } // a newcomer's way onto the boards
     }
   } else if (mode === "wallet") {
     heading = "WALLET";
     const connect = noBread ? getBread : !me && chain?.installed && !chain.connecting ? () => void chain.connect() : undefined; // the red key and ENTER on STATUS, until connected
     const bestScore = Number(stored("pub.best") ?? 0), b = chain?.balance ?? null;
-    // BALANCE carries the one thing to do with it: claim what is owed, or get 10 when down to 1 or less (Gaylord 2026-10-19)
+    // BALANCE carries the one thing to do with it: claim what is owed, or get more when down to 1 or less (Gaylord 2026-10-19)
     const balance: [string, string, (() => void)?] = b == null ? ["BALANCE", "ENTER TO READ", () => void chain?.readBalance()] // Bread asks the player on every asset read, so the row waits for ENTER (Gaylord 2026-10-21: a pop-up on arrival)
       : owed.length ? ["BALANCE", `${gc(b)}. ENTER TO CLAIM`, () => void chain?.collect(owed).then((ok) => { if (ok) { flash("COINS RECEIVED"); void chain.readBalance(); } })]
-      : b <= STAKE ? ["BALANCE", `${gc(b)}. ENTER TO GET 10`, grant]
+      : b <= STAKE ? ["BALANCE", `${gc(b)}. ENTER TO GET MORE`, openShop]
       : ["BALANCE", gc(b), () => void chain?.readBalance()];
     kv([
       ["STATUS", !chain?.installed ? "NO BREAD WALLET" : me ? "CONNECTED" : chain.connecting ? chain.walletStatus || "CONNECTING" : "NOT CONNECTED", connect],
@@ -255,17 +256,24 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     if (connect) { word = noBread ? "get bread" : "connect"; go = connect; }
   } else {
     heading = "SYSTEM";
-    // the testnet monitor's word on what the game needs: reads, proving, and the node taking our transactions
+    // the network monitor's word on what the game needs: reads, proving, and the node taking our transactions
     const NEEDED: [string, string][] = [["rpc", "RPC"], ["remote prover", "PROVER"], ["local transactions", "TRANSACTIONS"]];
     const down = health && NEEDED.find(([k]) => health[k] !== "healthy");
     const addr = chain?.address ?? null;
     kv([
       ["VERSION", __PUB_VERSION__],
       ["ADDRESS", addr ? `${addr.slice(0, 7)}…${addr.slice(-5)} COPY` : "--", addr ? () => void navigator.clipboard?.writeText(addr).then(() => setNote("ADDRESS COPIED"), () => setNote("COPY FAILED")) : undefined],
-      ["NETWORK", "MIDEN TESTNET"],
-      ["STATUS", !health ? "CHECKING" : !Object.keys(health).length ? "UNKNOWN" : down ? `${down[1]} DOWN` : "ALL GOOD", () => void window.open("https://status.testnet.miden.io/", "_blank", "noopener")],
+      ["NETWORK", MAINNET ? "MIDEN MAINNET" : "MIDEN TESTNET"],
+      ["STATUS", !health ? "CHECKING" : !Object.keys(health).length ? "UNKNOWN" : down ? `${down[1]} DOWN` : "ALL GOOD", () => void window.open(STATUS_URL, "_blank", "noopener")],
       ["RPC", (chain?.rpc ?? "").replace(/^https?:\/\//, "").replace(/\/$/, "") || "--"],
     ], "mono", AMBER); // the same face and colour as WALLET and every list value (Gaylord 2026-10-19)
+  }
+  // GET GAMECOINS over any mode (Gaylord 2026-10-23): a box with how many, PREV and NEXT step through QUANTITIES, the red key buys
+  const qty = shop === null ? 0 : QUANTITIES[shop];
+  if (shop !== null) {
+    heading = "GET GAMECOINS"; rows = []; footer = []; count = ""; status = null; rev = null; backdrop = null; enter = null;
+    total = QUANTITIES.length; at = shop;
+    word = "buy"; go = () => void chain?.buy(BigInt(qty) * 10n ** BigInt(GC_DECIMALS)).then((m) => { if (m) { setShop(null); setNote(m); } });
   }
   // the chain's say comes over the mode's own screen: what is being done, where it is and how long it takes (flow.ts waiting), the trouble after, our own note
   if (busy) { const [what, how] = waiting(busy, chain?.local); status = [(busy.stage === "connect" && chain?.walletStatus) || what, `${busy.text}. ${how}`]; word = "wait"; go = null; rev = null; }
@@ -280,7 +288,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
 
   // which keys answer, by the pack's rules: a root has no BACK, ENTER opens rows only, the arrows stop at a list's ends
   // (the stages wrap), nothing but VOL and MUTE while the chain works
-  const root = !review && !opened && !board && !note && !trouble && !pop;
+  const root = !review && !opened && !board && shop === null && !note && !trouble && !pop;
   const on = (id: string): boolean => {
     if (busy) return id === "volume" || id === "mute";
     switch (id) {
@@ -293,11 +301,11 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     }
   };
   const clearNote = () => { clearTimeout(noteTimer.current); setNoteUntil(null); setNote(null); };
-  const goMode = (m: Mode) => { setMode(m); setReview(null); setOpened(null); setBoard(null); clearNote(); chain?.dismiss(); };
+  const goMode = (m: Mode) => { setMode(m); setReview(null); setOpened(null); setBoard(null); setShop(null); clearNote(); chain?.dismiss(); };
   /** a note for five seconds, then the track */
   const flash = (t: string) => { clearNote(); setNote(t); setNoteUntil(Date.now() + 5000); noteTimer.current = window.setTimeout(() => goMode("solo"), 5000); };
-  const back = () => { if (trouble) return chain?.dismiss(); if (pop) return setOwedPop(false); if (note) return clearNote(); if (review) return setReview(null); if (board) return setBoard(null); setOpened(null); };
-  const stepTo = (d: number) => { if (mode === "solo") return setStation((station + d + STATIONS.length) % STATIONS.length); if (total) setCursor({ ...cursor, [cursorKey]: Math.max(0, Math.min(total - 1, at + d)) }); };
+  const back = () => { if (trouble) return chain?.dismiss(); if (pop) return setOwedPop(false); if (note) return clearNote(); if (shop !== null) return setShop(null); if (review) return setReview(null); if (board) return setBoard(null); setOpened(null); };
+  const stepTo = (d: number) => { if (shop !== null) return setShop((s) => Math.max(0, Math.min(QUANTITIES.length - 1, (s ?? 0) + d))); if (mode === "solo") return setStation((station + d + STATIONS.length) % STATIONS.length); if (total) setCursor({ ...cursor, [cursorKey]: Math.max(0, Math.min(total - 1, at + d)) }); };
   const act = (id: string, half?: 0 | 1) => {
     if (!on(id)) return;
     if (MODES.includes(id as Mode)) return goMode(id as Mode);
@@ -391,7 +399,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
               {lock ? text(lock === "bread" ? "GET BREAD TO UNLOCK" : `LOCKED: POST ${lock.records} RECORD${lock.records > 1 ? "S" : ""}, ONE AT ${lock.score}+`, TV.cond[0].icon[0], TV.cond[0].text[1], TV.cond[0].text[2], "cp", PINK) : cond(station, TV.cond[0].text[1])}
             </>
           )}
-          {mode !== "solo" && !status && !rev && (
+          {mode !== "solo" && !status && !rev && shop === null && (
             <>
               {text(heading, TV.heading[0], TV.heading[1], TV.heading[2], "cp", AMBER)}
               {brand(TV.brand, "right")}
@@ -407,6 +415,26 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
                 );
               })}
               {cells(footer)}
+            </>
+          )}
+          {shop !== null && !status && (
+            <>
+              {text(heading, TV.heading[0], TV.heading[1], TV.heading[2], "cp", AMBER)}
+              {brand(TV.brand, "right")}
+              {(() => { // the box in the middle of the tube: the number in it, a chevron each side (dark at the ends), the coin and the price under it
+                const cx = TV.size[0] / 2, w = 300 * u, h = 120 * u, top = mid - 70 * u, chev = 150 * u + 40 * u;
+                const arrow = (dir: -1 | 1, dim: boolean) => <svg key={dir} className={`gp-chev${dim ? " dim" : ""}`} viewBox="0 0 24 40" style={box([cx + dir * chev - 12 * u, top + h / 2 - 20 * u, 24 * u, 40 * u])}><path d={dir < 0 ? "M18 4 6 20l12 16" : "M6 4l12 16L6 36"} /></svg>;
+                return (
+                  <>
+                    <svg className="gp-box" viewBox={`0 0 ${w} ${h}`} style={box([cx - w / 2, top, w, h])}><rect x="2" y="2" width={w - 4} height={h - 4} rx={6 * u} /></svg>
+                    {arrow(-1, shop === 0)}
+                    {arrow(1, shop === QUANTITIES.length - 1)}
+                    <span className="gp-text gp-mono" style={{ left: px(cx - w / 2), width: px(w), textAlign: "center", top: px(top + h / 2 + 32 * u - baselineEm(FAMILY.mono) * 88 * u * K.mono), fontSize: px(88 * u * K.mono), color: AMBER }}>{qty}</span>
+                    <span className="gp-text gp-cp" style={{ left: 0, width: px(TV.size[0]), textAlign: "center", top: px(top + h + 40 * u - baselineEm(FAMILY.cp) * 24 * u), fontSize: px(24 * u), color: CYAN }}>{qty === 1 ? "GAMECOIN" : "GAMECOINS"}</span>
+                    <span className="gp-text gp-mono" style={{ left: 0, width: px(TV.size[0]), textAlign: "center", top: px(top + h + 78 * u - baselineEm(FAMILY.mono) * 26 * u * K.mono), fontSize: px(26 * u * K.mono), color: WHITE }}>{`FOR ${fmtPay(BigInt(qty) * GC_PRICE).toUpperCase()}`}</span>
+                  </>
+                );
+              })()}
             </>
           )}
           {rev && !status && (
@@ -438,7 +466,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       <div className="gp-radio" style={box([...R.origin, ...R.size])}>
         <img src={`${GP}${layout}/fascia.png`} alt="" style={box([0, 0, ...R.size])} />
         <img src={`${GP}${layout}/lcd.png`} alt="" style={box(R.lcd)} />
-        <span className="gp-text gp-lcd" style={{ left: px(R.purpose[0]), top: px(R.purpose[1] - baselineEm(LCD) * R.purpose[2] * K.lcd), fontSize: px(R.purpose[2] * K.lcd), color: AMBER }}>{pop ? "COLLECT YOUR GAMECOINS" : PURPOSE[mode]}</span>
+        <span className="gp-text gp-lcd" style={{ left: px(R.purpose[0]), top: px(R.purpose[1] - baselineEm(LCD) * R.purpose[2] * K.lcd), fontSize: px(R.purpose[2] * K.lcd), color: AMBER }}>{shop !== null ? "PICK HOW MANY AND BUY" : pop ? "COLLECT YOUR GAMECOINS" : PURPOSE[mode]}</span>
         <Meter layout={layout} m={R.meter} />
         <img className="gp-plaque" src={`${GP}${layout}/plaque.png`} alt="electronic GRAND PRIX" style={box(R.plaque)} />
         {R.controls.map((c) => {

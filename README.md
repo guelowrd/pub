@@ -18,7 +18,8 @@ action the screen allows (DRIVE, SHOT, COLLECT, CONNECT).
 
 Onchain: a run can be posted as a record (a Gamecoin prize on it); rivals pay a Gamecoin for a shot at its course and
 song and must beat the score; the chain replays the decision log (`masm/games/pub_score.masm`). Bread signs; without it,
-`?local=1` and `?local=2` run two test wallets inside the app (fee-funded from the testnet faucet, Gamecoins from the
-WALLET mode). Note tag 0x50420001, scripts in `web/public/scripts/`.
+`?local=1` and `?local=2` run two test wallets inside the app (on mainnet `&code=<invite code>` registers a new one and the
+node funds its fees; on testnet the public faucet does). Gamecoins are GeoQuizz's, bought from its sale notes (GET GAMECOINS
+in the head unit: PREV and NEXT pick how many, the red key buys at 0.001 USDCx each). Note tag 0x50420001, scripts in `web/public/scripts/`.
 
 Deploy: Vercel, root directory `web` (`web/vercel.json` sets the cross-origin isolation headers the Miden client needs).

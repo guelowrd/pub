@@ -109,6 +109,9 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .gp-pic.locked { filter: grayscale(.8) brightness(.45); }
 .gp-pic.dim { filter: brightness(.22) saturate(.8); } /* a record's stage behind the CHALLENGE list and review; the brightness is set inline per painting */
 .gp-lock { position: absolute; color: #f28bb1; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 .3em rgba(242, 139, 177, .55)); } /* the padlock over a locked stage, drawn like the kit's line icons */
+/* GET GAMECOINS: the quantity box and its chevrons, drawn like the kit's line icons (the padlock) */
+.gp-box { position: absolute; fill: rgba(255, 209, 107, .06); stroke: #ffd16b; stroke-width: 2.4; filter: drop-shadow(0 0 .3em rgba(255, 209, 107, .45)); }
+.gp-chev { position: absolute; fill: none; stroke: #a3dbd5; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 .3em rgba(163, 219, 213, .55)); } .gp-chev.dim { opacity: .25; filter: none; }
 .gp-shade { position: absolute; left: 0; right: 0; top: 62%; bottom: 0; background: linear-gradient(#080e1700, #080e17c8 45%, #080e17f0); }
 .gp-text { position: absolute; white-space: nowrap; line-height: 1; overflow: hidden; }
 .gp-para { position: absolute; line-height: 1.3; white-space: pre-wrap; user-select: text; -webkit-user-select: text; }
@@ -137,6 +140,9 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .hit:focus-visible { outline: 2px solid #ffe564; } .gp-radio .hit:focus-visible { outline: none; }
 .rk > img { position: absolute; inset: 0; width: 100%; height: 100%; }
 .rs-status { white-space: pre-line; line-height: 1.25; text-align: left; }
+/* NEED GAMECOINS on the results screen: how many to buy, stepped by the chevrons or the arrow keys */
+.rs-pick { position: absolute; display: flex; align-items: center; gap: .5em; white-space: nowrap; line-height: 1; font-family: "Share Tech Mono", monospace; font-weight: 400; font-variant-numeric: tabular-nums; color: #e6eae1; }
+.rs-pick button { font: inherit; font-size: 1.5em; line-height: 1; color: #94e6dc; background: none; border: 0; padding: 0 .25em; cursor: pointer; } .rs-pick button:hover { color: #ffe16f; } .rs-pick button:disabled { color: #657274; cursor: default; }
 /* portrait phones: the scene on top, then the seat strip and the radar side by side, then the pad */
 @media (max-aspect-ratio: 1/1) {
   #root { justify-content: flex-start; }

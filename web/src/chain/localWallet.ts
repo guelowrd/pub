@@ -1,15 +1,15 @@
 // A wallet inside the app, for testing without Bread: open the page with `?local=1` (`?local=2` for a second one). The app's own
-// Miden client creates a private single-signature account, funds its fees from the testnet faucet
-// and signs every request itself. Same contracts, same flows, no popups.
+// Miden client creates a private single-signature account, funds its fees (the testnet faucet; on mainnet the node pays a
+// registered account, `&code=` an invite code) and signs every request itself. Same contracts, same flows, no popups.
 //
 // Mutations go through the SDK's own hooks (`useCreateWallet`, `useConsume`, `useTransaction`):
 // they own the client lock and the configured prover. Never call them inside `runExclusive`.
 
-import { AccountId, NoteFile, TransactionRequest } from "@miden-sdk/miden-sdk";
+import { AccountId, NoteFile, NoteScript, TransactionRequest } from "@miden-sdk/miden-sdk";
 import { useConsume, useCreateWallet, useTransaction, type AuthScheme } from "@miden-sdk/react";
 import type { Asset, Transaction } from "@miden-sdk/miden-wallet-adapter-base";
 import { useCallback, useState } from "react";
-import { MIDEN_FAUCET_URL } from "./config";
+import { MAINNET, MIDEN_FAUCET_URL } from "./config";
 import { loadScripts, type Client } from "./chain";
 import { noteKind } from "./flow";
 import { requestFaucetTokens } from "./funding";
@@ -39,7 +39,7 @@ export function useLocalWallet(client: Client | null, runExclusive: <T>(fn: () =
   const claimIncoming = useCallback(
     async (hex: string, waitMs: number): Promise<number> => {
       if (!client) throw new Error("client not ready");
-      const scripts = await loadScripts();
+      const scripts = await loadScripts(), pswapRoot = NoteScript.pswap().root().toHex();
       const deadline = Date.now() + waitMs;
       let pending: string[] = [];
       for (;;) {
@@ -49,7 +49,8 @@ export function useLocalWallet(client: Client | null, runExclusive: <T>(fn: () =
             .flatMap((n) => n.inputNoteRecord() ?? [])
             .filter((r) => {
               const root = r.details()?.recipient().script().root().toHex();
-              return !root || !noteKind(root, scripts); // game notes are not payments
+              // game notes are not payments; a sale note (PSWAP) of this wallet is consumable by it, which would cancel the sale
+              return !root || (!noteKind(root, scripts) && root !== pswapRoot);
             })
             .flatMap((r) => r.id()?.toString() ?? []);
         });
@@ -81,7 +82,8 @@ export function useLocalWallet(client: Client | null, runExclusive: <T>(fn: () =
       }
       log("wallet", hex);
 
-      // 2. fees: the chain's fee asset from the public faucet, once
+      // 2. fees: the chain's fee asset, once: on mainnet the node pays a registered account (`?code=` an invite code, one
+      // use), on testnet the public faucet does
       setStatus("Syncing…");
       const funded = await runExclusive(async () => {
         await client.syncState();
@@ -89,7 +91,19 @@ export function useLocalWallet(client: Client | null, runExclusive: <T>(fn: () =
         return (await (await client.getAccount(AccountId.fromHex(hex!)))!.vault().getBalance(fee)) > 0n;
       });
       log("funded", funded);
-      if (!funded) {
+      if (!funded && MAINNET) {
+        const code = new URLSearchParams(location.search).get("code");
+        if (code) {
+          setStatus("Registering…");
+          await runExclusive(() => client.registerAccount(AccountId.fromHex(hex!), code));
+          log("registered");
+        }
+        // the node's funding note (a public P2ID) reaches the store a sync or two after registration
+        setStatus("Waiting for the funding note…");
+        if ((await claimIncoming(hex, 90_000)) === 0) {
+          throw new Error(code ? "The funding note never arrived." : "A new mainnet account needs an invite code: add &code=… to the address.");
+        }
+      } else if (!funded) {
         setStatus("Getting test money…");
         const noteId = await requestFaucetTokens(MIDEN_FAUCET_URL, hex);
         log("faucet note", noteId);
@@ -108,7 +122,7 @@ export function useLocalWallet(client: Client | null, runExclusive: <T>(fn: () =
         const r = await consume({ accountId: hex, notes: [noteId] });
         log("claimed", r.transactionId);
       }
-      // 3. whatever was sent to this account (Gamecoin mints, prizes won): claim it, as Bread does by itself.
+      // 3. whatever was sent to this account (Gamecoins bought, prizes won): claim it, as Bread does by itself.
       setStatus("Claiming…");
       await claimIncoming(hex, 0);
       setId(hex);
@@ -145,7 +159,7 @@ export function useLocalWallet(client: Client | null, runExclusive: <T>(fn: () =
     wallet: { readyState: "Installed" },
     connect,
     disconnect: async () => setId(null),
-    /** After a mint: wait for the note and claim it (Bread does this by itself). */
+    /** After a buy: wait for the note and claim it (Bread asks the player to). */
     claim: () => claimIncoming(id!, 90_000),
     requestTransaction,
     requestAssets: async (): Promise<Asset[]> =>

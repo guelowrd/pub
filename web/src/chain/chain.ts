@@ -24,7 +24,7 @@ import {
   Word,
 } from "@miden-sdk/miden-sdk";
 import type { useMidenClient } from "@miden-sdk/react";
-import { MIDEN_RPC_URL, RECORD_SCRIPT_URL, SHOT_SCRIPT_URL } from "./config";
+import { MAINNET, MIDEN_RPC_URL, RECORD_SCRIPT_URL, SHOT_SCRIPT_URL } from "./config";
 import { decodeStorage, NOTE_TAG, type AccountFelts, type ChallengeStorage, type Word4 } from "./notes";
 import { acceptNote, noteKind } from "./flow";
 
@@ -171,7 +171,7 @@ async function scanNotes(tip: number): Promise<ChallengeNote[]> {
 
 /** An account's address as wallets show it (Bread adds a `_…` routing part after it). */
 export const bech32Of = (a: AccountFelts) =>
-  AccountId.fromPrefixSuffix(new Felt(a.prefix), new Felt(a.suffix)).toBech32(MIDEN_RPC_URL === "devnet" ? NetworkId.devnet() : NetworkId.testnet(), AccountInterface.BasicWallet);
+  AccountId.fromPrefixSuffix(new Felt(a.prefix), new Felt(a.suffix)).toBech32(MAINNET ? NetworkId.mainnet() : NetworkId.testnet(), AccountInterface.BasicWallet);
 
 /** What the node says about a note: undefined while it is not on chain, else whether it is used. */
 export async function knownNote(id: string): Promise<{ consumed: boolean } | undefined> {
@@ -190,13 +190,7 @@ export function buildChallengeNote(sender: AccountId, script: NoteScript, storag
 }
 
 export function endpoint(): Endpoint {
-  return MIDEN_RPC_URL === "testnet"
-    ? Endpoint.testnet()
-    : MIDEN_RPC_URL === "devnet"
-      ? Endpoint.devnet()
-      : MIDEN_RPC_URL === "localhost"
-        ? Endpoint.localhost()
-        : new Endpoint(MIDEN_RPC_URL);
+  return MAINNET ? new Endpoint(MIDEN_RPC_URL) : Endpoint.testnet();
 }
 
 /**

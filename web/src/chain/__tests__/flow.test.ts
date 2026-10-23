@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ChallengeNote } from "../chain";
 import type { ChallengeStorage, Word4 } from "../notes";
-import { GC_FAUCET, MIN_SHOT_WINDOW_BLOCKS, SCORE_MAX, SHOT_DRIVE_BLOCKS } from "../config";
+import { GC_FAUCET, MIN_SHOT_WINDOW_BLOCKS, RECORD_LIFETIME_BLOCKS, SCORE_MAX, SHOT_DRIVE_BLOCKS } from "../config";
 import { encodeGame, newGame, RULES_VERSION } from "../game";
 import { acceptNote, blocksToClock, canDrive, claimVerdict, explain, fmtGamecoin, isChainBehind, myOpenShotsOn, NOT_FINISHED, WALLET_SILENT, waiting, noteKind, doneText, recordLinks, settlePlan, shotRefusal, submitWithRetry, withTimeout, SHARE_LINES } from "../flow";
 
@@ -63,8 +63,8 @@ describe("taking a shot", () => {
     expect(rigged({ target: SCORE_MAX })).toMatch(/rigged/);
     expect(rigged({ minStake: 999_999n })).toMatch(/rigged/);
     expect(rigged({ minStake: 1_000_001n })).toMatch(/rigged/);
-    expect(rigged({ expiryBlock: 100 + 28_800 })).toBeNull();
-    expect(rigged({ expiryBlock: 100 + 28_801 })).toMatch(/rigged/);
+    expect(rigged({ expiryBlock: 100 + RECORD_LIFETIME_BLOCKS })).toBeNull();
+    expect(rigged({ expiryBlock: 100 + RECORD_LIFETIME_BLOCKS + 1 })).toMatch(/rigged/);
   });
 });
 
@@ -146,6 +146,10 @@ describe("plain words for failures", () => {
     expect(explain(new Error("User rejected the request")).kind).toBe("said-no");
     expect(explain(new Error("WalletNotConnectedError")).kind).toBe("no-wallet");
     expect(explain(new Error("You need 1 Gamecoin and your wallet holds 0 Gamecoins. Get Gamecoins first."))).toMatchObject({ kind: "funds" });
+    expect(explain(new Error("You need 0.01 USDCx and your wallet holds 0 USDCx."))).toEqual({ kind: "refused", title: "You need 0.01 USDCx and your wallet holds 0 USDCx." }); // the shop's own words, no detail
+    expect(explain(new Error("No Gamecoins on sale right now. Try again later."))).toMatchObject({ kind: "refused" });
+    expect(explain(new Error("WalletConnectionError: NETWORK_NOT_GRANTED"))).toMatchObject({ kind: "refused", title: "Your wallet is on another network." });
+    expect(explain(new Error("transaction expired at block 5"))).toMatchObject({ kind: "network", title: "The network was slow this time. Try again." });
     expect(explain(Object.assign(new Error("the Miden client synced to block 1"), { name: "ChainBehindBoundBlockError" })).kind).toBe("out-of-step");
     expect(explain(new Error(NOT_FINISHED))).toEqual({ kind: "not-finished", title: NOT_FINISHED });
     expect(explain(new Error(WALLET_SILENT))).toEqual({ kind: "not-finished", title: WALLET_SILENT });
@@ -221,9 +225,9 @@ describe("Gamecoin in words", () => {
     expect(texts[1]).toContain(`#midnightchase\n`);
     vi.unstubAllGlobals();
   });
-  it("shows blocks as a clock at 3 s a block", () => {
-    expect(blocksToClock(20)).toBe("1:00");
-    expect(blocksToClock(1300)).toBe("1:05:00");
+  it("shows blocks as a clock at mainnet's 3.25 s a block", () => {
+    expect(blocksToClock(20)).toBe("1:05");
+    expect(blocksToClock(1200)).toBe("1:05:00");
     expect(blocksToClock(-5)).toBe("0:00");
   });
 });

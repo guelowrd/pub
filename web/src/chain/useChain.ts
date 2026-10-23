@@ -7,14 +7,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMiden } from "@miden-sdk/react";
 import { useMidenFiWallet } from "@miden-sdk/miden-wallet-adapter-react";
 import { LOCAL_WALLET, useLocalWallet } from "./localWallet";
-import { GAMECOIN_GRANT, gamecoinRefusal, GRANT_PENDING_MS, useGamecoin } from "./gamecoin";
 import { RECORD_LIFETIME_BLOCKS, STAKE, SUBMIT_TIMEOUT_MS } from "./config";
 import { accountFelts, bech32Of, endpoint, fetchChallengeNote, knownNote, listChallengeNotes, loadScripts, parseAccountId, syncNotes, wordFromHex, type ChallengeNote, type Client } from "./chain";
 import { keyOf, lettersBackward, nicknames, playersInOrder } from "./hub";
-import { collect as collectNotes, gcBalance, postRecord, postShot, setBalanceListener, setPendingListener, setSubmitAttemptListener, setSubmitStageListener, settle as settleNotes, waitFor, type Submitted } from "./bread";
+import { buyGamecoin, collect as collectNotes, gcBalance, postRecord, postShot, setBalanceListener, setPendingListener, setSubmitAttemptListener, setSubmitStageListener, settle as settleNotes, waitFor, type Submitted } from "./bread";
 import { shotDeadline, shotStorage, ZERO_WORD, type AccountFelts, type ChallengeStorage } from "./notes";
 import { blockToMs, canDrive, claimVerdict, explain, fmtGamecoin, myOpenShotsOn, NOT_FINISHED, doneText, settlePlan, SHOT_LOST, shotRefusal, WALLET_SILENT, withTimeout, type Trouble } from "./flow";
 import { decodeGame, encodeGame, genuine, newGame, pubAnswer } from "./game";
+import { openSales, pickSale } from "./shop";
 import type { Event } from "../game/sim";
 
 export type Stage = "connect" | "prepare" | "wallet" | "network";
@@ -56,8 +56,8 @@ export type ChainApi = {
   collect: (notes: ChallengeNote[]) => Promise<boolean>;
   /** The node the game reads from (SYSTEM screen). */
   rpc: string;
-  /** Ten Gamecoins from the faucet; what the player should know. */
-  gamecoins: () => Promise<string | null>;
+  /** Gamecoins bought from the shop (base units); what the player should know. */
+  buy: (gc: bigint) => Promise<string | null>;
 };
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -69,7 +69,6 @@ export function useChain(): ChainApi {
   const wallet = LOCAL_WALLET ? local : bread;
   const walletRef = useRef(wallet);
   walletRef.current = wallet;
-  const mint = useGamecoin(client, runExclusive);
 
   const [height, setHeight] = useState(0);
   const [notes, setNotes] = useState<ChallengeNote[]>([]);
@@ -80,7 +79,6 @@ export function useChain(): ChainApi {
   const heightRef = useRef(0);
   const notesRef = useRef<ChallengeNote[]>([]);
   const notesReadRef = useRef(false);
-  const lastGrant = useRef<{ to: string; at: number } | null>(null);
   const token = useRef(0);
 
   const address = wallet.connected && wallet.address ? wallet.address : null;
@@ -254,31 +252,19 @@ export function useChain(): ChainApi {
     return !!submitted;
   };
 
-  /** Mints the grant to the connected wallet; the local wallet then claims it, Bread claims by itself. */
-  const gamecoins: ChainApi["gamecoins"] = async () => {
-    const mine = ++token.current;
-    setTrouble(null);
-    try {
-      const address = await needWallet();
-      setBusy({ text: "GETTING GAMECOINS", stage: "network", since: Date.now() });
-      const grant = lastGrant.current;
-      const refusal = gamecoinRefusal(await gcBalance(walletRef.current), grant?.to === address && Date.now() - grant.at < GRANT_PENDING_MS);
-      if (refusal) return (say(refusal), null);
-      await withTimeout(mint(address), 180_000, "Getting Gamecoins");
-      lastGrant.current = { to: address, at: Date.now() };
-      if (LOCAL_WALLET) await local.claim();
-      else setBalance(null); // unknown until Bread takes the note: the results screen offers POST IT again
-      if (token.current !== mine) return null;
-      return `${fmtGamecoin(GAMECOIN_GRANT).toUpperCase()} FOR YOU. OPEN YOUR WALLET TO TAKE THEM.`;
-    } catch (e) {
-      if (token.current === mine) oops(e, () => void gamecoins());
-      return null;
-    } finally {
-      if (token.current === mine) {
-        setBusy(null);
-        if (LOCAL_WALLET) void readBalance();
-      }
-    }
+  /** Buys `gc` Gamecoin (base units) from the cheapest sale note; the local wallet then claims them, Bread asks the player to. */
+  const buy: ChainApi["buy"] = async (gc) => {
+    const submitted = await run("BUYING GAMECOINS", false, async () => {
+      if (!client) throw new Error("client not ready");
+      const me = parseAccountId(walletRef.current.address!).toString();
+      const sale = pickSale(await openSales((await client.feeFaucetId()).toString()), gc, me);
+      if (!sale) throw new Error("No Gamecoins on sale right now. Try again later.");
+      return buyGamecoin(client, walletRef.current, sale, gc);
+    });
+    if (!submitted) return null;
+    if (LOCAL_WALLET) await local.claim().then(() => readBalance());
+    else setBalance(null); // unknown until Bread takes the note: the results screen offers POST IT again
+    return `${fmtGamecoin(gc).toUpperCase()} FOR YOU. OPEN YOUR WALLET TO TAKE THEM.`;
   };
 
   const loadRecord: ChainApi["loadRecord"] = async (id) => {
@@ -329,7 +315,7 @@ export function useChain(): ChainApi {
     settle,
     collect,
     rpc: endpoint().toString(),
-    gamecoins,
+    buy,
   };
 }
 
