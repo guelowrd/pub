@@ -937,6 +937,11 @@ wallet; order = switch, mainnet round, push, then the screen audit resumes at 9/
 - [x] SYSTEM: NETWORK MIDEN MAINNET, STATUS from status.cedar.miden.io (api/status.py; same three cards)
 - [x] verified on the testnet dev server (:5181, VITE_MIDEN_NETWORK=testnet): the box on desktop + both phones, PREV/NEXT/arrows
       and the ends, BUY → "NO GAMECOINS ON SALE RIGHT NOW" (no testnet sale under the pair tag), Results picker + TRY AGAIN
-- [ ] mainnet round with Gaylord (Bread) and my `?local=1&code=` rival: buy, record, lost shot + collect, winning shot + claim
+- [x] mainnet round, my half (2026-10-23, local wallet KSN `?local=1&code=…`, the code used; Gaylord's Bread MPN posted 09681 on
+      ABANDONED FACTORY before): registered + funded in ~10 s; bought 2 GC from Gaylord's GQ sale (the buy landed, the screen said
+      NOT DONE AFTER 2 MINUTES: knownNote only knew game notes, so a sale note never "landed"; fixed, knownNote reads any note);
+      lost shot at MPN's record (368 pts, the Gamecoin waits for the champion); posted a record of my own (00382, 1 GC) for Gaylord
+      to beat from Bread
+- [ ] Gaylord's half from Bread: COLLECT the lost shot's Gamecoin (MY RUNS, after the shot window), a winning shot at KSN's 00382 + claim
 - [ ] push (Vercel: no env var needed), then screen 9/33 on the new copy
 Caps: the TV spells USDCX (its faces are capitals); the rule says USDCx in prose, flagged to Gaylord.

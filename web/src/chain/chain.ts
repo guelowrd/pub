@@ -173,12 +173,19 @@ async function scanNotes(tip: number): Promise<ChallengeNote[]> {
 export const bech32Of = (a: AccountFelts) =>
   AccountId.fromPrefixSuffix(new Felt(a.prefix), new Felt(a.suffix)).toBech32(MAINNET ? NetworkId.mainnet() : NetworkId.testnet(), AccountInterface.BasicWallet);
 
-/** What the node says about a note: undefined while it is not on chain, else whether it is used. */
+/** What the node says about any note (a record, a shot, a sale): undefined while it is not on chain, else whether it is used. */
 export async function knownNote(id: string): Promise<{ consumed: boolean } | undefined> {
-  return fetchChallengeNote(id).then(
-    (n) => ({ consumed: n.consumed }),
-    () => undefined,
-  );
+  try {
+    const [input] = (await fetchNotesWithProof([id])).inputs;
+    const rpc = new RpcClient(endpoint());
+    try {
+      return { consumed: (await rpc.getNullifierCommitHeight(input.note().nullifier(), input.location()?.blockNum() ?? 0)) !== undefined };
+    } finally {
+      rpc.free();
+    }
+  } catch {
+    return undefined;
+  }
 }
 
 /** Builds a record or shot note exactly as the contracts expect it; `serial` fixes its id. */
