@@ -102,7 +102,7 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
     } else if (trouble?.t.kind === "funds") needCoins();
     else if (trouble) {
       status = trouble.t.title.toUpperCase(); keys = [postKey("TRY AGAIN", false, () => { const r = trouble.retry; chain?.dismiss(); r ? r() : post(); })];
-      if (chain?.balance != null && chain.balance < STAKE) { heading = "NEED GAMECOINS"; color = YELLOW; picker = true; } // a buy that failed: the shop stays, TRY AGAIN buys again
+      if (chain?.balance != null && chain.balance < STAKE) { heading = "NEED GAMECOINS"; color = YELLOW; picker = true; keys = [postKey("TRY AGAIN", false, () => { chain.dismiss(); buy(); })]; } // a buy that failed: the shop stays, TRY AGAIN buys what is picked now
     }
     else if (busy) { // the key says what is being sent (a post, or the shop's Gamecoins), the status the step before it
       const coins = /GAMECOINS/.test(busy.text);
