@@ -62,6 +62,7 @@ let known: { address: string; assets: Assets } | null = null;
 async function walletAssets(wallet: Wallet): Promise<Assets> {
   if (!wallet.requestAssets) throw new Error("Bread is not connected");
   const assets = await withTimeout(wallet.requestAssets(), 30_000, "Reading your wallet's balance");
+  console.debug("[pub] wallet holds", assets.map((a) => `${a.amount} of ${a.faucetId}`).join(", "));
   known = { address: wallet.address!, assets };
   return assets;
 }

@@ -975,3 +975,8 @@ Caps: the TV spells USDCX (its faces are capitals); the rule says USDCx in prose
   read (KSN holds 0.000096 USDCx, too little for a buy, so the post path's arithmetic is unit-level only).
 - Records live 64 hours (Gaylord 2026-10-23; was 24). RECORD_LIFETIME_BLOCKS only; the rigged check still accepts the older 24-hour
   records, the note scripts carry no lifetime rule.
+- KSN check after Gaylord's top-up (2026-10-23): the post failed with the kernel's ERR_VAULT_FUNGIBLE_ASSET_AMOUNT_LESS_THAN_AMOUNT_TO_WITHDRAW
+  (code 644413868907058392, matched by hashing every 0.17.1 kernel error message with blake3): the fee. KSN held 1 GC and 96 base units of
+  USDCx; the sent USDCx never showed in its store (no consumable note at connect or on sync: a private note from Bread is invisible to it).
+  The game now says YOUR WALLET IS SHORT OF USDCX FOR THE FEE for that code (was THAT DID NOT WORK), and every wallet read logs the holdings
+  to the console ([pub] wallet holds).

@@ -144,6 +144,7 @@ describe("what the chain says before a claim", () => {
 describe("plain words for failures", () => {
   it("names the usual troubles and keeps the raw text", () => {
     expect(explain(new Error("User rejected the request")).kind).toBe("said-no");
+    expect(explain(new Error('failed to execute transaction kernel program: Diagnostic { message: "assertion failed with error code: 644413868907058392" }')).title).toMatch(/USDCx for the fee/);
     expect(explain(new Error("WalletNotConnectedError")).kind).toBe("no-wallet");
     expect(explain(new Error("You need 1 Gamecoin and your wallet holds 0 Gamecoins. Get Gamecoins first."))).toMatchObject({ kind: "funds", title: "Get a Gamecoin to challenge the record!" });
     expect(explain(new Error("You need 0.01 USDCx and your wallet holds 0 USDCx."))).toEqual({ kind: "refused", title: "You need 0.01 USDCx and your wallet holds 0 USDCx." }); // the shop's own words, no detail

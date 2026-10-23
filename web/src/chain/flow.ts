@@ -137,6 +137,7 @@ export function explain(e: unknown): Trouble {
   if (/deadline has passed|too late|is over/i.test(raw)) return trouble("too-late", "Too late: this one is over.");
   if (/not found on chain|is not public|not a record or shot|not Pick Up Boomers|Not found/i.test(raw)) return trouble("not-found", "No such record.", false); // the link is wrong or the record gone: nothing to copy for the player
   if (/course does not match/i.test(raw)) return trouble("refused", "This record is not from this game.");
+  if (raw.includes("644413868907058392")) return trouble("refused", "Your wallet is short of USDCx for the fee.", false); // the kernel's "less than the amount to remove": the stake is checked first, so it is the fee (KSN 2026-10-23)
   if (/assertion failed|error code/i.test(raw)) return trouble("refused", "That did not work.");
   if (/transaction expired/i.test(raw)) return trouble("network", "The network was slow this time. Try again."); // mainnet's fee asset caps every transaction at ~65 s after its reference block (GQ, 2026-10-22)
   if (/faucet/i.test(raw)) return trouble("network", "The test money faucet is down. Try again later."); // the local test wallet's fees on testnet
