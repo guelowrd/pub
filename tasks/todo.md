@@ -980,3 +980,6 @@ Caps: the TV spells USDCX (its faces are capitals); the rule says USDCx in prose
   USDCx; the sent USDCx never showed in its store (no consumable note at connect or on sync: a private note from Bread is invisible to it).
   The game now says YOUR WALLET IS SHORT OF USDCX FOR THE FEE for that code (was THAT DID NOT WORK), and every wallet read logs the holdings
   to the console ([pub] wallet holds).
+- Gaylord: "should be possible to take a shot at a record directly from the list". The CHALLENGE list's red key reads SHOT for the
+  highlighted record (unless it is mine) and fires the same shot as the opened record's key; ENTER still opens the record. Checked with
+  KSN: bought 1 GC, SHOT from the list → INSERTING YOUR GAMECOIN → the drive started, the wallet read 0 GC after.

@@ -185,14 +185,15 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     if (tuning) status = ["TUNING"];
   } else if (mode === "challenge") {
     heading = "CHALLENGE";
+    // SHOT: the Gamecoin in, the drive starts at once (Gaylord 2026-10-18: no PRESS DRIVE step, the shot window is six minutes)
+    const shoot = (r: ChallengeNote) => () => void chain?.shoot(r).then((x) => x && onShot(x.shots, x.record));
     if (review) {
       const r = review, mine = same(me, r.storage.champion), done = over(r);
       rev = { heading: done ? "RECORD OVER" : "CHALLENGE", label: `CHAMPION ${champion(r)}`, score: r.storage.target, line: mine ? "YOUR OWN RECORD" : "", song: songIn(r), left: done ? undefined : r.storage.expiryBlock - height };
       backdrop = previewOf(STATIONS[songIn(r)]);
-      // SHOT: the Gamecoin in, the drive starts at once (Gaylord 2026-10-18: no PRESS DRIVE step, the shot window is six minutes)
       if (done) { word = "try another"; go = () => setReview(null); } // an over record (by link, mostly): the key leads to the open ones, like BACK (Gaylord 2026-10-21)
       else if (!mine && chain?.balance != null && chain.balance < STAKE) { status = ["GET A GAMECOIN TO CHALLENGE THE RECORD!"]; word = "gamecoins"; go = openShop; } // known before SHOT (Gaylord 2026-10-23: why wait for the press)
-      else if (!mine) { word = "shot"; go = () => void chain?.shoot(r).then((x) => x && onShot(x.shots, x.record)); }
+      else if (!mine) { word = "shot"; go = shoot(r); }
     } else if (loading || opening) status = ["LOADING"];
     else if (me && chain!.balance != null && chain!.balance < STAKE) { status = ["GET A GAMECOIN TO CHALLENGE A RECORD!"]; word = "gamecoins"; go = openShop; } // the list waits behind the shop (Gaylord 2026-10-23: the pop-up on the CHALLENGE screen itself)
     else if (!records.length) status = ["NO CHALLENGES YET"];
@@ -203,6 +204,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       backdrop = previewOf(STATIONS[songIn(s)]); // the record's stage behind the list, dimmed (Gaylord 2026-10-19)
       footer = [cell(songOf(songIn(s)), TV.safe[0], TV.review.stageS, "cp", AMBER, false, undefined, TV.footer), cell("TIME LEFT", TV.count[0], Math.max(11, 14 * u), "cp", CYAN, true, undefined, TV.detail - 4 * u), cell(clock(s.storage.expiryBlock - height), TV.count[0], TV.review.expiryS, "mono", AMBER, true, undefined, TV.footer + 4 * u)];
       enter = () => setReview(s);
+      if (!same(me, s.storage.champion)) { word = "shot"; go = shoot(s); } // a shot straight from the list (Gaylord 2026-10-23); ENTER still opens the record
     }
   } else if (mode === "my-runs") {
     heading = "MY RUNS";
