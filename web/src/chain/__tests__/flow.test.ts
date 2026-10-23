@@ -145,7 +145,7 @@ describe("plain words for failures", () => {
   it("names the usual troubles and keeps the raw text", () => {
     expect(explain(new Error("User rejected the request")).kind).toBe("said-no");
     expect(explain(new Error("WalletNotConnectedError")).kind).toBe("no-wallet");
-    expect(explain(new Error("You need 1 Gamecoin and your wallet holds 0 Gamecoins. Get Gamecoins first."))).toMatchObject({ kind: "funds" });
+    expect(explain(new Error("You need 1 Gamecoin and your wallet holds 0 Gamecoins. Get Gamecoins first."))).toMatchObject({ kind: "funds", title: "Get a Gamecoin to challenge the record!" });
     expect(explain(new Error("You need 0.01 USDCx and your wallet holds 0 USDCx."))).toEqual({ kind: "refused", title: "You need 0.01 USDCx and your wallet holds 0 USDCx." }); // the shop's own words, no detail
     expect(explain(new Error("No Gamecoins on sale right now."))).toMatchObject({ kind: "refused" });
     expect(explain(new Error("WalletConnectionError: NETWORK_NOT_GRANTED"))).toEqual({ kind: "refused", title: "Make sure you're on Miden mainnet." }); // no detail: nothing to copy
@@ -228,6 +228,7 @@ describe("Gamecoin in words", () => {
   it("shows blocks as a clock at mainnet's 3.25 s a block", () => {
     expect(blocksToClock(20)).toBe("1:05");
     expect(blocksToClock(1200)).toBe("1:05:00");
+    expect(blocksToClock(3)).toBe("0:09"); // 9.75 s: whole seconds on the clock
     expect(blocksToClock(-5)).toBe("0:00");
   });
 });

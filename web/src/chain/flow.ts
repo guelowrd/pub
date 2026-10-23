@@ -93,6 +93,7 @@ export const pad = (v: number) => String(v).padStart(2, "0");
 
 /** m:ss, or h:mm:ss from an hour on. */
 export const secondsToClock = (s: number) => {
+  s = Math.floor(s); // blocks are 3.25 s on mainnet: TIME LEFT 11:51:9.25 otherwise
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
   return `${h ? `${h}:${pad(m)}` : m}:${pad(s % 60)}`;
@@ -127,7 +128,7 @@ export function explain(e: unknown): Trouble {
   if (/NOT_GRANTED|reject|declin|denied|cancel/i.test(raw)) return trouble("said-no", "You said no in your wallet. Nothing was sent.");
   if (/WalletNotReady|not installed/i.test(raw)) return trouble("no-wallet", "No Bread wallet found. Install it, then try again.");
   if (/WalletNotConnected|not connected|WalletDisconnected/i.test(raw)) return trouble("no-wallet", "Connect your wallet first.");
-  if (/^(\w+: )?You need .*Gamecoin/.test(raw)) return trouble("funds", "Not enough Gamecoins in your wallet. Get Gamecoins first.");
+  if (/^(\w+: )?You need .*Gamecoin/.test(raw)) return trouble("funds", "Get a Gamecoin to challenge the record!", false); // shown on the TV after SHOT; the results screen shows its shop instead (Gaylord 2026-10-23)
   if (/^(\w+: )?You need .*USDCx|on sale right now/.test(raw)) return trouble("refused", raw.replace(/^\w+: /, ""), false); // the shop's own words
   if (/SummaryAnchorMismatch|chain anchor|ChainBehindBoundBlock|block header for block \d+ not found/i.test(raw))
     return trouble("out-of-step", "Your wallet was not ready. Try again.");
