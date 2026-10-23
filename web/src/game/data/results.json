@@ -9,7 +9,7 @@
   },
   "portrait": {
     "canvas": [390, 844], "origin": [10, 12], "size": [370, 820],
-    "title": [18, 38, 20], "score": [18, 111, 72, 330], "best": [18, 134, 14, "left"],
+    "title": [18, 38, 20], "score": [18, 104, 72, 330], "best": [18, 127, 12, "left"],
     "stats": { "labels": [[71, 156], [185, 156], [299, 156]], "labelSize": 12, "labelAlign": "center", "split": true, "values": [[71, 203], [185, 203], [299, 203]], "valueSize": 23, "valueAlign": "center" },
     "riders": { "head": [26, 267, 14], "origin": [26, 280], "pitch": [164, 44], "cols": 2, "rows": 4, "face": 36, "age": [44, 14, 12], "pts": [44, 32, 16] },
     "post": { "head": [28, 508, 18], "status": [28, 544, 16, 314, 44] },

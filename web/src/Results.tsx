@@ -119,7 +119,8 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
   // the status lines shrink to fit the well's width and the room above the key (the terms are three lines); on desktop the
   // action key sits beside them, as tall as the well
   const lines = status ? status.split("\n") : [], [, sb, size0, sw, room] = G.post.status;
-  const statusSize = Math.max(7, Math.min(size0, sw / (Math.max(1, ...lines.map((l) => l.length)) * 0.54), room / (Math.max(1, lines.length) * 1.25)));
+  const flow = layout === "landscape" && status === TERMS; // on a landscape phone the terms reflow across the well at 11 px, four lines where the three written ones would read at 9 px
+  const statusSize = flow ? 11 : Math.max(7, Math.min(size0, sw / (Math.max(1, ...lines.map((l) => l.length)) * 0.54), room / (Math.max(1, lines.length) * 1.25)));
   const statusTop = sb - baselineEm("Share Tech Mono") * statusSize;
   const well = (G.post as { well?: number[] }).well; // desktop and landscape: the key stands beside the terms and fills the well
   if (well) for (const k of keys) if (k.kind === "post") k.rect = [k.rect[0], well[0] + (layout === "desktop" ? 12 : 0), k.rect[2], well[1] - (layout === "desktop" ? 24 : 0)];
@@ -151,7 +152,7 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
           ];
         })}
         {text(heading, G.post.head[0], G.post.head[1], G.post.head[2], color)}
-        {status && <span className="hu-text hu-mono rs-status" style={{ left: px(G.post.status[0]), width: px(G.post.status[3]), top: px(statusTop), fontSize: px(statusSize), color: MUTED }}>{status}</span>}
+        {status && <span className="hu-text hu-mono rs-status" style={{ left: px(G.post.status[0]), width: px(G.post.status[3]), top: px(statusTop), fontSize: px(statusSize), color: MUTED, whiteSpace: flow ? "normal" : undefined }}>{flow ? status.replace(/\n/g, " ") : status}</span>}
         {picker && (
           <span className="rs-pick" style={{ left: px(G.post.status[0]), width: px(G.post.status[3]), top: px(statusTop + statusSize * 1.6), fontSize: px(Math.min(statusSize * 1.4, sw / ((pick.length + 6) * 0.54))) }}>{/* bigger than the terms where the well allows (desktop, portrait), the label plus its two chevrons across the well where it does not (landscape) */}
             <button aria-label="FEWER" disabled={qty === 0} onClick={() => setQty(qty - 1)}>{"<"}</button>
