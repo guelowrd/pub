@@ -953,3 +953,6 @@ Caps: the TV spells USDCX (its faces are capitals); the rule says USDCx in prose
 - Backdrops (2026-10-23, Gaylord: "dimmed too much" on the night paintings): DIM_TO 0.045 -> 0.08. A per-painting floor of 40% (his pick 2)
   would have lifted the midday paintings from 9% to 40% brightness while the night ones went 24% -> 40%; the 8% target gives the night ones
   the same lift (factor 0.43-0.5) and midday only 9% -> 16%. Checked on the darkest and the brightest painting, desktop + both phones: text reads.
+
+## Bread Explore catalog (2026-10-23)
+- PR https://github.com/0xMiden/wallet-explore/pull/6 adds Pick Up Boomers to mainnet.json (id pick-up-boomers, games, tagline from the site's meta description cut to 113 chars, brandColor #080c24, icon = icon-512 resized to 256 and quantised to 256 colours, 16 KiB). Same shape as GQ's PR #5 (games list section, version 1 -> 2); whichever merges second needs a one-line version rebase. Catalog validate passed on the PR. Local clone: ~/Code/wallet-explore, fork remote guelowrd/wallet-explore.
