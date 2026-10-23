@@ -144,3 +144,6 @@ error stays out: there is nothing for them to copy to me. Keep the raw detail fo
 
 ## `tsc --noEmit -p .` checks nothing here (2026-10-23)
 web/tsconfig.json only holds project references, so `tsc -p .` is a no-op and said "ok" over a HeadUnit.tsx missing a brace (a `//` comment I had pasted into a one-line function swallowed its tail). The type check is `npx tsc -b` in web/ (what `npm run build` runs). Never append a `//` comment inside a one-line block.
+
+## Deploy check: grep the chunk, not just index (2026-10-23)
+The live bundle splits: flow.ts lands in `assets/hub-*.js`, so a marker string from it is never in `assets/index-*.js`. A "not live after 10 min" from the watcher was a false alarm while Vercel said success. Watch the index hash for a new deploy, then grep the marker across every chunk the index names.
