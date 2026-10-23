@@ -247,7 +247,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     const bestScore = Number(stored("pub.best") ?? 0), b = chain?.balance ?? null;
     // BALANCE carries the one thing to do with it: claim what is owed, or get more when down to 1 or less (Gaylord 2026-10-19)
     const balance: [string, string, (() => void)?] = b == null ? ["BALANCE", "TAP ENTER TO READ", () => void chain?.readBalance()] // Bread asks the player on every asset read, so the row waits for ENTER (Gaylord 2026-10-21: a pop-up on arrival)
-      : owed.length ? ["BALANCE", `${gc(b)}. TAP ENTER TO CLAIM`, () => void chain?.collect(owed).then((ok) => { if (ok) { flash("COINS RECEIVED"); void chain.readBalance(); } })]
+      : owed.length ? ["BALANCE", `${gc(b)}. TAP ENTER TO CLAIM`, () => void chain?.collect(owed).then((ok) => ok && flash("COINS RECEIVED"))]
       : b <= STAKE ? ["BALANCE", `${gc(b)}. TAP ENTER TO GET MORE`, openShop]
       : ["BALANCE", gc(b), () => void chain?.readBalance()];
     kv([
@@ -308,7 +308,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const goMode = (m: Mode) => { setMode(m); setReview(null); setOpened(null); setBoard(null); setShop(null); clearNote(); chain?.dismiss(); };
   /** a note for five seconds, then the track */
   const flash = (t: string) => { clearNote(); setNote(t); setNoteUntil(Date.now() + 5000); noteTimer.current = window.setTimeout(() => goMode("solo"), 5000); };
-  const back = () => { if (trouble) return chain?.dismiss(); if (pop) return setOwedPop(false); if (note) return clearNote(); if (shop !== null) { setShop(null); return void chain?.readBalance(); } if (review) return setReview(null); if (board) return setBoard(null); setOpened(null); };
+  const back = () => { if (trouble) return chain?.dismiss(); if (pop) return setOwedPop(false); if (note) return clearNote(); if (shop !== null) return setShop(null); if (review) return setReview(null); if (board) return setBoard(null); setOpened(null); };
   const stepTo = (d: number) => { if (shop !== null) return setShop((s) => Math.max(0, Math.min(QUANTITIES.length - 1, (s ?? 0) + d))); if (mode === "solo") return setStation((station + d + STATIONS.length) % STATIONS.length); if (total) setCursor({ ...cursor, [cursorKey]: Math.max(0, Math.min(total - 1, at + d)) }); };
   const act = (id: string, half?: 0 | 1) => {
     if (!on(id)) return;

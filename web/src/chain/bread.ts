@@ -55,10 +55,25 @@ function breadBuilder(boundBlock: number, feeFaucet: AccountId): TransactionRequ
 
 type Assets = Awaited<ReturnType<NonNullable<Wallet["requestAssets"]>>>;
 
-/** The wallet's own view of what it holds. */
+/** What the wallet held at its last read, the transactions since applied. Every read is a Bread sheet, so a post, a shot or a buy checks this instead of asking again. */
+let known: { address: string; assets: Assets } | null = null;
+
+/** The wallet's own view of what it holds, read now. */
 async function walletAssets(wallet: Wallet): Promise<Assets> {
   if (!wallet.requestAssets) throw new Error("Bread is not connected");
-  return withTimeout(wallet.requestAssets(), 30_000, "Reading your wallet's balance");
+  const assets = await withTimeout(wallet.requestAssets(), 30_000, "Reading your wallet's balance");
+  known = { address: wallet.address!, assets };
+  return assets;
+}
+
+/** The last read of this wallet, or a read now when there is none. */
+const knownAssets = (wallet: Wallet): Promise<Assets> => (known?.address === wallet.address ? Promise.resolve(known.assets) : walletAssets(wallet));
+
+/** A submitted transaction moved `delta` of `faucet` (negative: out): the known holdings follow without a read. */
+function moved(faucet: string, delta: bigint) {
+  if (!known) return;
+  known.assets = [...known.assets, { faucetId: faucet, amount: delta.toString() }];
+  if (AccountId.fromHex(faucet).toString() === AccountId.fromHex(GC_FAUCET).toString()) onBalance(balanceOf(known.assets, GC_FAUCET));
 }
 
 function balanceOf(assets: Assets, faucet: string): bigint {
@@ -79,7 +94,7 @@ export async function gcBalance(wallet: Wallet): Promise<bigint> {
 
 /** Throws a readable error (flow.ts explain) when the wallet holds less than `needed` Gamecoin. */
 async function requireGc(wallet: Wallet, needed: bigint): Promise<void> {
-  const balance = await gcBalance(wallet);
+  const balance = balanceOf(await knownAssets(wallet), GC_FAUCET);
   if (balance < needed) throw new Error(`You need ${fmtGamecoin(needed)} and your wallet holds ${fmtGamecoin(balance)}. Get Gamecoins first.`);
 }
 
@@ -174,6 +189,7 @@ export async function postRecord(client: Client, wallet: Wallet, storage: Challe
     notes.push(make());
     return b.withOwnOutputNotes(notes).build();
   });
+  moved(GC_FAUCET, -amount);
   return { txId, noteIds: [noteId] };
 }
 
@@ -195,6 +211,7 @@ export async function postShot(client: Client, wallet: Wallet, record: Challenge
     notes.push(make());
     return b.withOwnOutputNotes(notes).build();
   });
+  moved(record.faucet, -record.storage.minStake);
   return { txId, noteIds: [noteId], deadline };
 }
 
@@ -225,14 +242,16 @@ export async function settle(client: Client, wallet: Wallet, shots: ChallengeNot
     return b.extendAdviceMap(advice).build();
   };
   onPending({ txId: "", noteIds: ids });
-  return { txId: await submit(client, wallet, build, ids, files), noteIds: ids };
+  const txId = await submit(client, wallet, build, ids, files);
+  for (const n of [...(record ? [record] : []), ...shots]) moved(n.faucet, n.amount); // a settled win takes every note in
+  return { txId, noteIds: ids };
 }
 
 /** Champion after expiry: reclaim records and collect lost shots' stakes, all in one transaction. */
 /** Player: buy `gc` Gamecoin (base units) from `sale`, paying its price in the pay asset (shop.ts payFor). */
 export async function buyGamecoin(client: Client, wallet: Wallet, sale: Sale, gc: bigint): Promise<Submitted> {
   const pay = payFor(gc, sale);
-  const held = balanceOf(await walletAssets(wallet), sale.payFaucet);
+  const held = balanceOf(await knownAssets(wallet), sale.payFaucet);
   if (held < pay) throw new Error(`You need ${fmtPay(pay)} and your wallet holds ${fmtPay(held)}.`);
   const { files } = await fetchNotesWithProof([sale.id]);
   const txId = await submit(
@@ -246,6 +265,7 @@ export async function buyGamecoin(client: Client, wallet: Wallet, sale: Sale, gc
     [sale.id],
     files,
   );
+  known = null; // the Gamecoins arrive as a note the wallet still has to take: the next check reads
   return { txId, noteIds: [sale.id] };
 }
 
@@ -258,6 +278,8 @@ export async function collect(client: Client, wallet: Wallet, notes: ChallengeNo
     return b.build();
   };
   onPending({ txId: "", noteIds: ids });
-  return { txId: await submit(client, wallet, build, ids, files), noteIds: ids };
+  const txId = await submit(client, wallet, build, ids, files);
+  for (const n of notes) moved(n.faucet, n.amount);
+  return { txId, noteIds: ids };
 }
 

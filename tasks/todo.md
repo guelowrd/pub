@@ -963,3 +963,15 @@ Caps: the TV spells USDCX (its faces are capitals); the rule says USDCx in prose
 - Key instructions read action-first (Gaylord): TAP THE RED KEY TO GET SOME, TAP ENTER TO READ / CLAIM / GET MORE, TAP DRIVE.
 - Gaylord: "EXCEPTIONALLY lets make the screen clickable for the gamecoin number selection": a 100u x 140u hit over each chevron of the GET GAMECOINS box steps the quantity (FEWER / MORE, disabled at the ends); the only place the tube answers a tap. PREV, NEXT and the arrow keys still step.
 - Gaylord: "Still nothing when i go on CHALLENGE screen!" The pop-up now sits on the CHALLENGE list itself (GET A GAMECOIN TO CHALLENGE A RECORD!, red key GAMECOINS), and arriving on CHALLENGE reads the balance when nothing has yet, so Bread users get it too (one asset read, granted on the connect sheet). The opened-record and after-SHOT pop-ups stay as fallbacks. Checked with KSN at 0 GC.
+
+## Fewer Bread sheets, 64-hour records (2026-10-23)
+- Gaylord: "minimize the number of popups from bread, it happens quite often to have to click on 2 popups in a row". Every wallet-adapter
+  request is a sheet, reads included. Inventory before: connect + read (2), post = read + sign (2), shot = read + sign (2), buy = read + sign
+  + the BACK re-read (3), collect = sign + read (2). Now bread.ts keeps the last asset read per address and applies every submitted
+  transaction to it (post and shot take the stake out, a settled win and a collect take the notes' coins in), so a post, a shot, a collect
+  and a buy's funds check cost one sheet each; a buy forgets the holdings (the coins arrive as a note Bread still has to take), so the
+  next check reads once. Reads left: connect (on the connect sheet when Bread honours Auto + Assets, else one sheet), CHALLENGE arrival with
+  nothing known, ENTER on the WALLET row. Checked with KSN: the connect read, then a refused buy's line from the kept holdings with no new
+  read (KSN holds 0.000096 USDCx, too little for a buy, so the post path's arithmetic is unit-level only).
+- Records live 64 hours (Gaylord 2026-10-23; was 24). RECORD_LIFETIME_BLOCKS only; the rigged check still accepts the older 24-hour
+  records, the note scripts carry no lifetime rule.

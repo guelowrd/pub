@@ -19,8 +19,8 @@ export const QUANTITIES = [1, 2, 5, 10, 20, 50, 100];
 export const STAKE = 1_000_000n; // 1 GC
 // Mainnet makes a block about every 3.25 s, testnet every 3 s.
 export const BLOCK_SECONDS = MAINNET ? 3.25 : 3;
-// A record stays open about a day.
-export const RECORD_LIFETIME_BLOCKS = Math.round((24 * 3600) / BLOCK_SECONDS);
+// A record stays open 64 hours (Gaylord 2026-10-23: a day was short).
+export const RECORD_LIFETIME_BLOCKS = Math.round((64 * 3600) / BLOCK_SECONDS);
 // A shot must be settled within one drive (3 min) plus the wallet: 6 min. One shot is one drive (Gaylord, 2026-10-18: a
 // rival never gets two drives for one Gamecoin); a claim that misses the window is a lost shot.
 export const SHOT_WINDOW_BLOCKS = Math.round((6 * 60) / BLOCK_SECONDS);

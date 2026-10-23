@@ -29,7 +29,7 @@ export function shotRefusal(record: ChallengeNote, height: number, me?: AccountF
   if (sameAccount(me, record.storage.champion)) return "This one is yours.";
   if (record.storage.expiryBlock - height < MIN_SHOT_WINDOW_BLOCKS) return "Too late for this one.";
   const { target, minStake, expiryBlock } = record.storage;
-  // terms this game never writes: an unbeatable target, another stake, a record that outlives its day
+  // terms this game never writes: an unbeatable target, another stake, a record that outlives the lifetime
   if (target >= SCORE_MAX || minStake !== STAKE || expiryBlock > height + RECORD_LIFETIME_BLOCKS) return "This one is rigged.";
   return null;
 }
