@@ -431,6 +431,8 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
                     <svg className="gp-box" viewBox={`0 0 ${w} ${h}`} style={box([cx - w / 2, top, w, h])}><rect x="2" y="2" width={w - 4} height={h - 4} rx={6 * u} /></svg>
                     {arrow(-1, shop === 0)}
                     {arrow(1, shop === QUANTITIES.length - 1)}
+                    {/* the one place the tube itself answers a tap (Gaylord 2026-10-23): a wide hit over each chevron, PREV and NEXT still step */}
+                    {([-1, 1] as const).map((dir) => <button key={dir} className="hit" aria-label={dir < 0 ? "FEWER" : "MORE"} disabled={dir < 0 ? shop === 0 : shop === QUANTITIES.length - 1} onClick={() => stepTo(dir)} style={box([cx + dir * chev - 50 * u, top - 10 * u, 100 * u, h + 20 * u])} />)}
                     <span className="gp-text gp-mono" style={{ left: px(cx - w / 2), width: px(w), textAlign: "center", top: px(top + h / 2 + 32 * u - baselineEm(FAMILY.mono) * 88 * u * K.mono), fontSize: px(88 * u * K.mono), color: AMBER }}>{qty}</span>
                     <span className="gp-text gp-cp" style={{ left: 0, width: px(TV.size[0]), textAlign: "center", top: px(top + h + 40 * u - baselineEm(FAMILY.cp) * 24 * u), fontSize: px(24 * u), color: CYAN }}>{qty === 1 ? "GAMECOIN" : "GAMECOINS"}</span>
                     <span className="gp-text gp-mono" style={{ left: 0, width: px(TV.size[0]), textAlign: "center", top: px(top + h + 78 * u - baselineEm(FAMILY.mono) * 26 * u * K.mono), fontSize: px(26 * u * K.mono), color: WHITE }}>{`FOR ${fmtPay(BigInt(qty) * GC_PRICE).toUpperCase()}`}</span>
