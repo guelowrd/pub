@@ -147,7 +147,7 @@ describe("plain words for failures", () => {
     expect(explain(new Error("WalletNotConnectedError")).kind).toBe("no-wallet");
     expect(explain(new Error("You need 1 Gamecoin and your wallet holds 0 Gamecoins. Get Gamecoins first."))).toMatchObject({ kind: "funds" });
     expect(explain(new Error("You need 0.01 USDCx and your wallet holds 0 USDCx."))).toEqual({ kind: "refused", title: "You need 0.01 USDCx and your wallet holds 0 USDCx." }); // the shop's own words, no detail
-    expect(explain(new Error("No Gamecoins on sale right now. Try again later."))).toMatchObject({ kind: "refused" });
+    expect(explain(new Error("No Gamecoins on sale right now."))).toMatchObject({ kind: "refused" });
     expect(explain(new Error("WalletConnectionError: NETWORK_NOT_GRANTED"))).toMatchObject({ kind: "refused", title: "Your wallet is on another network." });
     expect(explain(new Error("transaction expired at block 5"))).toMatchObject({ kind: "network", title: "The network was slow this time. Try again." });
     expect(explain(Object.assign(new Error("the Miden client synced to block 1"), { name: "ChainBehindBoundBlockError" })).kind).toBe("out-of-step");

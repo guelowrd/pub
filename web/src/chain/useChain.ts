@@ -258,7 +258,7 @@ export function useChain(): ChainApi {
       if (!client) throw new Error("client not ready");
       const me = parseAccountId(walletRef.current.address!).toString();
       const sale = pickSale(await openSales((await client.feeFaucetId()).toString()), gc, me);
-      if (!sale) throw new Error("No Gamecoins on sale right now. Try again later.");
+      if (!sale) throw new Error("No Gamecoins on sale right now."); // the red key says TRY AGAIN (Gaylord 2026-10-23)
       return buyGamecoin(client, walletRef.current, sale, gc);
     });
     if (!submitted) return null;
