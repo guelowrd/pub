@@ -136,3 +136,8 @@ Three deployments failed in a row (3a9ca35, 211e8b8, 2a5b615) on a shadowed impo
 ## "The best score" on a board is rank one, not my row (2026-10-21)
 - Gaylord asked for the best score as the first line of every board page; I pinned the connected wallet's own row and shipped it. On a leaderboard "the best score" means the number one.
 - Rule: when a request names a board value, read it as the board's own value first; my own standing is only ever "my row" or "my standing". When two readings differ this much, show both in one line before building.
+
+## A trouble line tells the player what to do (2026-10-23)
+"YOUR WALLET IS ON ANOTHER NETWORK" with the raw error under it was rejected: Gaylord wanted MAKE SURE YOU'RE ON MIDEN MAINNET.
+When the fix is on the player's side (a wallet setting, a missing coin), the heading names the fix, not the state, and the raw
+error stays out: there is nothing for them to copy to me. Keep the raw detail for failures I need to see.

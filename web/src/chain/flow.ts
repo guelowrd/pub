@@ -4,7 +4,7 @@
 import type { ChallengeNote } from "./chain";
 import { noteDeadline, ZERO_WORD, type AccountFelts, type ChallengeStorage, type Word4 } from "./notes";
 import { playable } from "./game";
-import { BLOCK_SECONDS, CLAIM_FUZZ, GC_DECIMALS, GC_FAUCET, MIN_SHOT_WINDOW_BLOCKS, RECORD_LIFETIME_BLOCKS, SCORE_MAX, SHOT_DRIVE_BLOCKS, STAKE } from "./config";
+import { BLOCK_SECONDS, CLAIM_FUZZ, GC_DECIMALS, GC_FAUCET, MIN_SHOT_WINDOW_BLOCKS, RECORD_LIFETIME_BLOCKS, SCORE_MAX, SHOT_DRIVE_BLOCKS, STAKE, MAINNET } from "./config";
 
 export const sameAccount = (a: AccountFelts | null | undefined, b: AccountFelts | null | undefined) =>
   !!a && !!b && a.suffix === b.suffix && a.prefix === b.prefix;
@@ -123,7 +123,7 @@ export function explain(e: unknown): Trouble {
   if (raw.includes(NOT_FINISHED)) return trouble("not-finished", NOT_FINISHED, false);
   if (raw.includes(WALLET_SILENT)) return trouble("not-finished", WALLET_SILENT, false);
   if (raw.includes(SHOT_LOST)) return trouble("too-late", SHOT_LOST, false);
-  if (/NETWORK_NOT_GRANTED/.test(raw)) return trouble("refused", "Your wallet is on another network.");
+  if (/NETWORK_NOT_GRANTED/.test(raw)) return trouble("refused", `Make sure you're on Miden ${MAINNET ? "mainnet" : "testnet"}.`, false); // Bread on the other network (Gaylord 2026-10-23: say which one, no raw error)
   if (/NOT_GRANTED|reject|declin|denied|cancel/i.test(raw)) return trouble("said-no", "You said no in your wallet. Nothing was sent.");
   if (/WalletNotReady|not installed/i.test(raw)) return trouble("no-wallet", "No Bread wallet found. Install it, then try again.");
   if (/WalletNotConnected|not connected|WalletDisconnected/i.test(raw)) return trouble("no-wallet", "Connect your wallet first.");

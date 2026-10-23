@@ -945,3 +945,8 @@ wallet; order = switch, mainnet round, push, then the screen audit resumes at 9/
 - [x] Gaylord's half from Bread (2026-10-23): the claim done and the challenge seen ("looks all good")
 - [x] pushed 61baf20 + fb3c77c on "push" (Vercel: no env var needed); next = screen 9/33 on the new copy
 Caps: the TV spells USDCX (its faces are capitals); the rule says USDCx in prose, flagged to Gaylord.
+
+## Screen 9/33 on mainnet copy (2026-10-23)
+- Results NEED GAMECOINS = "A POST COSTS 1 GAMECOIN." + the picker + BUY: accepted as built; landscape picker 12 px left as is.
+- A failed buy: "NO GAMECOINS ON SALE RIGHT NOW." alone, the lit red key TRY AGAIN (Gaylord). Pushed e2d34d2.
+- Bread on the other network: MAKE SURE YOU'RE ON MIDEN MAINNET alone (Gaylord 2026-10-23, on seeing "YOUR WALLET IS ON ANOTHER NETWORK" + the raw error on the live site). The collect from Bread is still to be done after switching.
