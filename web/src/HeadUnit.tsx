@@ -190,6 +190,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       backdrop = previewOf(STATIONS[songIn(r)]);
       // SHOT: the Gamecoin in, the drive starts at once (Gaylord 2026-10-18: no PRESS DRIVE step, the shot window is six minutes)
       if (done) { word = "try another"; go = () => setReview(null); } // an over record (by link, mostly): the key leads to the open ones, like BACK (Gaylord 2026-10-21)
+      else if (!mine && chain?.balance != null && chain.balance < STAKE) { status = ["GET A GAMECOIN TO CHALLENGE THE RECORD!"]; word = "gamecoins"; go = openShop; } // known before SHOT (Gaylord 2026-10-23: why wait for the press)
       else if (!mine) { word = "shot"; go = () => void chain?.shoot(r).then((x) => x && onShot(x.shots, x.record)); }
     } else if (loading || opening) status = ["LOADING"];
     else if (!records.length) status = ["NO CHALLENGES YET"];
@@ -206,12 +207,12 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     const o = opened ? runs.find((r) => r.key === opened) : null;
     if (!me) { status = [noBread ? "NO BREAD WALLET" : chain?.connecting ? chain.walletStatus || "CONNECTING" : "CONNECT YOUR WALLET"]; if (noBread) { word = "get bread"; go = getBread; } else if (!chain?.connecting && chain?.installed) { word = "connect"; go = () => void chain.connect(); } }
     else if (o) {
-      rev = { heading: o.word === "drive" ? "SHOT READY" : o.kind === "record" ? "MY RECORD" : "MY SHOT", label: o.label, score: o.score, line: o.word === "drive" ? "PRESS DRIVE" : o.line, tone: o.tone, song: o.song, left: o.deadline };
+      rev = { heading: o.word === "drive" ? "SHOT READY" : o.kind === "record" ? "MY RECORD" : "MY SHOT", label: o.label, score: o.score, line: o.word === "drive" ? "TAP DRIVE" : o.line, tone: o.tone, song: o.song, left: o.deadline };
       backdrop = previewOf(STATIONS[o.song]);
       if (o.word === "collect") { word = "collect"; go = () => void chain?.collect(owed).then((ok) => ok && flash("COINS RECEIVED")); } // everything owed, one transaction
       else if (o.word === "drive") { word = "drive"; go = () => onShot(o.shots!, o.record!); }
     } else if (loading) status = ["LOADING"];
-    else if (!runs.length) { status = ["NO RUNS YET", "A POST COSTS 1 GAMECOIN. GET SOME WITH THE RED KEY"]; word = "gamecoins"; go = openShop; }
+    else if (!runs.length) { status = ["NO RUNS YET", "A POST COSTS 1 GAMECOIN. TAP THE RED KEY TO GET SOME"]; word = "gamecoins"; go = openShop; }
     else {
       list(runs.length); count = `${runs.length} RUNS`;
       rows = runs.map((r, i) => ({ key: r.key, cells: [cell(r.kind.toUpperCase(), C["my-runs"].type, C["my-runs"].typeS, "cp", i === at ? AMBER : WHITE), cell(score(r.score), C["my-runs"].scoreR, C["my-runs"].scoreS, "mono", AMBER, true), cell(r.state, C["my-runs"].stateR, C["my-runs"].stateS, "cp", i === at ? AMBER : TONE[r.state] ?? WHITE, true)] }));
@@ -243,9 +244,9 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     const connect = noBread ? getBread : !me && chain?.installed && !chain.connecting ? () => void chain.connect() : undefined; // the red key and ENTER on STATUS, until connected
     const bestScore = Number(stored("pub.best") ?? 0), b = chain?.balance ?? null;
     // BALANCE carries the one thing to do with it: claim what is owed, or get more when down to 1 or less (Gaylord 2026-10-19)
-    const balance: [string, string, (() => void)?] = b == null ? ["BALANCE", "ENTER TO READ", () => void chain?.readBalance()] // Bread asks the player on every asset read, so the row waits for ENTER (Gaylord 2026-10-21: a pop-up on arrival)
-      : owed.length ? ["BALANCE", `${gc(b)}. ENTER TO CLAIM`, () => void chain?.collect(owed).then((ok) => { if (ok) { flash("COINS RECEIVED"); void chain.readBalance(); } })]
-      : b <= STAKE ? ["BALANCE", `${gc(b)}. ENTER TO GET MORE`, openShop]
+    const balance: [string, string, (() => void)?] = b == null ? ["BALANCE", "TAP ENTER TO READ", () => void chain?.readBalance()] // Bread asks the player on every asset read, so the row waits for ENTER (Gaylord 2026-10-21: a pop-up on arrival)
+      : owed.length ? ["BALANCE", `${gc(b)}. TAP ENTER TO CLAIM`, () => void chain?.collect(owed).then((ok) => { if (ok) { flash("COINS RECEIVED"); void chain.readBalance(); } })]
+      : b <= STAKE ? ["BALANCE", `${gc(b)}. TAP ENTER TO GET MORE`, openShop]
       : ["BALANCE", gc(b), () => void chain?.readBalance()];
     kv([
       ["STATUS", !chain?.installed ? "NO BREAD WALLET" : me ? "CONNECTED" : chain.connecting ? chain.walletStatus || "CONNECTING" : "NOT CONNECTED", connect],
@@ -305,7 +306,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const goMode = (m: Mode) => { setMode(m); setReview(null); setOpened(null); setBoard(null); setShop(null); clearNote(); chain?.dismiss(); };
   /** a note for five seconds, then the track */
   const flash = (t: string) => { clearNote(); setNote(t); setNoteUntil(Date.now() + 5000); noteTimer.current = window.setTimeout(() => goMode("solo"), 5000); };
-  const back = () => { if (trouble) return chain?.dismiss(); if (pop) return setOwedPop(false); if (note) return clearNote(); if (shop !== null) return setShop(null); if (review) return setReview(null); if (board) return setBoard(null); setOpened(null); };
+  const back = () => { if (trouble) return chain?.dismiss(); if (pop) return setOwedPop(false); if (note) return clearNote(); if (shop !== null) { setShop(null); return void chain?.readBalance(); } if (review) return setReview(null); if (board) return setBoard(null); setOpened(null); };
   const stepTo = (d: number) => { if (shop !== null) return setShop((s) => Math.max(0, Math.min(QUANTITIES.length - 1, (s ?? 0) + d))); if (mode === "solo") return setStation((station + d + STATIONS.length) % STATIONS.length); if (total) setCursor({ ...cursor, [cursorKey]: Math.max(0, Math.min(total - 1, at + d)) }); };
   const act = (id: string, half?: 0 | 1) => {
     if (!on(id)) return;

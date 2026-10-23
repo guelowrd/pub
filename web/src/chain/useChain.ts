@@ -114,8 +114,8 @@ export function useChain(): ChainApi {
     return () => clearInterval(timer);
   }, [isReady, refresh]);
 
-  // Bread opens a popup for every asset read (it asks before sharing them): read on the player's request only; the
-  // local test wallet has no popup, so it reads on its own. Every read (a post's check included) lands in `balance`.
+  // Asset reads are granted on Bread's connect sheet (providers.tsx), so the balance is read as soon as a wallet connects
+  // and the shop can be offered before SHOT. Every read (a post's check included) lands in `balance`.
   useEffect(() => { setBalanceListener(setBalance); }, []);
   const readBalance = useCallback(async () => {
     if (!walletRef.current.connected) return setBalance(null);
@@ -125,7 +125,7 @@ export function useChain(): ChainApi {
       console.warn("[pub] balance", e);
     }
   }, []);
-  useEffect(() => { if (LOCAL_WALLET) void readBalance(); else setBalance(null); }, [address, readBalance]);
+  useEffect(() => { void readBalance(); }, [address, readBalance]);
 
   // arcade names for everyone who played, in the order they first did; a newcomer comes last
   const names = useMemo(() => {

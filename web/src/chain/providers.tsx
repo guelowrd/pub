@@ -1,7 +1,7 @@
 import { type ReactNode, useState } from "react";
 import { MidenProvider } from "@miden-sdk/react";
 import { MidenFiSignerProvider } from "@miden-sdk/miden-wallet-adapter-react";
-import { WalletAdapterNetwork } from "@miden-sdk/miden-wallet-adapter-base";
+import { AllowedPrivateData, PrivateDataPermission, WalletAdapterNetwork } from "@miden-sdk/miden-wallet-adapter-base";
 import { APP_NAME, MAINNET, MIDEN_RPC_URL, MIDEN_PROVER } from "./config";
 
 // MidenProvider sits outside the signer provider: with a signer above it, it would wait for the
@@ -22,6 +22,9 @@ export function AppProviders({ children, autoConnect }: { children: ReactNode; a
         // the adapter's enum stops at testnet; Bread reads the string and only warns when its own network differs
         network={MAINNET ? ("mainnet" as WalletAdapterNetwork) : WalletAdapterNetwork.Testnet}
         autoConnect={autoConnect && !refused}
+        // asset reads granted on the connect sheet itself: the balance is known before the player presses SHOT (Gaylord 2026-10-23)
+        privateDataPermission={PrivateDataPermission.Auto}
+        allowedPrivateData={AllowedPrivateData.Assets}
         onError={(e) => {
           if (e.name === "WalletConnectionError") setRefused(true);
           console.error(e);

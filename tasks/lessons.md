@@ -141,3 +141,6 @@ Three deployments failed in a row (3a9ca35, 211e8b8, 2a5b615) on a shadowed impo
 "YOUR WALLET IS ON ANOTHER NETWORK" with the raw error under it was rejected: Gaylord wanted MAKE SURE YOU'RE ON MIDEN MAINNET.
 When the fix is on the player's side (a wallet setting, a missing coin), the heading names the fix, not the state, and the raw
 error stays out: there is nothing for them to copy to me. Keep the raw detail for failures I need to see.
+
+## `tsc --noEmit -p .` checks nothing here (2026-10-23)
+web/tsconfig.json only holds project references, so `tsc -p .` is a no-op and said "ok" over a HeadUnit.tsx missing a brace (a `//` comment I had pasted into a one-line function swallowed its tail). The type check is `npx tsc -b` in web/ (what `npm run build` runs). Never append a `//` comment inside a one-line block.
