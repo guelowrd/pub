@@ -136,6 +136,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   useEffect(() => { if (mode !== "system") return; setHealth(null); fetch("/api/status").then((r) => r.json()).then(setHealth, () => setHealth({})); }, [mode]);
 
   const me = chain?.me ?? null, height = chain?.height ?? 0, notes = chain?.notes ?? [], busy = chain?.busy ?? null, trouble = chain?.trouble ?? null;
+  useEffect(() => { if (mode === "challenge" && me && chain && chain.balance == null) void chain.readBalance(); }, [mode, me]); // eslint-disable-line react-hooks/exhaustive-deps -- CHALLENGE needs the balance known: read it on arrival when nothing has yet
   const loading = !chain?.ready || !chain.notesRead;
   const champion = (n: ChallengeNote) => chain?.nameOf(n.storage.champion) ?? "???";
   const rival = (n: ChallengeNote) => (n.storage.rival && chain?.nameOf(n.storage.rival)) ?? "???";
@@ -193,6 +194,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       else if (!mine && chain?.balance != null && chain.balance < STAKE) { status = ["GET A GAMECOIN TO CHALLENGE THE RECORD!"]; word = "gamecoins"; go = openShop; } // known before SHOT (Gaylord 2026-10-23: why wait for the press)
       else if (!mine) { word = "shot"; go = () => void chain?.shoot(r).then((x) => x && onShot(x.shots, x.record)); }
     } else if (loading || opening) status = ["LOADING"];
+    else if (me && chain!.balance != null && chain!.balance < STAKE) { status = ["GET A GAMECOIN TO CHALLENGE A RECORD!"]; word = "gamecoins"; go = openShop; } // the list waits behind the shop (Gaylord 2026-10-23: the pop-up on the CHALLENGE screen itself)
     else if (!records.length) status = ["NO CHALLENGES YET"];
     else {
       list(records.length); count = `${records.length} OPEN`;
