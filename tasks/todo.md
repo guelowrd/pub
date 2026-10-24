@@ -985,3 +985,5 @@ Caps: the TV spells USDCX (its faces are capitals); the rule says USDCx in prose
   KSN: bought 1 GC, SHOT from the list → INSERTING YOUR GAMECOIN → the drive started, the wallet read 0 GC after.
 - Gaylord: refresh CHALLENGE / MY RUNS / LEADERBOARDS when the player opens them. goMode runs the chain refresh (sync + note list) on
   those three, the 15 s timer stays. Checked: SOLO click → 0 node calls in 2 s, CHALLENGE → 16, MY RUNS → 12.
+- Catalog PR #6 (2026-10-24): GQ's #5 merged first at version 2, so the branch got upstream main merged in (no rewrite), both games
+  listed, version 3. Validator green locally, pushed ee4fe8c to the fork.
