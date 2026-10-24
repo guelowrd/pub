@@ -209,11 +209,12 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   } else if (mode === "my-runs") {
     heading = "MY RUNS";
     const o = opened ? runs.find((r) => r.key === opened) : null;
+    const collectAll = () => void chain?.collect(owed).then((ok) => ok && flash("COINS RECEIVED")); // everything owed, one transaction
     if (!me) { status = [noBread ? "NO BREAD WALLET" : chain?.connecting ? chain.walletStatus || "CONNECTING" : "CONNECT YOUR WALLET"]; if (noBread) { word = "get bread"; go = getBread; } else if (!chain?.connecting && chain?.installed) { word = "connect"; go = () => void chain.connect(); } }
     else if (o) {
       rev = { heading: o.word === "drive" ? "SHOT READY" : o.kind === "record" ? "MY RECORD" : "MY SHOT", label: o.label, score: o.score, line: o.word === "drive" ? "TAP DRIVE" : o.line, tone: o.tone, song: o.song, left: o.deadline };
       backdrop = previewOf(STATIONS[o.song]);
-      if (o.word === "collect") { word = "collect"; go = () => void chain?.collect(owed).then((ok) => ok && flash("COINS RECEIVED")); } // everything owed, one transaction
+      if (o.word === "collect") { word = "collect"; go = collectAll; }
       else if (o.word === "drive") { word = "drive"; go = () => onShot(o.shots!, o.record!); }
     } else if (loading) status = ["LOADING"];
     else if (!runs.length) { status = ["NO RUNS YET", "A POST COSTS 1 GAMECOIN. TAP THE RED KEY TO GET SOME"]; word = "gamecoins"; go = openShop; }
@@ -224,6 +225,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       backdrop = previewOf(STATIONS[r.song]); // and its painting behind the list, like CHALLENGE
       footer = [cell(songOf(r.song), TV.safe[0], TV.review.stageS, "cp", AMBER, false, undefined, TV.footer), ...(r.line === r.state ? [] : [cell(r.line, TV.count[0], 20 * u, "cp", CYAN, true, undefined, TV.footer)])];
       const k = runs[at].key; enter = () => setOpened(k);
+      if (r.word === "collect") { word = "collect"; go = collectAll; } // collect straight from the list (Gaylord 2026-10-24); ENTER still opens the run
     }
   } else if (mode === "leaderboards") {
     heading = "LEADERBOARDS";

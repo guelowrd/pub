@@ -987,3 +987,7 @@ Caps: the TV spells USDCX (its faces are capitals); the rule says USDCx in prose
   those three, the 15 s timer stays. Checked: SOLO click → 0 node calls in 2 s, CHALLENGE → 16, MY RUNS → 12.
 - Catalog PR #6 (2026-10-24): GQ's #5 merged first at version 2, so the branch got upstream main merged in (no rewrite), both games
   listed, version 3. Validator green locally, pushed ee4fe8c to the fork.
+- Gaylord (2026-10-24): "same for Collect, I gotta be able to collect from the list of MY RUNS without having to hit ENTER". The MY RUNS
+  list's red key reads COLLECT on a row in the COLLECT state and collects everything owed, like the opened run's key; ENTER still opens
+  the run. SHOT READY rows keep the dark key (DRIVE from the list is not asked). Checked only by tsc + tests: KSN has nothing owed right
+  now (its records stay OPEN for 64 h), so the live row was not seen.
