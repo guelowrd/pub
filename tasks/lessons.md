@@ -147,3 +147,8 @@ web/tsconfig.json only holds project references, so `tsc -p .` is a no-op and sa
 
 ## Deploy check: grep the chunk, not just index (2026-10-23)
 The live bundle splits: flow.ts lands in `assets/hub-*.js`, so a marker string from it is never in `assets/index-*.js`. A "not live after 10 min" from the watcher was a false alarm while Vercel said success. Watch the index hash for a new deploy, then grep the marker across every chunk the index names.
+
+## Deploy check: comments never reach the bundle (2026-10-24)
+Grepping the live chunks for a code comment finds nothing: the minifier strips them. Grep a player-facing string the change
+added, or when the change adds no string, trust two facts together: the live index hash changed after the push and
+`GET api.github.com/repos/guelowrd/pub/commits/<sha>/status` reports Vercel success for that sha.
