@@ -1000,3 +1000,10 @@ Caps: the TV spells USDCX (its faces are capitals); the rule says USDCx in prose
   pause and results all inside the notch and the home bar and clear of the button; menu and results 0.88 sideways, 0.82 upright.
   Without Bread's numbers every element rect is identical to HEAD at 1440x900, 1366x768, 844x390 and 390x844 (splash, menu, run).
   The NO BREAD card never shows inside Bread, so it is untouched. No type size changed (lesson 2026-10-17).
+- Gaylord (2026-10-25): SAVE CARD in Bread's fullscreen "came back to bread app and I can't come back in PUB", only closing the site
+  worked. Cause: SAVE CARD clicked an `<a download href="data:…">`; Bread's in-app browser has no downloads (WKWebViewController lets
+  data: through as an internal scheme), so the game page gave way to the picture, and fullscreen has no back button. Now a phone shares
+  the picture (`navigator.share({ files })`, Save Image in the sheet), made as soon as the record is posted so the sheet opens inside the
+  tap; a phone that cannot share a file gets no SAVE CARD key (two share keys, wider); a computer downloads as before. A tap before the
+  picture is made says ONE MOMENT. TAP AGAIN. (no disabled plate for share keys in the kit). share.test.ts pins the three paths.
+  Not checked on a device: whether Bread's iOS web view offers navigator.share (if not, the key just is not there).

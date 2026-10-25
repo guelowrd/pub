@@ -8,9 +8,22 @@ import type { Rider } from "./game/sim";
 const SLOTS = [[666, 285, 146, 196], [829, 285, 146, 196], [992, 285, 146, 196]];
 const load = (src: string) => new Promise<HTMLImageElement>((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = no; im.src = src; });
 
-export async function saveCard(score: number, station: string, riders: Rider[]) {
+/** The card, made once the record is posted: a phone's share sheet opens only in the tap itself, with no wait before it */
+export async function cardFor(score: number, station: string, riders: Rider[]) {
+  const url = await renderCard(score, station, riders), name = `pick-up-boomers-${score}.png`;
+  return { url, name, file: new File([await (await fetch(url)).blob()], name, { type: "image/png" }) };
+}
+export type Card = Awaited<ReturnType<typeof cardFor>>;
+
+// A phone saves the card from its share sheet (Save Image). Bread's in-app browser has no downloads: a download link there
+// replaced the game with the picture, and fullscreen left no way back (Gaylord, 2026-10-25). A computer downloads it.
+const phone = () => matchMedia("(pointer: coarse)").matches;
+/** A phone that cannot share a file gets no SAVE CARD key */
+export const canSaveCard = () => !phone() || !!navigator.canShare?.({ files: [new File([], "card.png", { type: "image/png" })] });
+export async function saveCard(card: Card) {
+  if (phone()) return navigator.share({ files: [card.file] }).catch((e: Error) => { if (e.name !== "AbortError") throw e; });
   const a = document.createElement("a");
-  a.href = await renderCard(score, station, riders); a.download = `pick-up-boomers-${score}.png`; a.click();
+  a.href = card.url; a.download = card.name; a.click();
 }
 
 /** The card as a PNG data URL. */

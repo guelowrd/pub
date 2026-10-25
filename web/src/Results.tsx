@@ -10,7 +10,7 @@ import { RATE, agePoints, type Rider, type Sim } from "./game/sim";
 import { STATIONS } from "./game/stations";
 import { GC_DECIMALS, GC_PRICE, QUANTITIES, STAKE } from "./chain/config";
 import { BREAD_URL, fmtPay, recordLinks, waiting } from "./chain/flow";
-import { saveCard } from "./share";
+import { canSaveCard, cardFor, saveCard, type Card } from "./share";
 import type { ChainApi, Posted } from "./chain/ChainHost";
 import type { Settled } from "./chain/useChain";
 
@@ -46,6 +46,14 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
   const G = geometry[layout] as Geometry;
   const [note, setNote] = useState<string | null>(null);
   const [qty, setQty] = useState(QUANTITIES.indexOf(10)); // NEED GAMECOINS: how many to buy (an index into QUANTITIES)
+  // SAVE CARD's picture, made as soon as the record is posted (share.ts: a phone shares it in the tap itself)
+  const [card, setCard] = useState<Card | null>(null);
+  useEffect(() => {
+    setCard(null);
+    if (!posted) return;
+    const riders = s.stops.filter((o) => o.taken && o.rider).map((o) => o.rider!).sort((p, q) => agePoints(q.age) - agePoints(p.age));
+    void cardFor(posted.score, STATIONS[posted.song].title, riders).then(setCard, () => undefined);
+  }, [posted, s]);
   let picker = false;
   const pick = `${QUANTITIES[qty]} ${QUANTITIES[qty] === 1 ? "GAMECOIN" : "GAMECOINS"} FOR ${fmtPay(BigInt(QUANTITIES[qty]) * GC_PRICE).toUpperCase()}`;
   const busy = chain?.busy ?? null, trouble = chain?.trouble ?? null;
@@ -94,11 +102,11 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
     if (posted) {
       heading = "RECORD POSTED"; color = MINT; status = note;
       const links = recordLinks(posted.recordId, STATIONS[posted.song].id, posted.score, STATIONS[posted.song].title, posted.expiresAt);
-      // three share keys in the kit's two-key row: SHARE ON X, COPY LINK and the card to save
-      const [a, b] = G.share, gap = b[0] - a[0] - a[2], w = (b[0] + b[2] - a[0] - 2 * gap) / 3;
-      const riders = s.stops.filter((o) => o.taken && o.rider).map((o) => o.rider!).sort((p, q) => agePoints(q.age) - agePoints(p.age));
-      keys = [["SHARE ON X", () => { if (!window.open(links.x, "_blank", "noopener")) location.href = links.x; }], ["COPY LINK", () => void navigator.clipboard?.writeText(links.url).then(() => setNote("LINK COPIED"), () => setNote("COPY FAILED"))], ["SAVE CARD", () => void saveCard(posted.score, STATIONS[posted.song].title, riders).catch(() => setNote("COULD NOT SAVE"))]]
-        .map(([label, onClick], i) => ({ kind: "share" as const, rect: [a[0] + i * (w + gap), a[1], w, a[3]], label: label as string, onClick: onClick as () => void }));
+      // the share keys in the kit's two-key row: SHARE ON X, COPY LINK and, where the device can save it, the card
+      const share: [string, () => void][] = [["SHARE ON X", () => { if (!window.open(links.x, "_blank", "noopener")) location.href = links.x; }], ["COPY LINK", () => void navigator.clipboard?.writeText(links.url).then(() => setNote("LINK COPIED"), () => setNote("COPY FAILED"))]];
+      if (canSaveCard()) share.push(["SAVE CARD", () => (card ? void saveCard(card).catch(() => setNote("COULD NOT SAVE")) : setNote("ONE MOMENT. TAP AGAIN."))]);
+      const [a, b] = G.share, gap = b[0] - a[0] - a[2], w = (b[0] + b[2] - a[0] - (share.length - 1) * gap) / share.length;
+      keys = share.map(([label, onClick], i) => ({ kind: "share" as const, rect: [a[0] + i * (w + gap), a[1], w, a[3]], label, onClick }));
     } else if (trouble?.t.kind === "funds") needCoins();
     else if (trouble) {
       status = trouble.t.title.toUpperCase(); keys = [postKey("TRY AGAIN", false, () => { const r = trouble.retry; chain?.dismiss(); r ? r() : post(); })];
