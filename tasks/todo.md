@@ -1007,3 +1007,9 @@ Caps: the TV spells USDCX (its faces are capitals); the rule says USDCx in prose
   tap; a phone that cannot share a file gets no SAVE CARD key (two share keys, wider); a computer downloads as before. A tap before the
   picture is made says ONE MOMENT. TAP AGAIN. (no disabled plate for share keys in the kit). share.test.ts pins the three paths.
   Not checked on a device: whether Bread's iOS web view offers navigator.share (if not, the key just is not there).
+- Gaylord (2026-10-25): "make the tv screen clickable on mobile, this is too counterintuitive not to click". A tap on a TV row now
+  does what ENTER does on it (opens a record, a run or a board; runs a WALLET or SYSTEM line) and moves the cursor there, so BACK
+  comes back to it. Each row carries its own action (`open`), ENTER reads the highlighted one. Rows with nothing to open take no tap.
+  Mouse clicks do the same on a computer, like the shop's chevrons. Checked in Chrome on 390x844, 844x390 and 1280x800: every row
+  hit is topmost at its centre and corner, LEADERBOARDS and CHALLENGE rows open the tapped one, BACK lands on it, the arrows and
+  ENTER still work. Still passive: the SOLO RUN picture, a review, a board's pages.

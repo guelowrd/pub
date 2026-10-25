@@ -1,5 +1,5 @@
-// The head unit (the designer's approved painting, cut into pieces: PUB-Painted-Menu, 2026-10-17): a curved CRT above a black electronic GRAND PRIX stereo. The TV is
-// passive, every input is a key on the radio: four named mode keys (SOLO RUN, CHALLENGE, MY RUNS, LEADERBOARDS) and two
+// The head unit (the designer's approved painting, cut into pieces: PUB-Painted-Menu, 2026-10-17): a curved CRT above a black electronic GRAND PRIX stereo. The TV
+// answers a tap on a row (what ENTER does there) and on the shop's chevrons; every other input is a key on the radio: four named mode keys (SOLO RUN, CHALLENGE, MY RUNS, LEADERBOARDS) and two
 // utility keys (WALLET, SYSTEM); BACK and ENTER; PREV and NEXT; the programmable red key, which reads the one action the
 // screen allows (DRIVE, SHOT, COLLECT, CONNECT, WAIT) or stays dark; VOL, MUTE, POWER. The LCD states the mode's purpose
 // and meters the menu music. Posting a run stays on the results screen. Geometry from game/data/menu.json (the pack's
@@ -38,7 +38,7 @@ const AMBER = "#ffd16b", WHITE = "#e6d5b8", CYAN = "#a3dbd5", PINK = "#f28bb1";
 const GP = `${ART}gp/`;
 type G = (typeof geometry)["desktop"];
 type Cell = { t: string; x: number; y?: number; size: number; font: Font; color: string; right?: boolean; width?: number };
-type Row = { key: string; cells: Cell[] };
+type Row = { key: string; cells: Cell[]; open?: () => void }; // open: what ENTER (or a tap on the row) does
 /** What a review shows: the record under review, a funded shot, one of my runs */
 type Review = { heading: string; label: string; score: number; line: string; tone?: string; song: number; left?: number };
 /** One of my runs: a record or a shot, live or finished */
@@ -173,8 +173,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const list = (n: number) => { total = n; at = Math.min(cur, Math.max(0, n - 1)); start = Math.min(Math.max(0, at - baselines.length + 1), Math.max(0, n - baselines.length)); selected = at; };
   const kv = (pairs: [string, string, (() => void)?][], valueFont: Font, valueColor: string) => {
     five(); list(pairs.length); if (pairs.length > baselines.length) count = `${pad2(at + 1)} / ${pad2(pairs.length)}`; // more rows than the TV shows: say where the cursor is
-    rows = pairs.map(([k, v], i) => ({ key: k, cells: [cell(k, C["my-runs"].type, C["wallet-system"].keyS, "cp", i === at ? AMBER : CYAN), cell(v, C["wallet-system"].valueR, C["wallet-system"].valueS, valueFont, valueColor, true)] }));
-    enter = pairs[at]?.[2] ?? null;
+    rows = pairs.map(([k, v, open], i) => ({ key: k, open, cells: [cell(k, C["my-runs"].type, C["wallet-system"].keyS, "cp", i === at ? AMBER : CYAN), cell(v, C["wallet-system"].valueR, C["wallet-system"].valueS, valueFont, valueColor, true)] }));
   };
   const stage = STATIONS[station], preview = previewOf(stage), tuning = mode === "solo" && !loaded.has(preview);
   // the dial's locks: what this wallet has posted opens the later tracks (unlock.ts); a locked stage shows, dark, with its price, and DRIVE stays dark
@@ -199,11 +198,10 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     else if (!records.length) status = ["NO CHALLENGES YET"];
     else {
       list(records.length); count = `${records.length} OPEN`;
-      rows = records.map((n, i) => ({ key: n.id, cells: [cell(champion(n), C.challenge.champion, C.challenge.nicknameS, "cp", i === at ? AMBER : WHITE), cell(score(n.storage.target), C.challenge.scoreR, C.challenge.scoreS, "mono", AMBER, true), cell(songOf(songIn(n)), C.challenge.stage, C.challenge.stageS, "cp", i === at ? AMBER : WHITE, false, C.challenge.stageW)] }));
+      rows = records.map((n, i) => ({ key: n.id, open: () => setReview(n), cells: [cell(champion(n), C.challenge.champion, C.challenge.nicknameS, "cp", i === at ? AMBER : WHITE), cell(score(n.storage.target), C.challenge.scoreR, C.challenge.scoreS, "mono", AMBER, true), cell(songOf(songIn(n)), C.challenge.stage, C.challenge.stageS, "cp", i === at ? AMBER : WHITE, false, C.challenge.stageW)] }));
       const s = records[at];
       backdrop = previewOf(STATIONS[songIn(s)]); // the record's stage behind the list, dimmed (Gaylord 2026-10-19)
       footer = [cell(songOf(songIn(s)), TV.safe[0], TV.review.stageS, "cp", AMBER, false, undefined, TV.footer), cell("TIME LEFT", TV.count[0], Math.max(11, 14 * u), "cp", CYAN, true, undefined, TV.detail - 4 * u), cell(clock(s.storage.expiryBlock - height), TV.count[0], TV.review.expiryS, "mono", AMBER, true, undefined, TV.footer + 4 * u)];
-      enter = () => setReview(s);
       if (!same(me, s.storage.champion)) { word = "shot"; go = shoot(s); } // a shot straight from the list (Gaylord 2026-10-23); ENTER still opens the record
     }
   } else if (mode === "my-runs") {
@@ -220,11 +218,10 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     else if (!runs.length) { status = ["NO RUNS YET", "A POST COSTS 1 GAMECOIN. TAP THE RED KEY TO GET SOME"]; word = "gamecoins"; go = openShop; }
     else {
       list(runs.length); count = `${runs.length} RUNS`;
-      rows = runs.map((r, i) => ({ key: r.key, cells: [cell(r.kind.toUpperCase(), C["my-runs"].type, C["my-runs"].typeS, "cp", i === at ? AMBER : WHITE), cell(score(r.score), C["my-runs"].scoreR, C["my-runs"].scoreS, "mono", AMBER, true), cell(r.state, C["my-runs"].stateR, C["my-runs"].stateS, "cp", i === at ? AMBER : TONE[r.state] ?? WHITE, true)] }));
+      rows = runs.map((r, i) => ({ key: r.key, open: () => setOpened(r.key), cells: [cell(r.kind.toUpperCase(), C["my-runs"].type, C["my-runs"].typeS, "cp", i === at ? AMBER : WHITE), cell(score(r.score), C["my-runs"].scoreR, C["my-runs"].scoreS, "mono", AMBER, true), cell(r.state, C["my-runs"].stateR, C["my-runs"].stateS, "cp", i === at ? AMBER : TONE[r.state] ?? WHITE, true)] }));
       const r = runs[at]; // the stage under the list (the rows have no room for it); the money or the rival on the right, unless the line only repeats the state
       backdrop = previewOf(STATIONS[r.song]); // and its painting behind the list, like CHALLENGE
       footer = [cell(songOf(r.song), TV.safe[0], TV.review.stageS, "cp", AMBER, false, undefined, TV.footer), ...(r.line === r.state ? [] : [cell(r.line, TV.count[0], 20 * u, "cp", CYAN, true, undefined, TV.footer)])];
-      const k = runs[at].key; enter = () => setOpened(k);
       if (r.word === "collect") { word = "collect"; go = collectAll; } // collect straight from the list (Gaylord 2026-10-24); ENTER still opens the run
     }
   } else if (mode === "leaderboards") {
@@ -233,8 +230,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     else if (!board) { // the five boards as a list, how many players on each (BEST RECORDS: distinct champions, its page counts the records); ENTER opens one
       const players = (rows: { who: Parameters<typeof keyOf>[0] }[]) => new Set(rows.map((r) => keyOf(r.who))).size;
       five(); list(BOARDS.length);
-      rows = BOARDS.map(([key, title], i) => ({ key, cells: [cell(title, C.leaderboards.name, C.challenge.nicknameS, "cp", i === at ? AMBER : key === "losers" ? PINK : WHITE), cell(`${players(best[key].top)} PLAYER${players(best[key].top) === 1 ? "" : "S"}`, C["wallet-system"].valueR, C.leaderboards.scoreS, "mono", AMBER, true)] }));
-      const k = BOARDS[at][0]; enter = () => setBoard(k);
+      rows = BOARDS.map(([key, title], i) => ({ key, open: () => setBoard(key), cells: [cell(title, C.leaderboards.name, C.challenge.nicknameS, "cp", i === at ? AMBER : key === "losers" ? PINK : WHITE), cell(`${players(best[key].top)} PLAYER${players(best[key].top) === 1 ? "" : "S"}`, C["wallet-system"].valueR, C.leaderboards.scoreS, "mono", AMBER, true)] }));
     } else { // one board, ten rows a page: PREV / NEXT turn the pages, BACK closes it. The number one opens every later page (nine more ranks under it, so none is skipped; Gaylord 2026-10-21)
       const title = BOARDS.find(([k]) => k === board)![1], b = best[board], pages: typeof b.top[] = [];
       for (let from = 0; from < b.top.length || !pages.length; ) { if (!from) { pages.push(b.top.slice(0, DENSE)); from += DENSE; } else { pages.push([b.top[0], ...b.top.slice(from, from + DENSE - 1)]); from += DENSE - 1; } }
@@ -275,6 +271,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       ["RPC", (chain?.rpc ?? "").replace(/^https?:\/\//, "").replace(/\/$/, "") || "--"],
     ], "mono", AMBER); // the same face and colour as WALLET and every list value (Gaylord 2026-10-19)
   }
+  enter = rows[at]?.open ?? null;
   // GET GAMECOINS over any mode (Gaylord 2026-10-23): a box with how many, PREV and NEXT step through QUANTITIES, the red key buys
   const qty = shop === null ? 0 : QUANTITIES[shop];
   if (shop !== null) {
@@ -422,6 +419,8 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
                     {i === selected && r && <img src={`${GP}${layout}/row.png`} alt="" style={box(r)} />}
                     {i === selected && r && <img src={`${GP}icons/cursor.png`} alt="" style={{ left: px(r[0] + 5 * u), top: px(r[1] + r[3] / 2 - 6 * u), width: px(12 * u), height: px(12 * u) }} />}
                     {cells(row.cells, baselines[j])}
+                    {/* a tap on a row opens it, like ENTER (Gaylord 2026-10-25: a TV that ignores taps is too counterintuitive on a phone) */}
+                    {row.open && r && <button className="hit" aria-label={row.cells.map((c) => c.t).join(" ")} style={box(r)} onClick={() => { setCursor({ ...cursor, [cursorKey]: i }); row.open!(); }} onMouseUp={(e) => e.currentTarget.blur()} />}
                   </span>
                 );
               })}
