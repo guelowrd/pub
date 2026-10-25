@@ -1,5 +1,5 @@
 // The head unit (the designer's approved painting, cut into pieces: PUB-Painted-Menu, 2026-10-17): a curved CRT above a black electronic GRAND PRIX stereo. The TV
-// answers a tap on a row (what ENTER does there) and on the shop's chevrons; every other input is a key on the radio: four named mode keys (SOLO RUN, CHALLENGE, MY RUNS, LEADERBOARDS) and two
+// answers a tap on a row (what ENTER does there), on the stage (DRIVE) and on the shop's chevrons; every other input is a key on the radio: four named mode keys (SOLO RUN, CHALLENGE, MY RUNS, LEADERBOARDS) and two
 // utility keys (WALLET, SYSTEM); BACK and ENTER; PREV and NEXT; the programmable red key, which reads the one action the
 // screen allows (DRIVE, SHOT, COLLECT, CONNECT, WAIT) or stays dark; VOL, MUTE, POWER. The LCD states the mode's purpose
 // and meters the menu music. Posting a run stays on the results screen. Geometry from game/data/menu.json (the pack's
@@ -405,6 +405,8 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
               {text(`${pad2(station + 1)} / ${pad2(STATIONS.length)}`, TV.count[0], TV.count[1], TV.count[2], "cp", AMBER, true)}
               {text(stage.title, TV.scene.title[0], TV.scene.title[1], TV.scene.title[2], "cp", WHITE)}
               {lock ? text(lock === "bread" ? "GET BREAD TO UNLOCK" : `LOCKED: POST ${lock.records} RECORD${lock.records > 1 ? "S" : ""}, ONE AT ${lock.score}+`, TV.cond[0].icon[0], TV.cond[0].text[1], TV.cond[0].text[2], "cp", PINK) : cond(station, TV.cond[0].text[1])}
+              {/* a tap on the stage drives it, like the red key (Gaylord 2026-10-25); the run opens on READY? GO! */}
+              {word === "drive" && <button className="hit" aria-label={`DRIVE ${stage.title}`} disabled={!on("action")} style={box([0, 0, ...TV.size])} onClick={() => press("action")} />}
             </>
           )}
           {mode !== "solo" && !status && !rev && shop === null && (

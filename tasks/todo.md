@@ -1013,3 +1013,10 @@ Caps: the TV spells USDCX (its faces are capitals); the rule says USDCx in prose
   Mouse clicks do the same on a computer, like the shop's chevrons. Checked in Chrome on 390x844, 844x390 and 1280x800: every row
   hit is topmost at its centre and corner, LEADERBOARDS and CHALLENGE rows open the tapped one, BACK lands on it, the arrows and
   ENTER still work. Still passive: the SOLO RUN picture, a review, a board's pages.
+- Gaylord (2026-10-25): a tap on the SOLO RUN stage can start the run, "but we should add a basic READY?-GO! countdown then so that
+  player isn't surprised. Music starts at GO. READY is just for 1 sec". A tap on the stage presses the red key (it dips), only while it
+  reads DRIVE and is lit, so a locked stage takes no tap. Every run now opens on READY? for one second over the stopped road (the
+  menu music paused, the sim clock at 0), then GO! with the song, the clock and the car together; GO! stays for the run's first 0.8 s
+  (sim time, so a pause does not replay it). Same for the red key, D and DRIVE SAME on results. The cue is the HUD's callout style
+  in yellow, no new type size (Boomer GT has ? and !). Checked in Chrome: READY? at sim 0, the song 1012 ms later with GO!, GO! gone
+  at 0.81 s; pause and resume keep the song; a locked stage's tap does nothing.

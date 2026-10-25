@@ -20,7 +20,7 @@ const randomSeed = () => crypto.getRandomValues(new Uint32Array(1))[0];
 /** A shot being driven: the shot notes on the table and the record they are at. */
 type Shot = { shots: ChallengeNote[]; record: ChallengeNote };
 
-type Mode = "ready" | "menu" | "play" | "paused" | "over";
+type Mode = "ready" | "menu" | "countdown" | "play" | "paused" | "over";
 const STEP = 1 / 120;
 const KEYS: Record<string, keyof Input> = { ArrowUp: "gas", w: "gas", ArrowDown: "brake", s: "brake", ArrowLeft: "left", a: "left", ArrowRight: "right", d: "right" };
 const face = (r: Rider) => {
@@ -117,7 +117,8 @@ export default function App() {
   // music follows the screen: menus loop Omotesando, the run plays the station from its first second, results loop Wireline Cosmos
   useEffect(() => {
     if (mode === "ready" || mode === "menu") audio.menu(MENU_TRACK); // silent until the browser allows sound; the song starts with the run
-    else if (mode === "play") audio.resume(); // the run's song starts in start(), with the sim
+    else if (mode === "countdown") audio.pause(); // READY? in silence
+    else if (mode === "play") audio.resume(); // the run's song starts at GO!, with the clock
     else if (mode === "paused") audio.pause();
     else if (mode === "over") audio.results(RESULTS_TRACK);
     if (mode !== "play") { audio.engine(0, false); audio.skid(false); }
@@ -126,8 +127,15 @@ export default function App() {
   // the stage's light (its skylines, venues, portals, frontage, water) and the song's look (its lamps, props, sky pieces) are fetched first; a miss logs and the run still starts.
   // The renderer and the music learn the song here, with the sim: the play effect ran after the first frame had stepped the sim on some runs and skipped both (a silver car under the default sky, the menu track still playing)
   const start = (sd: number, song: number) => void Promise.all([loadLight(STATIONS[song].time), loadLook(STATIONS[song])]).catch((e: unknown) => console.error(e)).then(() => {
-    settling.current = false; setSettled(null); setPosted(null); botRun.current = false; sim.current = newSim(sd, song); setSong(STATIONS[song].id); audio.run(STATIONS[song].id); setSeed(sd); setMode("play");
+    settling.current = false; setSettled(null); setPosted(null); botRun.current = false; sim.current = newSim(sd, song); setSong(STATIONS[song].id); setSeed(sd); setMode("countdown");
   });
+  // READY? for a second over the stopped road, then GO!: the song, the clock and the car start together (Gaylord 2026-10-25: a tap on
+  // the TV starts the run, so the player is told first)
+  useEffect(() => {
+    if (mode !== "countdown") return;
+    const t = setTimeout(() => { audio.run(STATIONS[sim.current.song].id); setMode("play"); }, 1000);
+    return () => clearTimeout(t);
+  }, [mode]);
   /** A free drive on the station's song. */
   const drive = (sd: number) => { shot.current = null; start(sd, station); };
   /** A shot: the record's course and song, the stake on the table. */
@@ -198,6 +206,7 @@ export default function App() {
       set("time", `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`);
       node("time").classList.toggle("late", left <= 20);
       set("score", fmt(s.score));
+      set("cue", modeRef.current === "countdown" ? "READY?" : playing && s.t < 0.8 ? "GO!" : "");
       set("speed", String(Math.round(s.v * KMH)).padStart(3, "0"));
       const full = !s.seats.includes(null);
       html("bank", `<span>BOOMER METER</span>${full ? "<em>FULL</em>" : ""}<span class="num">${fmt(s.seats.reduce((a, r) => a + (r ? agePoints(r.age) : 0), 0))}</span>`); // the name left, the points right, like SCORE
@@ -253,6 +262,7 @@ export default function App() {
         </div>
         <div className="fork" id="fork" />
         <div className="callout" id="callout" />
+        <div className="callout" id="cue" style={{ color: "#ffe564" }} />
       </div>
       {mode === "ready" && (
         <div className="overlay splash" onClick={() => { if (loaded) { audio.unlock(); setMode("menu"); } }}>
