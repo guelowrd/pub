@@ -20,13 +20,27 @@ export function useFit(canvas: Record<Layout, { canvas: number[] }>) {
   useEffect(() => {
     const on = () => setFit(measure(canvas));
     addEventListener("resize", on);
-    return () => removeEventListener("resize", on);
+    // Bread sets its numbers on <html> after a turn of the phone, not always before the resize
+    const bread = new MutationObserver(on);
+    bread.observe(document.documentElement, { attributes: true, attributeFilter: ["style", "data-bread-control-bounds"] });
+    return () => (removeEventListener("resize", on), bread.disconnect());
   }, [canvas]);
   return fit;
 }
-function measure(canvas: Record<Layout, { canvas: number[] }>) {
-  const layout = pickLayout(innerWidth, innerHeight), [w, h] = canvas[layout].canvas, scale = Math.min(innerWidth / w, innerHeight / h);
-  return { layout, scale, left: (innerWidth - w * scale) / 2, top: (innerHeight - h * scale) / 2 };
+/** Bread's fullscreen on phones runs the page under the notch and the home bar, its button top left, and says where in CSS
+ *  variables on <html>; everywhere else they are unset, so 0 */
+const bread = (name: string) => parseFloat(document.documentElement.style.getPropertyValue(`--bread-${name}`)) || 0;
+export function measure(canvas: Record<Layout, { canvas: number[] }>) {
+  const L = bread("safe-area-left"), T = bread("safe-area-top"), W = innerWidth - L - bread("safe-area-right"), H = innerHeight - T - bread("safe-area-bottom");
+  const layout = pickLayout(W, H), [w, h] = canvas[layout].canvas;
+  // clear of Bread's button: beside it or under it, whichever leaves the screen bigger (Bread before 1.17.4 gives only the height)
+  const fit = (x: number, y: number) => {
+    const scale = Math.min((W - x) / w, (H - y) / h);
+    return { scale, left: L + x + (W - x - w * scale) / 2, top: T + y + (H - y - h * scale) / 2 };
+  };
+  const button = bread("control-width"), under = fit(0, Math.max(0, bread("control-inset-top") - T));
+  const beside = button ? fit(bread("control-left") + button + 8 - L, 0) : under;
+  return { layout, ...(beside.scale > under.scale ? beside : under) };
 }
 
 /** Where a font's baseline sits under the top of a line-height-1 span, in em: half-leading plus ascent. */

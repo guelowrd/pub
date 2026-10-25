@@ -991,3 +991,12 @@ Caps: the TV spells USDCX (its faces are capitals); the rule says USDCx in prose
   list's red key reads COLLECT on a row in the COLLECT state and collects everything owed, like the opened run's key; ENTER still opens
   the run. SHOT READY rows keep the dark key (DRIVE from the list is not asked). Checked only by tsc + tests: KSN has nothing owed right
   now (its records stay OPEN for 64 h), so the live row was not seen.
+- Gaylord (2026-10-25, "Ok do it", after GeoQuizz): Bread's mobile fullscreen, as GQ. `bread-display: fullscreen` in index.html
+  (theme-color was already #080c24). The page body sits inside Bread's safe area (--vw / --vh replace 100vw / 100vh in the scene, the
+  pad and the splash); upright the scene starts under Bread's button; sideways TIME moves right of it. The head unit and the results
+  (board.ts measure) fit the safe area beside or under the button, whichever leaves them bigger, and re-fit when Bread changes its
+  numbers on <html>. board.test.ts pins it (outside Bread unchanged, sideways, upright, Bread before 1.17.4).
+  Measured in iframes with the coarse-pointer rules injected and Bread's numbers set (852x393, 393x852, 667x375): splash, menu, run,
+  pause and results all inside the notch and the home bar and clear of the button; menu and results 0.88 sideways, 0.82 upright.
+  Without Bread's numbers every element rect is identical to HEAD at 1440x900, 1366x768, 844x390 and 390x844 (splash, menu, run).
+  The NO BREAD card never shows inside Bread, so it is untouched. No type size changed (lesson 2026-10-17).

@@ -4,10 +4,14 @@
 @font-face { font-family: "PUB Painted Pixel"; src: url("/fonts/PUB-Painted-Pixel.woff") format("woff"); font-weight: 400; font-display: swap; } /* the font pass (PUB-Painted-Type): headings, names, metadata, counter */
 @font-face { font-family: "PUB Painted Matrix"; src: url("/fonts/PUB-Painted-Matrix.woff") format("woff"); font-weight: 400; font-display: swap; } /* LCD line, scores, clocks, the red key's word */
 * { box-sizing: border-box; margin: 0; }
+/* the screen inside the notch and the home bar: Bread's mobile fullscreen runs the page under both and sets these numbers (and
+   its button's, top left) on <html>; everywhere else they are unset, so 0. The menu and the results fit the same way (board.ts) */
+:root { --vw: calc(100vw - var(--bread-safe-area-left, 0px) - var(--bread-safe-area-right, 0px)); --vh: calc(100vh - var(--bread-safe-area-top, 0px) - var(--bread-safe-area-bottom, 0px)); }
+body { padding: var(--bread-safe-area-top, 0px) var(--bread-safe-area-right, 0px) var(--bread-safe-area-bottom, 0px) var(--bread-safe-area-left, 0px); }
 html, body, #root { height: 100%; background: #080c24; color: #fff3f4; font-family: "Chakra Petch", ui-sans-serif, sans-serif; font-weight: 600; overflow: hidden; }
 #root { display: flex; flex-direction: column; align-items: center; justify-content: center; }
 /* the view is 4:3 like the boards (1280 x 960 reference); --u is one board pixel. The pad takes the room under it on phones */
-.app { position: relative; width: min(100vw, calc(100vh * 4 / 3)); height: min(100vh, calc(100vw * 3 / 4)); --u: calc(min(100vw, 100vh * 4 / 3) / 1280); font-size: calc(18 * var(--u)); }
+.app { position: relative; width: min(var(--vw), calc(var(--vh) * 4 / 3)); height: min(var(--vh), calc(var(--vw) * 3 / 4)); --u: calc(min(var(--vw), var(--vh) * 4 / 3) / 1280); font-size: calc(18 * var(--u)); }
 canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 /* the HUD keeps the pixel fonts: Chakra Petch and Share Tech Mono read tiny in these boxes (Gaylord, 2026-10-16) */
 @font-face { font-family: "Boomer GT"; src: url("/art/BoomerGT.woff") format("woff"); font-display: swap; }
@@ -61,13 +65,14 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .pad { display: none; width: 100%; padding: 12px; gap: 10px; }
 .pad button { flex: 1; height: 72px; font: inherit; font-size: 16px; color: #63e7ff; background: rgba(11,16,45,.8); border: 2px solid #63e7ff; touch-action: none; user-select: none; -webkit-user-select: none; }
 .pad button:nth-child(3) { color: #ff40bd; border-color: #ff40bd; } .pad button:nth-child(4) { color: #ffe564; border-color: #ffe564; }
-@media (pointer: coarse) { .pad { display: flex; } #root:has(.overlay) .pad { display: none; } /* the pad drives the run only: nothing under the splash, the menu, the pause or the results */ .app { height: min(100vh - 96px, calc(100vw * 3 / 4)); width: min(100vw, calc((100vh - 96px) * 4 / 3)); } }
+@media (pointer: coarse) { .pad { display: flex; } #root:has(.overlay) .pad { display: none; } /* the pad drives the run only: nothing under the splash, the menu, the pause or the results */ .app { height: min(var(--vh) - 96px, calc(var(--vw) * 3 / 4)); width: min(var(--vw), calc((var(--vh) - 96px) * 4 / 3)); } }
 /* landscape phones: wider than 4:3, the whole width above the pad, so the HUD scales with the screen and not with a box in its middle */
 @media (pointer: coarse) and (min-aspect-ratio: 1/1) {
-  .app { width: 100vw; height: calc(100vh - 96px); --u: calc(100vw / 1280); }
+  .app { width: var(--vw); height: calc(var(--vh) - 96px); --u: calc(var(--vw) / 1280); }
   /* the scene is a third as tall as it is wide here: the rail's column ran under the scene and the radar sat on GAS. Gaylord: the
      meter on the left between TIME and SPEED (its seats shorter so it fits that gap), the radar on the right where the rail began */
   .rail { position: static; width: auto; }
+  .tl { left: max(calc(26 * var(--u)), calc(var(--bread-control-left, 0px) + var(--bread-control-width, 0px) - var(--bread-safe-area-left, 0px) + 8px)); } /* TIME right of Bread's button */
   .rail .panel { position: absolute; left: calc(26 * var(--u)); top: calc(126 * var(--u)); width: calc(228 * var(--u)); margin: 0; }
   .rail .radar-box { position: absolute; right: calc(26 * var(--u)); top: calc(190 * var(--u)); width: calc(228 * var(--u)); }
   .slots > div { min-height: calc(100 * var(--u)); } .slots > div > b { font-size: calc(18 * var(--u)); } .slots > div > em { font-size: calc(12 * var(--u)); } .face { width: calc(42 * var(--u)); height: calc(42 * var(--u)); } /* a filled seat no taller than an empty one */
@@ -77,7 +82,7 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .pause { width: calc(390 * var(--u)); }
 /* the splash is the 4:3 scene itself, centred: the attract canvas, the riders' path, the ribbon and the mute key all live in its
    1280x960 frame (the phone pass made every overlay the window, which cropped the scene and drew the riders off it) */
-.splash { inset: 0; margin: auto; width: min(100vw, calc(100vh * 4 / 3)); height: min(100vh, calc(100vw * 3 / 4)); background: #080c24 url("/art/title-scene.webp") center / contain no-repeat; }
+.splash { inset: var(--bread-safe-area-top, 0px) var(--bread-safe-area-right, 0px) var(--bread-safe-area-bottom, 0px) var(--bread-safe-area-left, 0px); margin: auto; width: min(var(--vw), calc(var(--vh) * 4 / 3)); height: min(var(--vh), calc(var(--vw) * 3 / 4)); background: #080c24 url("/art/title-scene.webp") center / contain no-repeat; }
 .app:has(> .splash) > canvas, .app:has(> .splash) > .hud { visibility: hidden; } /* on a phone the splash box leaves room above and below: no road or HUD showing there */
 .attract { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .splash-mute { position: absolute; top: calc(22 * var(--u)); right: calc(26 * var(--u)); font: inherit; font-size: calc(16 * var(--u)); letter-spacing: .06em; color: #94e6dc; background: rgba(8,12,36,.7); border: calc(1.5 * var(--u)) solid #3a4652; border-radius: calc(6 * var(--u)); padding: calc(6 * var(--u)) calc(14 * var(--u)); cursor: pointer; }
@@ -145,8 +150,8 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .rs-pick button { font: inherit; font-size: 1.5em; line-height: 1; color: #94e6dc; background: none; border: 0; padding: 0 .25em; cursor: pointer; } .rs-pick button:hover { color: #ffe16f; } .rs-pick button:disabled { color: #657274; cursor: default; }
 /* portrait phones: the scene on top, then the seat strip and the radar side by side, then the pad */
 @media (max-aspect-ratio: 1/1) {
-  #root { justify-content: flex-start; }
-  .app { width: 100vw; height: calc(100vw * 3 / 4); --u: calc(100vw / 1280); font-size: calc(36 * var(--u)); }
+  #root { justify-content: flex-start; padding-top: max(0px, var(--bread-control-inset-top, 0px) - var(--bread-safe-area-top, 0px)); } /* the scene under Bread's button */
+  .app { width: var(--vw); height: calc(var(--vw) * 3 / 4); --u: calc(var(--vw) / 1280); font-size: calc(36 * var(--u)); }
   .panel small { font-size: calc(30 * var(--u)); } .panel > b { font-size: calc(64 * var(--u)); }
   .rail { top: 100%; left: 0; right: 0; width: auto; display: flex; gap: calc(16 * var(--u)); padding: calc(16 * var(--u)); pointer-events: none; }
   .rail .panel { flex: 1; margin: 0; }
@@ -156,7 +161,7 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
   .face { width: calc(90 * var(--u)); height: calc(90 * var(--u)); } .icon { width: calc(32 * var(--u)); height: calc(32 * var(--u)); }
   /* the cue centred between TIME and SCORE (SCORE is the wider box), at the largest size that stays 10 px clear of both with a five-digit score and CASINO STRIP against WATERFRONT (measured; 30 touched) */
   .fork { left: calc(262 * var(--u)); right: calc(354 * var(--u)); transform: none; justify-content: center; font-size: calc(27 * var(--u)); } .callout { font-size: calc(56 * var(--u)); } .callout.high { font-size: calc(46 * var(--u)); }
-  .pad { margin-top: calc(100vw * 430 / 1280); } /* under the rail (the rail is 408 board px tall here); --u lives on .app, not here */
+  .pad { margin-top: calc(var(--vw) * 430 / 1280); } /* under the rail (the rail is 408 board px tall here); --u lives on .app, not here */
   .pause { width: 76%; }
   }
 /* the no-Bread card over the head unit (App.tsx BreadCard): the pause card's colours, HTML so the line can change. Sized
