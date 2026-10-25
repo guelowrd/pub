@@ -1020,3 +1020,6 @@ Caps: the TV spells USDCX (its faces are capitals); the rule says USDCx in prose
   (sim time, so a pause does not replay it). Same for the red key, D and DRIVE SAME on results. The cue is the HUD's callout style
   in yellow, no new type size (Boomer GT has ? and !). Checked in Chrome: READY? at sim 0, the song 1012 ms later with GO!, GO! gone
   at 0.81 s; pause and resume keep the song; a locked stage's tap does nothing.
+- Gaylord (2026-10-25): the collect wait read SENDING / TAKING IT. USUALLY IN LESS THAN 20 SEC, and nothing is sent. The wait text is now
+  YOUR COINS ARE COMING, and the last stage's title reads COLLECTING instead of SENDING when the coins come to the player (collect and
+  the prize claim after a shot, via a Busy.inbound flag); posts, shots and buys keep SENDING. Not seen live: KSN has nothing to collect.

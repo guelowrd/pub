@@ -18,7 +18,7 @@ import { openSales, pickSale } from "./shop";
 import type { Event } from "../game/sim";
 
 export type Stage = "connect" | "prepare" | "wallet" | "network";
-export type Busy = { text: string; stage: Stage; since: number };
+export type Busy = { text: string; stage: Stage; since: number; inbound?: boolean }; // inbound: coins come to the player (collect, settle), so the last stage reads COLLECTING (Gaylord 2026-10-25)
 export type Posted = { recordId: string; score: number; song: number; expiresAt: number };
 export type Settled = { won: boolean; claimed: boolean; text: string };
 
@@ -153,17 +153,17 @@ export function useChain(): ChainApi {
    * consumed notes are gone). A failure, or a wallet that never finishes, leaves the error in plain words with Try again,
    * which first looks whether the attempt landed after all, so a slow network never makes anyone post or pay twice.
    */
-  async function run<S extends Submitted>(text: string, posted: boolean, fn: () => Promise<S>, previous?: S): Promise<S | null> {
+  async function run<S extends Submitted>(text: string, posted: boolean, fn: () => Promise<S>, previous?: S, inbound = false): Promise<S | null> {
     const mine = ++token.current;
     const live = () => token.current === mine;
     const landed = async (ids: string[]) => {
       const records = await Promise.all(ids.map((id) => knownNote(id)));
       return posted ? records.every((r) => !!r) : records.every((r) => !!r?.consumed);
     };
-    const again = (attempt?: S) => () => void run(text, posted, fn, attempt);
+    const again = (attempt?: S) => () => void run(text, posted, fn, attempt, inbound);
     let stage: Stage = "prepare", pending = previous; // what the request will make, known before the wallet has it
     setTrouble(null);
-    setBusy({ text, stage: previous ? "network" : "prepare", since: Date.now() });
+    setBusy({ text, stage: previous ? "network" : "prepare", since: Date.now(), inbound });
     setSubmitAttemptListener((attempt) => live() && setBusy((b) => (b ? { ...b, text: attempt > 1 ? `${text} (TRY ${attempt})` : text } : b)));
     setSubmitStageListener((s) => { stage = s; if (live()) setBusy((b) => (b ? { ...b, stage: s, since: Date.now() } : b)); });
     setPendingListener((s) => { if (live()) pending = s as S; });
@@ -172,12 +172,12 @@ export function useChain(): ChainApi {
       if (previous && client) {
         await runExclusive(() => syncNotes(client)).catch(() => undefined);
         if (await runExclusive(() => landed(previous.noteIds))) return previous;
-        setBusy({ text, stage: "prepare", since: Date.now() });
+        setBusy({ text, stage: "prepare", since: Date.now(), inbound });
       }
       // a wallet popup left open, or a node that never answers, used to hold the screen for good: past the cap the player
       // is told, and Try again first looks whether the request landed anyway
       const submitted = await withTimeout(fn(), SUBMIT_TIMEOUT_MS, text).catch((e) => { throw stage === "wallet" && /timed out after/.test(String(e)) ? new Error(WALLET_SILENT) : e; });
-      setBusy({ text, stage: "network", since: Date.now() });
+      setBusy({ text, stage: "network", since: Date.now(), inbound });
       const seen = client ? await waitFor(client, runExclusive, () => landed(submitted.noteIds)) : false;
       if (!live()) return null;
       if (seen) return submitted;
@@ -243,12 +243,12 @@ export function useChain(): ChainApi {
       const h = client ? await runExclusive(() => syncNotes(client)) : heightRef.current;
       if (shots.some((s) => h >= shotDeadline(s.storage))) throw new Error(SHOT_LOST);
       return client ? settleNotes(client, walletRef.current, shots, claimPrize ? record : undefined, pubAnswer(seed, song, log, dist)) : Promise.reject(new Error("client not ready"));
-    });
+    }, undefined, true);
     return submitted ? { won, claimed: true, text: doneText(text) } : null;
   };
 
   const collect: ChainApi["collect"] = async (picked) => {
-    const submitted = await run(picked.length > 1 ? "TAKING THEM" : "TAKING IT", false, () => (client ? collectNotes(client, walletRef.current, picked) : Promise.reject(new Error("client not ready"))));
+    const submitted = await run("YOUR COINS ARE COMING", false, () => (client ? collectNotes(client, walletRef.current, picked) : Promise.reject(new Error("client not ready"))), undefined, true);
     return !!submitted;
   };
 

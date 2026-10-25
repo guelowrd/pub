@@ -159,12 +159,12 @@ export function withTimeout<T>(p: Promise<T>, ms: number, what: string): Promise
  * What a wait is, for the player (Gaylord's phone, 2026-10-18: CLAIMING YOUR PRIZE sat there with nothing else): the step,
  * what to do, how long it usually takes, and a clock running since the step began.
  */
-export function waiting(b: { stage: "connect" | "prepare" | "wallet" | "network"; since: number }, local = false): [string, string] {
+export function waiting(b: { stage: "connect" | "prepare" | "wallet" | "network"; since: number; inbound?: boolean }, local = false): [string, string] {
   const clock = secondsToClock(Math.max(0, Math.floor((Date.now() - b.since) / 1000)));
   const [what, how] = b.stage === "connect" ? (local ? ["MAKING THE TEST WALLET", "UP TO A MINUTE"] : ["CONNECTING YOUR WALLET", "APPROVE IN BREAD IF IT ASKS"])
     : b.stage === "prepare" ? ["GETTING READY", "A FEW SECONDS"]
       : b.stage === "wallet" ? (local ? ["PROVING", "UP TO A MINUTE"] : ["OVER TO YOUR WALLET", "APPROVE IT THERE. USUALLY IN LESS THAN 20 SEC"])
-        : ["SENDING", "USUALLY IN LESS THAN 20 SEC"]; // Bread proves remotely (local only when that service is down), blocks every 3 s: longer means trouble (Gaylord, 2026-10-19)
+        : [b.inbound ? "COLLECTING" : "SENDING", "USUALLY IN LESS THAN 20 SEC"]; // Bread proves remotely (local only when that service is down), blocks every 3 s: longer means trouble (Gaylord, 2026-10-19)
   return [what, `${how}  ${clock}`];
 }
 
