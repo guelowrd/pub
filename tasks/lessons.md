@@ -152,3 +152,5 @@ The live bundle splits: flow.ts lands in `assets/hub-*.js`, so a marker string f
 Grepping the live chunks for a code comment finds nothing: the minifier strips them. Grep a player-facing string the change
 added, or when the change adds no string, trust two facts together: the live index hash changed after the push and
 `GET api.github.com/repos/guelowrd/pub/commits/<sha>/status` reports Vercel success for that sha.
+The chain code sits in a lazy chunk (ChainHost-*.js) that the index HTML never names: walk the chunks the HTML names, grep
+them for `ChainHost-*.js`, then grep that file. The live hash matched the local dist name on 2026-10-25.
