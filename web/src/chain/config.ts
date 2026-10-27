@@ -34,6 +34,8 @@ export const SCORE_MAX = 50_000;
 // Where the assembled note scripts live (written by `cargo run --bin build_scripts`).
 export const RECORD_SCRIPT_URL = "/scripts/record.bin";
 export const SHOT_SCRIPT_URL = "/scripts/shot.bin";
+// GeoQuizz's sale script (gq masm/sale/sale.masm): the shop buys only from its sale notes
+export const SALE_SCRIPT_URL = "/scripts/sale.bin";
 // masm/challenge/challenge_core.masm CLAIM_FUZZ: how late a claim proved before a deadline may land.
 export const CLAIM_FUZZ = 64;
 

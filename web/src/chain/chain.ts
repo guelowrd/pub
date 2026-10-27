@@ -24,7 +24,7 @@ import {
   Word,
 } from "@miden-sdk/miden-sdk";
 import type { useMidenClient } from "@miden-sdk/react";
-import { MAINNET, MIDEN_RPC_URL, RECORD_SCRIPT_URL, SHOT_SCRIPT_URL } from "./config";
+import { MAINNET, MIDEN_RPC_URL, RECORD_SCRIPT_URL, SALE_SCRIPT_URL, SHOT_SCRIPT_URL } from "./config";
 import { decodeStorage, NOTE_TAG, type AccountFelts, type ChallengeStorage, type Word4 } from "./notes";
 import { acceptNote, noteKind } from "./flow";
 
@@ -36,6 +36,8 @@ export type Scripts = {
   shot: NoteScript;
   recordRoot: string;
   shotRoot: string;
+  /** GeoQuizz's sale script, the one the shop buys from */
+  saleRoot: string;
   /** every shot script by root: a record names the one its shots run (storage.shotRoot) */
   shots: Map<string, NoteScript>;
 };
@@ -44,8 +46,8 @@ let scriptsPromise: Promise<Scripts> | undefined;
 /** The note scripts, assembled by `cargo run --bin build_scripts`. */
 export function loadScripts(): Promise<Scripts> {
   scriptsPromise ??= (async () => {
-    const [p, c] = await Promise.all(
-      [RECORD_SCRIPT_URL, SHOT_SCRIPT_URL].map(async (url) => {
+    const [p, c, s] = await Promise.all(
+      [RECORD_SCRIPT_URL, SHOT_SCRIPT_URL, SALE_SCRIPT_URL].map(async (url) => {
         const buf = await fetch(url).then((r) => {
           if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
           return r.arrayBuffer();
@@ -54,7 +56,7 @@ export function loadScripts(): Promise<Scripts> {
       }),
     );
     const shots = new Map([c].map((n) => [n.root().toHex(), n]));
-    return { record: p, shot: c, recordRoot: p.root().toHex(), shotRoot: c.root().toHex(), shots };
+    return { record: p, shot: c, recordRoot: p.root().toHex(), shotRoot: c.root().toHex(), saleRoot: s.root().toHex(), shots };
   })();
   return scriptsPromise;
 }

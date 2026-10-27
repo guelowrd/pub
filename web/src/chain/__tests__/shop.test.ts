@@ -1,7 +1,10 @@
 // The Gamecoin shop (GeoQuizz's, shared): sale notes (PSWAP) anyone may post; the game buys from the cheapest one at or under the price.
+import { readFileSync } from "node:fs";
+import { AccountId, FungibleAsset, Note, NoteAssets, NoteMetadata, NoteRecipient, NoteScript, NoteStorage, NoteTag, NoteType } from "@miden-sdk/miden-sdk";
 import { describe, expect, it } from "vitest";
+import { feltArray, wordFromFelts } from "../chain";
 import { GC_FAUCET, GC_PRICE } from "../config";
-import { acceptSale, payFor, pickSale, pswapTag, type Sale } from "../shop";
+import { acceptSale, decodeSale, payFor, pickSale, pswapTag, type Sale } from "../shop";
 
 // mainnet USDCx (the fee asset; the testnet one is 0x4cbdcaffe75f0a317482224dae6436)
 const PAY = "0xe69e6ca6e39df1b10c1e5399399feb";
@@ -16,6 +19,25 @@ describe("a sale note the game buys from", () => {
     expect(pswapTag(PAY)).toBe(TAG);
   });
 
+
+  it("is GeoQuizz's sale note (public/scripts/sale.bin), never a standard PSWAP note: a buyer's Bread lists a standard leftover and a tap buys all of it (wallet#1952)", () => {
+    const saleScript = NoteScript.deserialize(new Uint8Array(readFileSync("public/scripts/sale.bin")));
+    const seller = AccountId.fromHex("0xa6be5c4d8fdc03415bde66453d5f91");
+    const pay = AccountId.fromHex(PAY);
+    // PSWAP storage: pay faucet (suffix, prefix), asked, min fill step, payback note type, seller (suffix, prefix)
+    const storage = [pay.suffix().asInt(), pay.prefix().asInt(), 10n * GC_PRICE, 0n, 1n, seller.suffix().asInt(), seller.prefix().asInt()];
+    const note = (script: NoteScript) =>
+      new Note(
+        new NoteAssets([new FungibleAsset(AccountId.fromHex(GC_FAUCET), 10n * GC)]),
+        new NoteMetadata(seller, NoteType.Public, new NoteTag(TAG)),
+        new NoteRecipient(wordFromFelts([1n, 2n, 3n, 4n]), script, new NoteStorage(feltArray(storage))),
+      );
+    const saleRoot = saleScript.root().toHex();
+    // the script GeoQuizz posts its sales with (gq masm/sale/sale.masm, `cargo run --bin build_scripts`)
+    expect(saleRoot).toBe("0xfe5c6de19f05ae3c77227128bcf15180fc252b94429a3b030967126077e1db2a");
+    expect(decodeSale("0xs", note(saleScript), saleRoot)).toMatchObject({ creator: seller.toString(), gcFaucet: GC_FAUCET, payFaucet: PAY, offered: 10n * GC, asked: 10n * GC_PRICE, minFill: 0n });
+    expect(decodeSale("0xp", note(NoteScript.pswap()), saleRoot)).toBeNull();
+  });
 
   it("offers Gamecoin, asks the pay asset, at or under the official price", () => {
     expect(acceptSale(sale(), PAY)).toBe(true);

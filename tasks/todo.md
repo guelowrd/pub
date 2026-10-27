@@ -1023,3 +1023,7 @@ Caps: the TV spells USDCX (its faces are capitals); the rule says USDCx in prose
 - Gaylord (2026-10-25): the collect wait read SENDING / TAKING IT. USUALLY IN LESS THAN 20 SEC, and nothing is sent. The wait text is now
   YOUR COINS ARE COMING, and the last stage's title reads COLLECTING instead of SENDING when the coins come to the player (collect and
   the prize claim after a shot, via a Busy.inbound flag); posts, shots and buys keep SENDING. Not seen live: KSN has nothing to collect.
+- 2026-10-27 wallet#1952: Bread listed a sale's leftover to a buyer who could pay for all of it, and one tap bought it all (a standard
+  PSWAP note reads "no amount" as "everything"). GeoQuizz now sells through its own sale note (gq masm/sale/sale.masm: anyone but the
+  seller names an amount); the shop buys only from those (public/scripts/sale.bin, decodeSale on its root). Tested on testnet: a PUB
+  test wallet with 100 USDC bought 10 GC and its client never kept the leftover.
