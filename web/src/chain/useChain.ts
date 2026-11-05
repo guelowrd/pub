@@ -16,6 +16,7 @@ import { blockToMs, canDrive, claimVerdict, explain, fmtGamecoin, myOpenShotsOn,
 import { decodeGame, encodeGame, genuine, newGame, pubAnswer } from "./game";
 import { openSales, pickSale } from "./shop";
 import type { Event } from "../game/sim";
+import { store } from "../board";
 
 export type Stage = "connect" | "prepare" | "wallet" | "network";
 export type Busy = { text: string; stage: Stage; since: number; inbound?: boolean }; // inbound: coins come to the player (collect, settle), so the last stage reads COLLECTING (Gaylord 2026-10-25)
@@ -97,6 +98,7 @@ export function useChain(): ChainApi {
           const list = await listChallengeNotes(h);
           notesRef.current = list;
           setNotes(list);
+          if (!notesReadRef.current) store("pub.wait", String(Math.round(performance.now() / 1000))); // how long LOADING took here: the next visit's estimate
           notesReadRef.current = true;
           setNotesRead(true);
         }

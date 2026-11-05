@@ -13,7 +13,7 @@ import { need, unlocked } from "./game/unlock";
 import { NAME } from "./game/sim";
 import { audio } from "./audio";
 import type { ChainApi, ChallengeNote } from "./chain/ChainHost";
-import { BREAD_URL, blocksToClock as clock, canDrive, fmtGamecoin, fmtPay, sameAccount as same, sameWord, waiting } from "./chain/flow";
+import { BREAD_URL, blocksToClock as clock, canDrive, fmtGamecoin, fmtPay, loadingLines, sameAccount as same, sameWord, USUAL_WAIT, waiting } from "./chain/flow";
 import { boards, history, keyOf, owed as owedNotes } from "./chain/hub";
 import { GC_DECIMALS, GC_PRICE, MAINNET, QUANTITIES, STAKE, STATUS_URL } from "./chain/config";
 import { noteDeadline } from "./chain/notes";
@@ -138,6 +138,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const me = chain?.me ?? null, height = chain?.height ?? 0, notes = chain?.notes ?? [], busy = chain?.busy ?? null, trouble = chain?.trouble ?? null;
   useEffect(() => { if (mode === "challenge" && me && chain && chain.balance == null) void chain.readBalance(); }, [mode, me]); // eslint-disable-line react-hooks/exhaustive-deps -- CHALLENGE needs the balance known: read it on arrival when nothing has yet
   const loading = !chain?.ready || !chain.notesRead;
+  const wait = loadingLines(performance.now(), Number(stored("pub.wait")) || USUAL_WAIT); // LOADING with its clock (the tick re-renders it) and the usual wait
   const champion = (n: ChallengeNote) => chain?.nameOf(n.storage.champion) ?? "???";
   const rival = (n: ChallengeNote) => (n.storage.rival && chain?.nameOf(n.storage.rival)) ?? "???";
   const songIn = (n: ChallengeNote) => Number(n.storage.game[4] ?? 0n);
@@ -193,7 +194,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       if (done) { word = "try another"; go = () => setReview(null); } // an over record (by link, mostly): the key leads to the open ones, like BACK (Gaylord 2026-10-21)
       else if (!mine && chain?.balance != null && chain.balance < STAKE) { status = ["GET A GAMECOIN TO CHALLENGE THE RECORD!"]; word = "gamecoins"; go = openShop; } // known before SHOT (Gaylord 2026-10-23: why wait for the press)
       else if (!mine) { word = "shot"; go = shoot(r); }
-    } else if (loading || opening) status = ["LOADING"];
+    } else if (loading || opening) status = wait;
     else if (me && chain!.balance != null && chain!.balance < STAKE) { status = ["GET A GAMECOIN TO CHALLENGE A RECORD!"]; word = "gamecoins"; go = openShop; } // the list waits behind the shop (Gaylord 2026-10-23: the pop-up on the CHALLENGE screen itself)
     else if (!records.length) status = ["NO CHALLENGES YET"];
     else {
@@ -214,7 +215,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       backdrop = previewOf(STATIONS[o.song]);
       if (o.word === "collect") { word = "collect"; go = collectAll; }
       else if (o.word === "drive") { word = "drive"; go = () => onShot(o.shots!, o.record!); }
-    } else if (loading) status = ["LOADING"];
+    } else if (loading) status = wait;
     else if (!runs.length) { status = ["NO RUNS YET", "A POST COSTS 1 GAMECOIN. TAP THE RED KEY TO GET SOME"]; word = "gamecoins"; go = openShop; }
     else {
       list(runs.length); count = `${runs.length} RUNS`;
@@ -226,7 +227,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
     }
   } else if (mode === "leaderboards") {
     heading = "LEADERBOARDS";
-    if (loading) status = ["LOADING"];
+    if (loading) status = wait;
     else if (!board) { // the five boards as a list, how many players on each (BEST RECORDS: distinct champions, its page counts the records); ENTER opens one
       const players = (rows: { who: Parameters<typeof keyOf>[0] }[]) => new Set(rows.map((r) => keyOf(r.who))).size;
       five(); list(BOARDS.length);
@@ -467,7 +468,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
             <>
               {brand(TV.brand, "right")}
               <div className="gp-status" style={{ left: px(TV.safe[0]), top: px(mid - baselineEm(FAMILY.cp) * TV.heading[2] * K.cp), width: px(TV.safe[2]) }}>{/* the heading wraps when it must (phones); the paragraph follows it */}
-                <p className="gp-cp" style={{ fontSize: px(TV.heading[2] * K.cp), color: trouble && !trouble.retry ? PINK : AMBER }}>{status[0]}</p>
+                <p className="gp-cp" style={{ fontSize: px(TV.heading[2] * K.cp), color: trouble && !trouble.retry ? PINK : AMBER }}>{status[0]}{status === wait && <span className="pub-dots" />}</p>
                 {status[1] && <p className="gp-para gp-cp" style={{ marginTop: px(34 * u - (1 - baselineEm(FAMILY.cp)) * TV.heading[2] * K.cp), fontSize: px(20 * u), color: CYAN }}>{status[1]}</p>}
               </div>
             </>

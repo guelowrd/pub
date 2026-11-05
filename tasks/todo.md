@@ -1027,3 +1027,9 @@ Caps: the TV spells USDCX (its faces are capitals); the rule says USDCx in prose
   PSWAP note reads "no amount" as "everything"). GeoQuizz now sells through its own sale note (gq masm/sale/sale.masm: anyone but the
   seller names an amount); the shop buys only from those (public/scripts/sale.bin, decodeSale on its root). Tested on testnet: a PUB
   test wallet with 100 USDC bought 10 GC and its client never kept the leftover.
+
+## LOADING with a clock (2026-11-05)
+- Gaylord: "can we have an estimation of the LOADING time... three dots repeating, or any kind of mini loop, and time elapsed + estimation".
+- Measured on the live site (desktop Chrome, cached): LOADING clears 21 s after the page opens, twice; the node answered 503 on a share of SyncNotes / GetNotesById / GetBlockHeaderByNumber calls that day, the SDK retried.
+- Done: LOADING + animated dots (CSS `::after`, out of the centring, static under reduced motion), the paragraph `USUALLY 20 SEC  0:12` in the busy-line format (`loadingLines` in flow.ts). The clock counts from the page opening, where the chain starts loading. The usual wait is this device's last one (`pub.wait`, written when the notes first read) or 20 s. CHALLENGE / MY RUNS / LEADERBOARDS and the results screen.
+- Skipped: a word when the wait runs past the usual (the clock says it); the same clock on CONNECTING.

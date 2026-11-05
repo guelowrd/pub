@@ -168,6 +168,10 @@ export function waiting(b: { stage: "connect" | "prepare" | "wallet" | "network"
   return [what, `${how}  ${clock}`];
 }
 
+/** The LOADING lines: the usual wait (this device's last one, else 20 s, a desktop on fibre 2026-11-05) and the clock since the page opened. */
+export const USUAL_WAIT = 20;
+export const loadingLines = (sinceMs: number, usual: number): [string, string] => ["LOADING", `USUALLY ${usual} SEC  ${secondsToClock(Math.max(0, Math.floor(sinceMs / 1000)))}`];
+
 /** The outcome line once the chain shows the effect: "YOU WIN! DONE!" */
 export const doneText = (action: string) => `${/[.!?]$/.test(action) ? action : `${action}.`} DONE!`;
 

@@ -93,6 +93,9 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .start-prompt .glyphs { display: block; color: transparent; -webkit-text-stroke: .4px #fff2ff; background-image: repeating-linear-gradient(0deg, #080c2440 0 1px, transparent 1px 5px), linear-gradient(#fff 0%, #b9f5ff 28%, #5385e8 48%, #201a5b 49%, #f9abff 58%, #ff37bd 80%, #fff4ff 100%); background-clip: text; -webkit-background-clip: text; filter: drop-shadow(calc(-2 * var(--u)) 0 #63e7ff); }
 .start-prompt .glyphs::after { content: attr(data-text); position: absolute; inset: 0; color: transparent; background: linear-gradient(115deg, transparent 43%, #fff 50%, transparent 57%); background-size: 300% 100%; background-clip: text; -webkit-background-clip: text; animation: pub-start-sheen 3.2s linear infinite; }
 @keyframes pub-start-sheen { from { background-position: 150% 0; } to { background-position: -150% 0; } }
+.pub-dots::after { content: ""; position: absolute; animation: pub-dots 1.6s infinite; } /* the three dots after LOADING, out of the centring */
+@keyframes pub-dots { 0%, 24% { content: ""; } 25%, 49% { content: "."; } 50%, 74% { content: ".."; } 75%, 100% { content: "..."; } }
+@media (prefers-reduced-motion: reduce) { .pub-dots::after { animation: none; content: "..."; } }
 @keyframes pub-blink { 0%, 72.5% { opacity: 1; } 72.6%, 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .start-prompt, .start-prompt .glyphs::after { animation: none; } .start-prompt .glyphs::after { display: none; } }
 /* the head unit and the results screen (visual update, results kit): the designer's face scaled from its canvas; layers and text placed in canvas pixels inside */

@@ -9,7 +9,7 @@ import { CHARACTERS } from "./game/course";
 import { RATE, agePoints, type Rider, type Sim } from "./game/sim";
 import { STATIONS } from "./game/stations";
 import { GC_DECIMALS, GC_PRICE, QUANTITIES, STAKE } from "./chain/config";
-import { BREAD_URL, fmtPay, recordLinks, waiting } from "./chain/flow";
+import { BREAD_URL, fmtPay, loadingLines, recordLinks, USUAL_WAIT, waiting } from "./chain/flow";
 import { canSaveCard, cardFor, saveCard, type Card } from "./share";
 import type { ChainApi, Posted } from "./chain/ChainHost";
 import type { Settled } from "./chain/useChain";
@@ -58,7 +58,8 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
   const pick = `${QUANTITIES[qty]} ${QUANTITIES[qty] === 1 ? "GAMECOIN" : "GAMECOINS"} FOR ${fmtPay(BigInt(QUANTITIES[qty]) * GC_PRICE).toUpperCase()}`;
   const busy = chain?.busy ?? null, trouble = chain?.trouble ?? null;
   const [, setTick] = useState(0);
-  useEffect(() => { if (!busy) return; const t = setInterval(() => setTick((n) => n + 1), 1000); return () => clearInterval(t); }, [busy]); // the waiting line's clock
+  const ticking = !!busy || !chain?.ready;
+  useEffect(() => { if (!ticking) return; const t = setInterval(() => setTick((n) => n + 1), 1000); return () => clearInterval(t); }, [ticking]); // the waiting and loading lines' clocks
   useEffect(() => { // the arrow keys step the quantity while the shop is on the well
     const down = (e: KeyboardEvent) => { if (!picker) return; if (e.key === "ArrowLeft") setQty((q) => Math.max(0, q - 1)); else if (e.key === "ArrowRight") setQty((q) => Math.min(QUANTITIES.length - 1, q + 1)); else return; e.preventDefault(); };
     addEventListener("keydown", down);
@@ -118,7 +119,7 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
       status = waiting(busy, chain?.local).join("\n");
       keys = [postKey(busy.stage !== "network" ? (coins ? "BUY" : "POST IT") : coins ? "BUYING" : "POSTING", true)];
     }
-    else if (!chain?.ready) { status = "LOADING"; keys = [postKey("POST IT", true)]; }
+    else if (!chain?.ready) { status = loadingLines(performance.now(), Number(stored("pub.wait")) || USUAL_WAIT).join("\n"); keys = [postKey("POST IT", true)]; }
     else if (!chain.me) { status = null; keys = [noBread ? postKey("GET BREAD", false, () => void window.open(BREAD_URL, "_blank", "noopener")) : postKey("CONNECT", false, () => void chain.connect())]; } // the key says it
     else if (chain.balance != null && chain.balance < STAKE) needCoins();
     else { status = note ?? TERMS; keys = [postKey("POST IT")]; }
@@ -160,7 +161,7 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
           ];
         })}
         {text(heading, G.post.head[0], G.post.head[1], G.post.head[2], color)}
-        {status && <span className="hu-text hu-mono rs-status" style={{ left: px(G.post.status[0]), width: px(G.post.status[3]), top: px(statusTop), fontSize: px(statusSize), color: MUTED, whiteSpace: flow ? "normal" : undefined }}>{flow ? status.replace(/\n/g, " ") : status}</span>}
+        {status && <span className="hu-text hu-mono rs-status" style={{ left: px(G.post.status[0]), width: px(G.post.status[3]), top: px(statusTop), fontSize: px(statusSize), color: MUTED, whiteSpace: flow ? "normal" : undefined }}>{flow ? status.replace(/\n/g, " ") : lines[0] === "LOADING" ? <>{lines[0]}<span className="pub-dots" />{`\n${lines.slice(1).join("\n")}`}</> : status}</span>}
         {picker && (
           <span className="rs-pick" style={{ left: px(G.post.status[0]), width: px(G.post.status[3]), top: px(statusTop + statusSize * 1.6), fontSize: px(Math.min(statusSize * 1.4, sw / ((pick.length + 6) * 0.54))) }}>{/* bigger than the terms where the well allows (desktop, portrait), the label plus its two chevrons across the well where it does not (landscape) */}
             <button aria-label="FEWER" disabled={qty === 0} onClick={() => setQty(qty - 1)}>{"<"}</button>
