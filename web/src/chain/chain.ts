@@ -159,12 +159,15 @@ async function scanNotes(tip: number): Promise<ChallengeNote[]> {
         known.set(id, { id, idWord: wordFromHex(id), ...decoded, consumed: false, createdAt, nullifier: input.note().nullifier().toHex() });
       }
     }
-    // which are used now, and since when
-    for (const n of known.values()) {
-      if (n.consumed) continue;
-      const at = await rpc.getNullifierCommitHeight(Word.fromHex(n.nullifier!), n.createdAt ?? 0).catch(() => undefined);
-      if (at !== undefined) known.set(n.id, { ...n, consumed: true, consumedAt: at });
-    }
+    // which are used now, and since when: 25 asks in flight (one at a time took minutes for hundreds of notes)
+    const open = [...known.values()].filter((n) => !n.consumed);
+    for (let i = 0; i < open.length; i += 25)
+      await Promise.all(
+        open.slice(i, i + 25).map(async (n) => {
+          const at = await rpc.getNullifierCommitHeight(Word.fromHex(n.nullifier!), n.createdAt ?? 0).catch(() => undefined);
+          if (at !== undefined) known.set(n.id, { ...n, consumed: true, consumedAt: at });
+        }),
+      );
   } finally {
     rpc.free();
   }

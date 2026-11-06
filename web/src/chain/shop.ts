@@ -97,11 +97,15 @@ export async function openSales(payFaucet: string): Promise<Sale[]> {
         seen.set(id, { ...sale, createdAt: input.location()?.blockNum() ?? 0, nullifier: input.note().nullifier().toHex(), consumed: false });
       }
     }
-    for (const s of seen.values()) {
-      if (s.consumed) continue;
-      const at = await rpc.getNullifierCommitHeight(Word.fromHex(s.nullifier), s.createdAt).catch(() => undefined);
-      if (at !== undefined) s.consumed = true;
-    }
+    // 25 asks in flight, as in chain.ts
+    const open = [...seen.values()].filter((s) => !s.consumed);
+    for (let i = 0; i < open.length; i += 25)
+      await Promise.all(
+        open.slice(i, i + 25).map(async (s) => {
+          const at = await rpc.getNullifierCommitHeight(Word.fromHex(s.nullifier), s.createdAt).catch(() => undefined);
+          if (at !== undefined) s.consumed = true;
+        }),
+      );
   } finally {
     rpc.free();
   }
