@@ -775,12 +775,14 @@ export function draw(ctx: CanvasRenderingContext2D, s: Sim, w: number, h: number
     g.addColorStop(0, "rgba(120,130,165,0)"); g.addColorStop(0.5, `rgba(120,130,165,${(a * (1 + 0.6 * dip)).toFixed(3)})`); g.addColorStop(1, "rgba(120,130,165,0)");
     ctx.fillStyle = g; ctx.fillRect(0, y - 0.05 * h, w, 0.12 * h);
   }
-  if (songId === "midnight-chase" && !inside) {
-    // the searchlight: from the helicopter down to a spot that sweeps the road ahead
+  // the searchlight: from the helicopter down to a spot that sweeps the road up to 100 m ahead. It fades out over the
+  // 100 m before that reach touches the next mouth, so no light ever falls inside the bore (Gaylord, 2026-11-07)
+  const next = s.forks.find((o) => o.mouth > s.z), beam = next ? Math.min(1, Math.max(0, (next.mouth - s.z - 100) / 100)) : 1;
+  if (songId === "midnight-chase" && !inside && beam > 0) {
     const hx = w * (0.5 + 0.3 * Math.sin(t * 0.12)) + par * 0.6, hyy = hy * 0.3 + 6 * Math.sin(t * 1.3) + (420 - 330) / 512 * w * 0.16;
     const p = place(s.z + 70 + 30 * Math.sin(t * 0.5), 3 * Math.sin(t * 0.37)), g = ctx.createLinearGradient(hx, hyy, p.px, p.py);
     g.addColorStop(0, "rgba(255,250,220,0.05)"); g.addColorStop(1, "rgba(255,250,220,0.3)");
-    ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(hx, hyy); ctx.lineTo(p.px - 4 * p.k, p.py); ctx.lineTo(p.px + 4 * p.k, p.py); ctx.fill(); ctx.restore();
+    ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = beam; ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(hx, hyy); ctx.lineTo(p.px - 4 * p.k, p.py); ctx.lineTo(p.px + 4 * p.k, p.py); ctx.fill(); ctx.restore();
   }
   if ((songId === "outrun-pulse" || songId === "bittersweet-sunset" || songId === "night-cruise") && !inside) {
     // sun glare, a lens flare, or the moon's path: light on the water to the right
