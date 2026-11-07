@@ -31,7 +31,7 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
-    include: ["src/**/*.test.ts"],
+    include: ["src/**/*.test.{ts,tsx}"],
     env: { VITE_MIDEN_NETWORK: "mainnet" }, // the tests pin the mainnet build whatever .env.local says
     server: { deps: { external: [/@miden-sdk\/miden-wallet-adapter-react/] } },
   },

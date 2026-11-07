@@ -77,22 +77,24 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
   const picked = s.stops.filter((o) => o.taken && o.rider).map((o) => o.rider!);
   const R = G.riders, shown = picked.slice(0, R.cols * R.rows);
 
-  // the post well: what it says, which key it offers; or the shot's verdict
-  let heading = "POST YOUR RECORD", color = CYAN, status: string | null = TERMS, keys: KeyDef[] = [], footer: KeyDef[];
+  // the post well: what it says, which key it offers; or the shot's verdict. A shot that beat the record gets the well too, under
+  // the verdict: the winning score goes up as a record of the rival's own (alelpoan 2026-11-07: "they've essentially set a new record")
+  const beaten = !!shot && !!settled?.won, terms = beaten ? settled!.text : TERMS;
+  let heading = beaten ? "RECORD BEATEN" : "POST YOUR RECORD", color = beaten ? MINT : CYAN, status: string | null = terms, keys: KeyDef[] = [], footer: KeyDef[];
   if (shot) {
     const left = (label: string, onClick?: () => void) => ({ kind: "footer" as const, rect: G.footer[0], label, disabled: !onClick, onClick });
     // one shot is one drive: a verdict (or a lost shot) closes with NEW RUN; a claim that failed with time left offers TRY AGAIN
     const lost = trouble?.t.kind === "too-late";
     footer = [settled || lost ? left("NEW RUN", onNew) : trouble?.retry ? left("TRY AGAIN", () => onRetry(trouble.retry!)) : left("TRY AGAIN"),
       { kind: "footer", rect: G.footer[1], label: "MENU", disabled: !!busy, onClick: onMenu }];
-    if (settled) { heading = settled.won ? "RECORD BEATEN" : "RECORD HELD"; color = settled.won ? MINT : PINK; status = settled.text; }
-    else { // the score tells the verdict before the chain does; the wait says where it is and how long it takes
+    if (settled && !settled.won) { heading = "RECORD HELD"; color = PINK; status = settled.text; }
+    else if (!settled) { // the score tells the verdict before the chain does; the wait says where it is and how long it takes
       const won = s.score > shot.target;
       heading = lost ? "SHOT LOST" : won ? "RECORD BEATEN" : "CHECKING RESULT"; color = lost ? PINK : won ? MINT : color;
       status = trouble ? trouble.t.title.toUpperCase() : busy ? [busy.text, ...waiting(busy, chain?.local)].join("\n") : `SCORE TO BEAT ${fmt(shot.target)}`;
     }
-  } else {
-    footer = [{ kind: "footer", rect: G.footer[0], label: "SAME RUN", onClick: onSame }, { kind: "footer", rect: G.footer[1], label: "NEW RUN", onClick: onNew }];
+  } else footer = [{ kind: "footer", rect: G.footer[0], label: "SAME RUN", onClick: onSame }, { kind: "footer", rect: G.footer[1], label: "NEW RUN", onClick: onNew }];
+  if (!shot || beaten) {
     const post = () => { chain?.dismiss(); void chain?.post(s.seed, station, s.score).then((p) => { if (p) { setPosted(p); setNote(null); } }); };
     const postKey = (label: string, disabled = false, onClick = post): KeyDef => ({ kind: "post", rect: G.action, label, disabled, onClick });
     const buy = () => void chain?.buy(BigInt(QUANTITIES[qty]) * 10n ** BigInt(GC_DECIMALS)).then((m) => m && setNote(m));
@@ -122,7 +124,7 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
     else if (!chain?.ready) { status = loadingLines(performance.now(), Number(stored("pub.wait")) || USUAL_WAIT).join("\n"); keys = [postKey("POST IT", true)]; }
     else if (!chain.me) { status = null; keys = [noBread ? postKey("GET BREAD", false, () => void window.open(BREAD_URL, "_blank", "noopener")) : postKey("CONNECT", false, () => void chain.connect())]; } // the key says it
     else if (chain.balance != null && chain.balance < STAKE) needCoins();
-    else { status = note ?? TERMS; keys = [postKey("POST IT")]; }
+    else { status = note ?? terms; keys = [postKey("POST IT")]; }
   }
 
   // the status lines shrink to fit the well's width and the room above the key (the terms are three lines); on desktop the
