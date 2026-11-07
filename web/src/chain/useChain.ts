@@ -12,7 +12,7 @@ import { accountFelts, bech32Of, endpoint, fetchChallengeNote, knownNote, listCh
 import { keyOf, lettersBackward, nicknames, playersInOrder } from "./hub";
 import { buyGamecoin, collect as collectNotes, gcBalance, postRecord, postShot, setBalanceListener, setPendingListener, setSubmitAttemptListener, setSubmitStageListener, settle as settleNotes, waitFor, type Submitted } from "./bread";
 import { shotDeadline, shotStorage, ZERO_WORD, type AccountFelts, type ChallengeStorage } from "./notes";
-import { blockToMs, canDrive, claimVerdict, explain, fmtGamecoin, myOpenShotsOn, NOT_FINISHED, doneText, settlePlan, SHOT_LOST, shotRefusal, WALLET_SILENT, withTimeout, type Trouble } from "./flow";
+import { blockToMs, canDrive, claimVerdict, explain, fmtGamecoin, myOpenShotsOn, NOT_FINISHED, settlePlan, SHOT_LOST, shotRefusal, WALLET_SILENT, withTimeout, type Trouble } from "./flow";
 import { decodeGame, encodeGame, genuine, newGame, pubAnswer } from "./game";
 import { openSales, pickSale } from "./shop";
 import type { Event } from "../game/sim";
@@ -246,7 +246,7 @@ export function useChain(): ChainApi {
       if (shots.some((s) => h >= shotDeadline(s.storage))) throw new Error(SHOT_LOST);
       return client ? settleNotes(client, walletRef.current, shots, claimPrize ? record : undefined, pubAnswer(seed, song, log, dist)) : Promise.reject(new Error("client not ready"));
     }, undefined, true);
-    return submitted ? { won, claimed: true, text: doneText(text) } : null;
+    return submitted ? { won, claimed: true, text } : null;
   };
 
   const collect: ChainApi["collect"] = async (picked) => {

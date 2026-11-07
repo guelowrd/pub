@@ -172,9 +172,6 @@ export function waiting(b: { stage: "connect" | "prepare" | "wallet" | "network"
 export const USUAL_WAIT = 20;
 export const loadingLines = (sinceMs: number, usual: number): [string, string] => ["LOADING", `USUALLY ${usual} SEC  ${secondsToClock(Math.max(0, Math.floor(sinceMs / 1000)))}`];
 
-/** The outcome line once the chain shows the effect: "YOU WIN! DONE!" */
-export const doneText = (action: string) => `${/[.!?]$/.test(action) ? action : `${action}.`} DONE!`;
-
 /** Bread had not synced up to the block the request binds yet. */
 export const isChainBehind = (e: unknown) => /ChainBehindBoundBlock|has not reached that block/i.test(e instanceof Error ? e.message : String(e));
 

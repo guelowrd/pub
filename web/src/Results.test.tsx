@@ -17,8 +17,8 @@ const page = (settled: { won: boolean; claimed: boolean; text: string } | null, 
 
 describe("a shot's results well", () => {
   it("offers POST IT once the win is settled, under the verdict", () => {
-    const html = page({ won: true, claimed: true, text: "1,500 POINTS. YOU WIN! DONE!" });
-    expect(html).toContain("RECORD BEATEN"); expect(html).toContain("YOU WIN! DONE!"); expect(html).toContain("NOW POST IT AS YOUR OWN RECORD."); expect(html).toContain(">POST IT<"); expect(html).toContain(">NEW RUN<"); expect(html).toContain(">MENU<");
+    const html = page({ won: true, claimed: true, text: "1,500 POINTS. YOU WIN!" });
+    expect(html).toContain("RECORD BEATEN"); expect(html).toContain("YOU WIN!"); expect(html).toContain("NOW POST IT AS YOUR OWN RECORD."); expect(html).toContain(">POST IT<"); expect(html).toContain(">NEW RUN<"); expect(html).toContain(">MENU<");
   });
   it("offers nothing to post on a loss, or before the chain has settled", () => {
     expect(page({ won: false, claimed: false, text: "NOT ENOUGH." })).not.toContain("POST IT");

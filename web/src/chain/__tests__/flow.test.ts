@@ -4,7 +4,7 @@ import type { ChallengeNote } from "../chain";
 import type { ChallengeStorage, Word4 } from "../notes";
 import { GC_FAUCET, MIN_SHOT_WINDOW_BLOCKS, RECORD_LIFETIME_BLOCKS, SCORE_MAX, SHOT_DRIVE_BLOCKS } from "../config";
 import { encodeGame, newGame, RULES_VERSION } from "../game";
-import { acceptNote, blocksToClock, canDrive, claimVerdict, explain, fmtGamecoin, isChainBehind, myOpenShotsOn, NOT_FINISHED, WALLET_SILENT, waiting, noteKind, doneText, recordLinks, settlePlan, shotRefusal, submitWithRetry, withTimeout, SHARE_LINES } from "../flow";
+import { acceptNote, blocksToClock, canDrive, claimVerdict, explain, fmtGamecoin, isChainBehind, myOpenShotsOn, NOT_FINISHED, WALLET_SILENT, waiting, noteKind, recordLinks, settlePlan, shotRefusal, submitWithRetry, withTimeout, SHARE_LINES } from "../flow";
 
 const champion = { suffix: 1n, prefix: 2n };
 const me = { suffix: 3n, prefix: 4n };
@@ -164,13 +164,6 @@ describe("plain words for failures", () => {
   it("times a slow promise out with a network trouble", async () => {
     await expect(withTimeout(new Promise(() => {}), 10, "Syncing")).rejects.toThrow(/Syncing timed out/);
     await expect(withTimeout(Promise.resolve(1), 10, "x")).resolves.toBe(1);
-  });
-});
-
-describe("outcome wording", () => {
-  it("says done in the screen's own case", () => {
-    expect(doneText("POSTING")).toBe("POSTING. DONE!");
-    expect(doneText("5,200 POINTS. YOU WIN!")).toBe("5,200 POINTS. YOU WIN! DONE!");
   });
 });
 
