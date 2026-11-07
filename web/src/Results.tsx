@@ -79,7 +79,8 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
 
   // the post well: what it says, which key it offers; or the shot's verdict. A shot that beat the record gets the well too, under
   // the verdict: the winning score goes up as a record of the rival's own (alelpoan 2026-11-07: "they've essentially set a new record")
-  const beaten = !!shot && !!settled?.won, terms = beaten ? settled!.text : TERMS;
+  // the verdict then what POST IT does (Gaylord 2026-11-07: "make it clear user can post the new record")
+  const beaten = !!shot && !!settled?.won, terms = beaten ? `${settled!.text}\nNOW POST IT AS YOUR OWN RECORD.\nRIVALS GOTTA PAY TO BEAT IT, OR THEIR GAMECOIN IS YOURS!` : TERMS;
   let heading = beaten ? "RECORD BEATEN" : "POST YOUR RECORD", color = beaten ? MINT : CYAN, status: string | null = terms, keys: KeyDef[] = [], footer: KeyDef[];
   if (shot) {
     const left = (label: string, onClick?: () => void) => ({ kind: "footer" as const, rect: G.footer[0], label, disabled: !onClick, onClick });
@@ -130,7 +131,7 @@ export default function Results({ s, station, chain, posted, setPosted, shot, se
   // the status lines shrink to fit the well's width and the room above the key (the terms are three lines); on desktop the
   // action key sits beside them, as tall as the well
   const lines = status ? status.split("\n") : [], [, sb, size0, sw, room] = G.post.status;
-  const flow = layout === "landscape" && status === TERMS; // on a landscape phone the terms reflow across the well at 11 px, four lines where the three written ones would read at 9 px
+  const flow = layout === "landscape" && status === terms; // on a landscape phone the terms reflow across the well at 11 px, four lines where the three written ones would read at 9 px
   const statusSize = flow ? 11 : Math.max(7, Math.min(size0, sw / (Math.max(1, ...lines.map((l) => l.length)) * 0.54), room / (Math.max(1, lines.length) * 1.25)));
   const statusTop = sb - baselineEm("Share Tech Mono") * statusSize;
   const well = (G.post as { well?: number[] }).well; // desktop and landscape: the key stands beside the terms and fills the well
