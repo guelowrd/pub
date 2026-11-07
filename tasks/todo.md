@@ -1035,3 +1035,10 @@ Caps: the TV spells USDCX (its faces are capitals); the rule says USDCx in prose
 - Skipped: a word when the wait runs past the usual (the clock says it); the same clock on CONNECTING.
 - [x] 2026-11-06 chain.ts and shop.ts check used notes 25 at a time (one at a time took 21 s for 169 notes on mainnet, now 1.5 s). GQ got the same plus a progress loader; PUB keeps its own loading screens for now.
 - [x] 2026-11-07 MIDNIGHT CHASE searchlight fades out over the 100 m before its reach (100 m ahead) touches the next tunnel mouth, so no light falls inside the bore from any car position (Gaylord saw it in the tunnel before entering).
+
+## Stage dial: chevrons and a locked stage on arrival (2026-11-07)
+- alelpoan on X: after a refresh Solo Run showed a locked track (09 / 13) and nothing said the dial turns; suggested arrows by the counter, then "start from the first unlocked track". Gaylord: "do both", arrows "visually consistent with the rest".
+- Cause confirmed: a shot on a record sets the dial to the record's song, locked or not, `pub.stage` stores it, the next visit restores it as is.
+- Done: a chevron each side of the counter (the shop's `.gp-chev`, 0.9 em tall, tap targets at least 40 px, PREV / NEXT keys light); the stored stage is applied once the notes are read, and a locked one (records or no Bread) falls back to the first open stage. Dialing onto a locked stage by hand still shows it with its price.
+- Checked on the dev server: stored 2 comes back as 03, stored 8 as 01, chevron tap steps, 8 arrow presses onto 09 stay there; portrait frame at 390 px: chevrons 5.5 px off the counter, hits 40 x 40. tsc, 100 vitest tests, build green.
+- Skipped: the no-Bread lock is only known 1.5 s after the menu opens, so a stored stage above 1 on a Bread-less browser still shows GET BREAD TO UNLOCK (the chevrons show the way out).

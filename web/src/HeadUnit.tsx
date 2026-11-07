@@ -129,8 +129,8 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       img.src = src;
     }
   }, []);
-  // the stage comes back as it was last chosen (the first one cold)
-  useEffect(() => { const s = Number(stored("pub.stage")); if (Number.isInteger(s) && s >= 0 && s < STATIONS.length) setStation(s); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // the stage comes back as it was last chosen (the first one cold), once the notes say whether it is still open here
+  const [pending, setPending] = useState<number | null>(() => { const s = Number(stored("pub.stage")); return Number.isInteger(s) && s >= 0 && s < STATIONS.length ? s : null; });
   useEffect(() => { store("pub.stage", String(station)); }, [station]);
   // WALLET read once per connection on its first visit (Bread asks the player on every read); ENTER on BALANCE reads again
   useEffect(() => { if (mode !== "system") return; setHealth(null); fetch("/api/status").then((r) => r.json()).then(setHealth, () => setHealth({})); }, [mode]);
@@ -180,6 +180,9 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   // the dial's locks: what this wallet has posted opens the later tracks (unlock.ts); a locked stage shows, dark, with its price, and DRIVE stays dark
   const posted = notes.filter((n) => n.kind === "record" && same(me, n.storage.champion)).map((n) => n.storage.target);
   const lock = mode !== "solo" ? null : noBread && station > 0 ? ("bread" as const) : !unlocked(station, posted) ? need(station) : null;
+  // a stage that comes back locked (a shot drove it, or another wallet) is no place to start: the first open one instead (alelpoan, 2026-11-07)
+  const open = (i: number) => !(noBread && i > 0) && unlocked(i, posted);
+  useEffect(() => { if (loading || pending === null) return; setPending(null); setStation(open(pending) ? pending : Math.max(0, STATIONS.findIndex((_, i) => open(i)))); }, [loading, pending]); // eslint-disable-line react-hooks/exhaustive-deps
   if (mode === "solo") {
     if (lock === "bread") { word = "get bread"; go = getBread; } else { word = "drive"; go = lock ? null : onDrive; }
     if (tuning) status = ["TUNING"];
@@ -314,7 +317,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   /** a note for five seconds, then the track */
   const flash = (t: string) => { clearNote(); setNote(t); setNoteUntil(Date.now() + 5000); noteTimer.current = window.setTimeout(() => goMode("solo"), 5000); };
   const back = () => { if (trouble) return chain?.dismiss(); if (pop) return setOwedPop(false); if (note) return clearNote(); if (shop !== null) return setShop(null); if (review) return setReview(null); if (board) return setBoard(null); setOpened(null); };
-  const stepTo = (d: number) => { if (shop !== null) return setShop((s) => Math.max(0, Math.min(QUANTITIES.length - 1, (s ?? 0) + d))); if (mode === "solo") return setStation((station + d + STATIONS.length) % STATIONS.length); if (total) setCursor({ ...cursor, [cursorKey]: Math.max(0, Math.min(total - 1, at + d)) }); };
+  const stepTo = (d: number) => { if (shop !== null) return setShop((s) => Math.max(0, Math.min(QUANTITIES.length - 1, (s ?? 0) + d))); if (mode === "solo") { setPending(null); return setStation((station + d + STATIONS.length) % STATIONS.length); } if (total) setCursor({ ...cursor, [cursorKey]: Math.max(0, Math.min(total - 1, at + d)) }); };
   const act = (id: string, half?: 0 | 1) => {
     if (!on(id)) return;
     if (MODES.includes(id as Mode)) return goMode(id as Mode);
@@ -404,10 +407,13 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
               {lock && <svg className="gp-lock" viewBox="0 0 32 32" style={box([TV.size[0] / 2 - TV.size[1] * 0.14, TV.size[1] / 2 - TV.size[1] * 0.14, TV.size[1] * 0.28, TV.size[1] * 0.28])}><path d="M10 14v-4a6 6 0 0 1 12 0v4" /><rect x="6.5" y="14" width="19" height="13" rx="2" /><circle cx="16" cy="20.5" r="1.5" fill="currentColor" stroke="none" /></svg>}
               {brand(TV.scene.logo, "left")}
               {text(`${pad2(station + 1)} / ${pad2(STATIONS.length)}`, TV.count[0], TV.count[1], TV.count[2], "cp", AMBER, true)}
+              {/* a chevron each side of the counter, the shop's, so the dial reads as one (alelpoan 2026-11-07: a locked stage on arrival looked like a dead end) */}
+              {([-1, 1] as const).map((dir) => { const s = TV.count[2], x = dir < 0 ? TV.count[0] - 5.3 * s : TV.count[0] + 0.45 * s; return <svg key={dir} className="gp-chev" viewBox="0 0 24 40" style={box([x, TV.count[1] - 0.8 * s, 0.54 * s, 0.9 * s])}><path d={dir < 0 ? "M18 4 6 20l12 16" : "M6 4l12 16L6 36"} /></svg>; })}
               {text(stage.title, TV.scene.title[0], TV.scene.title[1], TV.scene.title[2], "cp", WHITE)}
               {lock ? text(lock === "bread" ? "GET BREAD TO UNLOCK" : `LOCKED: POST ${lock.records} RECORD${lock.records > 1 ? "S" : ""}, ONE AT ${lock.score}+`, TV.cond[0].icon[0], TV.cond[0].text[1], TV.cond[0].text[2], "cp", PINK) : cond(station, TV.cond[0].text[1])}
               {/* a tap on the stage drives it, like the red key (Gaylord 2026-10-25); the run opens on READY? GO! */}
               {word === "drive" && <button className="hit" aria-label={`DRIVE ${stage.title}`} disabled={!on("action")} style={box([0, 0, ...TV.size])} onClick={() => press("action")} />}
+              {([-1, 1] as const).map((dir) => { const s = TV.count[2], x = dir < 0 ? TV.count[0] - 5.3 * s : TV.count[0] + 0.45 * s; return <button key={dir} className="hit" aria-label={dir < 0 ? "PREVIOUS STAGE" : "NEXT STAGE"} disabled={!on(dir < 0 ? "prev" : "next")} onClick={() => press(dir < 0 ? "prev" : "next")} style={box([x + 0.27 * s - Math.max(0.77 * s, 20), TV.count[1] - 0.35 * s - Math.max(0.95 * s, 20), Math.max(1.54 * s, 40), Math.max(1.9 * s, 40)])} />; })}
             </>
           )}
           {mode !== "solo" && !status && !rev && shop === null && (
