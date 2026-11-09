@@ -107,6 +107,7 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
   const [note, setNote] = useState<string | null>(null);
   const [noteUntil, setNoteUntil] = useState<number | null>(null); // a note that counts down and goes back to the track (COINS RECEIVED, Gaylord 2026-10-19)
   const noteTimer = useRef(0);
+  const wheel = useRef(0), swipe = useRef(NaN); // scroll pooled until a step; where a finger landed on the TV (the wheel and a swipe move the lists, lost with the radio pack 2026-10-17, back 2026-11-09)
   const [health, setHealth] = useState<Record<string, string> | null>(null); // SYSTEM: the network monitor's word per service, {} when unreachable // a line of our own on the TV (coins received, best cleared)
   const [pressed, setPressed] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
@@ -397,7 +398,10 @@ export default function HeadUnit({ chain, station, setStation, volume, setVolume
       <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden="true">
         <clipPath id={`gp-tube-${layout}`} clipPathUnits="userSpaceOnUse"><path transform={`scale(${TV.size[0] / TV.native[0]} ${TV.size[1] / TV.native[1]})`} d={TV.path} /></clipPath>
       </svg>
-      <div className="gp-tv" style={box([...TV.origin, ...TV.size])}>
+      <div className="gp-tv" style={box([...TV.origin, ...TV.size])}
+        onWheel={(e) => { wheel.current += e.deltaY; if (Math.abs(wheel.current) >= 80) { act(wheel.current > 0 ? "next" : "prev"); wheel.current = 0; } }}
+        onPointerDown={(e) => { swipe.current = e.pointerType === "touch" ? e.clientY : NaN; }}
+        onPointerUp={(e) => { const dy = e.clientY - swipe.current; swipe.current = NaN; if (Math.abs(dy) >= 40) act(dy < 0 ? "next" : "prev"); }}>
         <div className="gp-content" style={{ width: px(TV.size[0]), height: px(TV.size[1]), clipPath: `url(#gp-tube-${layout})` }}>
           {backdrop && !status && loaded.has(backdrop) && <img className="gp-pic dim" style={{ filter: `brightness(${(DIM_TO / loaded.get(backdrop)!).toFixed(3)}) saturate(.8)` }} src={backdrop} alt="" />}
           {mode === "solo" && !status && (
